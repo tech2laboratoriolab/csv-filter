@@ -216,7 +216,7 @@ export function importCSV(headers: string[], rows: string[][]): { rowCount: numb
 
 export interface FilterCondition {
   column: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'in' | 'not_in' | 'is_null' | 'is_not_null' | 'date_after' | 'date_before' | 'date_between';
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'in' | 'not_in' | 'is_null' | 'is_not_null' | 'date_after' | 'date_before' | 'date_between' | 'is_today' | 'is_future' | 'is_past';
   value: string | number;
   value2?: string | number;
 }
@@ -243,9 +243,19 @@ function buildWhereClause(conditions: FilterCondition[]): { sql: string; params:
     const col = `"${c.column}"`;
     switch (c.operator) {
       case 'equals':
-        clauses.push(`${col} = ?`); params.push(c.value); break;
+        if (c.value === '' || c.value == null) {
+          clauses.push(`(${col} IS NULL OR ${col} = '')`);
+        } else {
+          clauses.push(`${col} = ?`); params.push(c.value);
+        }
+        break;
       case 'not_equals':
-        clauses.push(`${col} != ?`); params.push(c.value); break;
+        if (c.value === '' || c.value == null) {
+          clauses.push(`(${col} IS NOT NULL AND ${col} != '')`);
+        } else {
+          clauses.push(`${col} != ?`); params.push(c.value);
+        }
+        break;
       case 'contains':
         clauses.push(`${col} LIKE ?`); params.push(`%${c.value}%`); break;
       case 'not_contains':
@@ -282,6 +292,18 @@ function buildWhereClause(conditions: FilterCondition[]): { sql: string; params:
       case 'date_between':
         clauses.push(`${col} BETWEEN ? AND ?`);
         params.push(c.value, c.value2); break;
+      case 'is_today': {
+        const today = new Date().toISOString().split('T')[0];
+        clauses.push(`DATE(${col}) = ?`); params.push(today); break;
+      }
+      case 'is_future': {
+        const today = new Date().toISOString().split('T')[0];
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) > ?)`); params.push(today); break;
+      }
+      case 'is_past': {
+        const today = new Date().toISOString().split('T')[0];
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) < ?)`); params.push(today); break;
+      }
     }
   }
 

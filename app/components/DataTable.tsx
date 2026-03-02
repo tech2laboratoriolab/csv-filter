@@ -42,6 +42,15 @@ function buildDisplayCols(selectedCols: string[], formulaColumns: FormulaColumn[
   return result;
 }
 
+function formatDate(val: string): string {
+  if (!val) return '';
+  const [datePart, timePart] = val.split(' ');
+  const parts = datePart.split('-');
+  if (parts.length !== 3) return val;
+  const [y, m, d] = parts;
+  return `${d}/${m}/${y}`;
+}
+
 export default function DataTable({
   rows,
   selectedCols,
@@ -124,9 +133,14 @@ export default function DataTable({
 
                   const cellStyle = (cellStyles[col.name] || {}) as React.CSSProperties;
                   const val = row[col.name] ?? '';
+                  const colType = columns.find(c => c.name === col.name)?.type;
+                  const displayVal =
+                    colType === 'date' && col.name !== 'dta_solicitacao'
+                      ? formatDate(String(val))
+                      : String(val);
                   return (
-                    <td key={col.name} style={cellStyle} title={String(val)}>
-                      {String(val)}
+                    <td key={col.name} style={cellStyle} title={displayVal}>
+                      {displayVal}
                     </td>
                   );
                 })}

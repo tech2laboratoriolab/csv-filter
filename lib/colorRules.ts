@@ -48,6 +48,18 @@ function matchesRule(row: Record<string, unknown>, rule: ColorRule): boolean {
       return value <= ruleVal;
     case 'date_between':
       return value >= ruleVal && value <= ruleVal2;
+    case 'is_today': {
+      const today = new Date().toISOString().split('T')[0];
+      return value.split(' ')[0] === today;
+    }
+    case 'is_future': {
+      const today = new Date().toISOString().split('T')[0];
+      return value !== '' && value.split(' ')[0] > today;
+    }
+    case 'is_past': {
+      const today = new Date().toISOString().split('T')[0];
+      return value !== '' && value.split(' ')[0] < today;
+    }
     default:
       return false;
   }

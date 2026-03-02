@@ -1,7 +1,11 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import type { ColumnDef, FilterCondition } from '@/lib/types';
 import { getOpsForType } from '@/lib/operators';
+
+// Columns that render a select dropdown instead of a free-text input
+const SELECT_COLUMNS = new Set(['nom_medico']);
 
 interface ConditionEditorProps {
   columns: ColumnDef[];
@@ -18,6 +22,25 @@ export default function ConditionEditor({
   onApply,
   loading,
 }: ConditionEditorProps) {
+  const [distinctValues, setDistinctValues] = useState<Record<string, string[]>>({});
+  const fetchedCols = useRef<Set<string>>(new Set());
+
+  // Fetch distinct values whenever a SELECT_COLUMNS column appears in conditions
+  useEffect(() => {
+    const needed = [...new Set(conditions.map(c => c.column))].filter(
+      col => SELECT_COLUMNS.has(col) && !fetchedCols.current.has(col),
+    );
+    for (const col of needed) {
+      fetchedCols.current.add(col);
+      fetch(`/api/columns?column=${col}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.values) setDistinctValues(prev => ({ ...prev, [col]: d.values }));
+        })
+        .catch(() => fetchedCols.current.delete(col));
+    }
+  }, [conditions]);
+
   const addCondition = () => {
     if (!columns.length) return;
     onChange([...conditions, { column: columns[0].name, operator: 'equals', value: '' }]);
@@ -44,7 +67,9 @@ export default function ConditionEditor({
   const isDate = (colName: string) =>
     columns.find(c => c.name === colName)?.type === 'date';
 
-  const noValue = (op: string) => op === 'is_null' || op === 'is_not_null';
+  const noValue = (op: string) =>
+    op === 'is_null' || op === 'is_not_null' ||
+    op === 'is_today' || op === 'is_future' || op === 'is_past';
   const isList = (op: string) => op === 'in' || op === 'not_in';
 
   return (
@@ -79,12 +104,21 @@ export default function ConditionEditor({
               ))}
             </select>
             {!noValue(c.operator) && (
-              <input
-                type={isDate(c.column) ? 'date' : 'text'}
-                placeholder={isList(c.operator) ? 'val1,val2,val3' : 'Valor'}
-                value={c.value}
-                onChange={e => updateCond(i, 'value', e.target.value)}
-              />
+              SELECT_COLUMNS.has(c.column) && !isList(c.operator) && !isDate(c.column) && distinctValues[c.column] ? (
+                <select value={c.value} onChange={e => updateCond(i, 'value', e.target.value)}>
+                  <option value="">-- Selecione --</option>
+                  {distinctValues[c.column].map(v => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={isDate(c.column) ? 'date' : 'text'}
+                  placeholder={isList(c.operator) ? 'val1,val2,val3' : 'Valor'}
+                  value={c.value}
+                  onChange={e => updateCond(i, 'value', e.target.value)}
+                />
+              )
             )}
             {(c.operator === 'between' || c.operator === 'date_between') && (
               <input

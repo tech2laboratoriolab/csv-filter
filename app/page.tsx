@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { evaluateColorRules } from "@/lib/colorRules";
+import type { ColorRule } from "@/lib/types";
+
+const SELECT_COLUMNS = new Set(["nom_medico"]);
 
 interface ColumnDef {
   name: string;
@@ -21,6 +25,7 @@ interface SavedFilter {
   description?: string;
   selectedColumns: string[];
   conditions: FilterCondition[];
+  colorRules?: ColorRule[];
   createdAt: string;
 }
 
@@ -67,7 +72,10 @@ export default function Home() {
   const [filterName, setFilterName] = useState("");
   const [filterDesc, setFilterDesc] = useState("");
   const [colSearch, setColSearch] = useState("");
+  const [colorRules, setColorRules] = useState<ColorRule[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [distinctValues, setDistinctValues] = useState<Record<string, string[]>>({});
+  const fetchedCols = useRef<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const filterFileRef = useRef<HTMLInputElement>(null);
   const PAGE_SIZE = 50;
@@ -98,6 +106,23 @@ export default function Home() {
       })
       .catch(() => {});
   }, []);
+
+  // Fetch distinct values for SELECT_COLUMNS when those columns appear in conditions
+  useEffect(() => {
+    const needed = [...new Set(conditions.map((c) => c.column))].filter(
+      (col) => SELECT_COLUMNS.has(col) && !fetchedCols.current.has(col),
+    );
+    for (const col of needed) {
+      fetchedCols.current.add(col);
+      fetch(`/api/columns?column=${col}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.values)
+            setDistinctValues((prev) => ({ ...prev, [col]: d.values }));
+        })
+        .catch(() => fetchedCols.current.delete(col));
+    }
+  }, [conditions]);
 
   const fetchData = useCallback(
     async (
@@ -221,11 +246,21 @@ export default function Home() {
     fetchData(selectedCols, conditions, page, col, dir);
   };
 
-  // Date formarter
+  // Date formatter (for status bar — keeps time)
   function formatDate(str: string) {
     const [date, time] = str.split(" ");
     const [y, m, d] = date.split("-");
     return `${time} - ${d}/${m}/${y}`;
+  }
+
+  // Date formatter for table cells — Brazilian format, no time
+  function formatDateBR(str: string): string {
+    if (!str) return '';
+    const [datePart] = str.split(' ');
+    const parts = datePart.split('-');
+    if (parts.length !== 3) return str;
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y}`;
   }
 
   // Pagination
@@ -269,6 +304,7 @@ export default function Home() {
   const loadFilter = (f: SavedFilter) => {
     setSelectedCols(f.selectedColumns);
     setConditions(f.conditions);
+    setColorRules(f.colorRules ?? []);
     setPage(1);
     fetchData(f.selectedColumns, f.conditions, 1);
   };
@@ -526,19 +562,43 @@ export default function Home() {
                             </option>
                           ))}
                         </select>
-                        <input
-                          type={
-                            columns.find((x) => x.name === c.column)?.type ===
-                            "date"
-                              ? "date"
-                              : "text"
-                          }
-                          placeholder="Valor"
-                          value={c.value}
-                          onChange={(e) =>
-                            updateCond(i, "value", e.target.value)
-                          }
-                        />
+                        {c.operator !== "is_null" &&
+                          c.operator !== "is_not_null" &&
+                          c.operator !== "is_today" &&
+                          c.operator !== "is_future" &&
+                          c.operator !== "is_past" && (
+                            SELECT_COLUMNS.has(c.column) &&
+                            c.operator !== "in" &&
+                            c.operator !== "not_in" &&
+                            columns.find((x) => x.name === c.column)?.type !== "date" &&
+                            distinctValues[c.column] ? (
+                              <select
+                                value={c.value}
+                                onChange={(e) =>
+                                  updateCond(i, "value", e.target.value)
+                                }
+                              >
+                                <option value="">-- Selecione --</option>
+                                {distinctValues[c.column].map((v) => (
+                                  <option key={v} value={v}>{v}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type={
+                                  columns.find((x) => x.name === c.column)
+                                    ?.type === "date"
+                                    ? "date"
+                                    : "text"
+                                }
+                                placeholder="Valor"
+                                value={c.value}
+                                onChange={(e) =>
+                                  updateCond(i, "value", e.target.value)
+                                }
+                              />
+                            )
+                          )}
                         {(c.operator === "between" ||
                           c.operator === "date_between") && (
                           <input
@@ -747,15 +807,30 @@ export default function Home() {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((row, i) => (
-                        <tr key={i}>
-                          {selectedCols.map((col) => (
-                            <td key={col} title={String(row[col] ?? "")}>
-                              {row[col] ?? ""}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
+                      {rows.map((row, i) => {
+                        const { rowStyle, cellStyles } = colorRules.length
+                          ? evaluateColorRules(row, colorRules)
+                          : { rowStyle: {}, cellStyles: {} };
+                        return (
+                          <tr key={i} style={rowStyle as React.CSSProperties}>
+                            {selectedCols.map((col) => {
+                              const colType = columns.find(c => c.name === col)?.type;
+                              const displayVal = colType === 'date'
+                                ? formatDateBR(String(row[col] ?? ''))
+                                : String(row[col] ?? '');
+                              return (
+                                <td
+                                  key={col}
+                                  title={displayVal}
+                                  style={(cellStyles[col] ?? {}) as React.CSSProperties}
+                                >
+                                  {displayVal}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

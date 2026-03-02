@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:latest
+    platform: linux/amd64
+    command: redis-server --requirepass default
+    environment:
+      REDIS_USER: default
+      REDIS_PASSWORD: default
+    ports:
+      - "6379:6379"
+
+  waha:
+    image: devlikeapro/waha-plus:latest
+    platform: linux/amd64
+    # Adicionado para ler as senhas do seu arquivo .env
+    env_file: .env
+    environment:
+      WHATSAPP_HOOK_URL: https://automacaolab.ngrok.dev/webhook/LabWahaPlus
+      WHATSAPP_DEFAULT_ENGINE: GOWS
+      WHATSAPP_HOOK_EVENTS: message
+      WAHA_FILES_LIFETIME: 3600
+      # Desativa a telemetria para parar o erro 429 do PostHog
+      WAHA_TELEMETRY: "false"
+    volumes:
+      - waha_sessions:/app/.sessions # Corrigido de .sessi para .sessions
+      - waha_media:/app/.media
+    ports:
+      - "4300:3000"
+
+  n8n:
+    image: n8nio/n8n:latest
+    platform: linux/amd64
+    environment:
+      WEBHOOK_URL: https://automacaolab.ngrok.dev
+      N8N_HOST: automacaolab.ngrok.dev # Removido o https:// daqui, n8n pede apenas o host
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      N8N_LOG_LEVEL: debug
+      N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE: "true"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    ports:
+      - "5002:5678"
+
+volumes:
+  pgdata:
+  waha_sessions:
+  waha_media:
+  n8n_data:
+

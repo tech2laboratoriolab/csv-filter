@@ -141,7 +141,8 @@ export default function ColorRuleEditor({ rules, columns, onChange }: ColorRuleE
                     </option>
                   ))}
                 </select>
-                {rule.operator !== 'is_null' && rule.operator !== 'is_not_null' && (
+                {rule.operator !== 'is_null' && rule.operator !== 'is_not_null' &&
+                  rule.operator !== 'is_today' && rule.operator !== 'is_future' && rule.operator !== 'is_past' && (
                   <input
                     type={condCol?.type === 'date' ? 'date' : 'text'}
                     placeholder={rule.operator === 'in' || rule.operator === 'not_in' ? 'val1,val2' : 'Valor'}
