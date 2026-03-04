@@ -135,7 +135,7 @@ export default function DataTable({
                   const val = row[col.name] ?? '';
                   const colType = columns.find(c => c.name === col.name)?.type;
                   const displayVal =
-                    colType === 'date' && col.name !== 'dta_solicitacao'
+                    colType === 'date'
                       ? formatDate(String(val))
                       : String(val);
                   return (
