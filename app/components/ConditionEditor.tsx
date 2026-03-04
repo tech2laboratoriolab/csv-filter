@@ -61,7 +61,11 @@ export default function ConditionEditor({
 
   const getOps = (colName: string) => {
     const col = columns.find(c => c.name === colName);
-    return getOpsForType(col?.type ?? 'text');
+    const ops = getOpsForType(col?.type ?? 'text');
+    if (/id/i.test(colName) && !ops.some(o => o.v === 'in')) {
+      return [...ops, { v: 'in', l: 'Em (lista)' }, { v: 'not_in', l: 'Não em (lista)' }];
+    }
+    return ops;
   };
 
   const isDate = (colName: string) =>
@@ -69,7 +73,8 @@ export default function ConditionEditor({
 
   const noValue = (op: string) =>
     op === 'is_null' || op === 'is_not_null' ||
-    op === 'is_today' || op === 'is_future' || op === 'is_past';
+    op === 'is_today' || op === 'is_today_or_tomorrow' || op === 'is_future' || op === 'is_future_or_today' ||
+    op === 'is_past' || op === 'is_past_or_today';
   const isList = (op: string) => op === 'in' || op === 'not_in';
 
   return (
