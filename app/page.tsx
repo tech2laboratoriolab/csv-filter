@@ -401,6 +401,26 @@ export default function Home() {
           <div className="logo">
             CSV<span>Filter</span>Pro
           </div>
+          <a
+            href="/whatsapp"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 10px",
+              background: "rgba(34,197,94,0.12)",
+              border: "1px solid rgba(34,197,94,0.3)",
+              borderRadius: 6,
+              color: "#22c55e",
+              textDecoration: "none",
+              fontSize: 12,
+              fontWeight: 600,
+              marginTop: 10,
+              whiteSpace: "nowrap",
+            }}
+          >
+            📱 WhatsApp
+          </a>
         </div>
 
         <div className="sidebar-scroll">
