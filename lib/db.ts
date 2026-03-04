@@ -30,7 +30,7 @@ export interface ColumnDef {
 
 export const COLUMNS: ColumnDef[] = [
   { name: 'ano', label: 'Ano', type: 'number' },
-  { name: 'mes', label: 'Mes', type: 'number' },
+  { name: 'mes', label: 'Mes', type: 'text' },
   { name: 'id_laboratorio', label: 'IdLaboratorio', type: 'number' },
   { name: 'nom_laboratorio', label: 'NomLaboratorio', type: 'text' },
   { name: 'id_unidade', label: 'IdUnidade', type: 'number' },
@@ -106,7 +106,7 @@ export const COLUMNS: ColumnDef[] = [
   { name: 'vlr_bruto', label: 'VlrBruto', type: 'number' },
   { name: 'vlr_liquido', label: 'VlrLiquido', type: 'number' },
   { name: 'vlr_recebido', label: 'VlrRecebido', type: 'number' },
-  { name: 'dta_recebido', label: 'DtaRecebido', type: 'date' },
+  { name: 'dta_recebido', label: 'DtaRecebido', type: 'text' },
   { name: 'id_motivo_glosa', label: 'IdMotivoGlosa', type: 'text' },
   { name: 'des_motivo_glosa', label: 'DesMotivoGlosa', type: 'text' },
   { name: 'id_exame_tipo', label: 'IdExameTipo', type: 'text' },
@@ -156,6 +156,19 @@ export function ensureTable() {
 export function importCSV(headers: string[], rows: string[][]): { rowCount: number; skipped: number } {
   const db = getDb();
   ensureTable();
+
+  // This CSV export omits 'SetorLocal' from the header but includes it as an
+  // empty column in every data row (between NomSegmentoLocal and IdConvenio).
+  // Without correction this creates a +1 shift for every column from IdConvenio
+  // onwards, causing NomPatologista to land in the QtdCobranca (numeric) slot
+  // and be silently discarded. We inject the missing header here to realign.
+  const hasSetorLocal = headers.some(h => h.trim().toLowerCase() === 'setorlocal');
+  if (!hasSetorLocal) {
+    const nomSegLocalIdx = headers.findIndex(h => h.trim().toLowerCase() === 'nomsegmentolocal');
+    if (nomSegLocalIdx >= 0) {
+      headers.splice(nomSegLocalIdx + 1, 0, 'SetorLocal');
+    }
+  }
 
   // Map CSV headers to column names
   const colMapping: { csvIndex: number; dbCol: string; colDef: ColumnDef }[] = [];
@@ -296,13 +309,27 @@ function buildWhereClause(conditions: FilterCondition[]): { sql: string; params:
         const today = new Date().toISOString().split('T')[0];
         clauses.push(`DATE(${col}) = ?`); params.push(today); break;
       }
+      case 'is_today_or_tomorrow': {
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) BETWEEN ? AND ?)`);
+        params.push(today, tomorrow); break;
+      }
       case 'is_future': {
         const today = new Date().toISOString().split('T')[0];
         clauses.push(`(${col} IS NOT NULL AND DATE(${col}) > ?)`); params.push(today); break;
       }
+      case 'is_future_or_today': {
+        const today = new Date().toISOString().split('T')[0];
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) >= ?)`); params.push(today); break;
+      }
       case 'is_past': {
         const today = new Date().toISOString().split('T')[0];
         clauses.push(`(${col} IS NOT NULL AND DATE(${col}) < ?)`); params.push(today); break;
+      }
+      case 'is_past_or_today': {
+        const today = new Date().toISOString().split('T')[0];
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) <= ?)`); params.push(today); break;
       }
     }
   }
@@ -410,4 +437,94 @@ export function getFilterById(id: string): SavedFilter | null {
   const filePath = path.join(FILTERS_DIR, `${id}.json`);
   if (!fs.existsSync(filePath)) return null;
   return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+}
+
+// --- Patologistas ---
+
+export function getDistinctPatologists(): string[] {
+  const db = getDb();
+  try {
+    const rows = db.prepare(
+      `SELECT DISTINCT nom_patologista FROM csv_data
+       WHERE nom_patologista IS NOT NULL AND nom_patologista != ''
+       ORDER BY nom_patologista`
+    ).all() as any[];
+    return rows.map(r => String(r.nom_patologista));
+  } catch {
+    return [];
+  }
+}
+
+export interface PatologistaSummary {
+  total: number;
+  eventos: { nome_evento: string; count: number }[];
+}
+
+export function getPatologistaSummary(
+  conditions: FilterCondition[],
+  patologistaNome: string
+): PatologistaSummary {
+  const db = getDb();
+  const { sql: where, params } = buildWhereClause(conditions);
+
+  const patCond = where
+    ? `${where} AND "nom_patologista" = ?`
+    : `WHERE "nom_patologista" = ?`;
+  const allParams = [...params, patologistaNome];
+
+  const { total } = db.prepare(
+    `SELECT COUNT(*) as total FROM csv_data ${patCond}`
+  ).get(...allParams) as any;
+
+  const eventoRows = db.prepare(
+    `SELECT nom_evento_fatur as nome_evento, COUNT(*) as count
+     FROM csv_data ${patCond}
+     AND nom_evento_fatur IS NOT NULL AND nom_evento_fatur != ''
+     GROUP BY nom_evento_fatur
+     ORDER BY count DESC`
+  ).all(...allParams) as any[];
+
+  return {
+    total: total ?? 0,
+    eventos: eventoRows.map(r => ({ nome_evento: String(r.nome_evento), count: Number(r.count) })),
+  };
+}
+
+export interface PatologistaRows {
+  columns: { name: string; label: string; type: string }[];
+  rows: Record<string, string>[];
+}
+
+export function getPatologistaRows(
+  conditions: FilterCondition[],
+  selectedColumns: string[],
+  patologistaNome: string
+): PatologistaRows {
+  const db = getDb();
+  const { sql: where, params } = buildWhereClause(conditions);
+  const patCond = where
+    ? `${where} AND "nom_patologista" = ?`
+    : `WHERE "nom_patologista" = ?`;
+  const allParams = [...params, patologistaNome];
+
+  const cols = selectedColumns.length ? selectedColumns : COLUMNS.map(c => c.name);
+  const colsSql = cols.map(c => `"${c}"`).join(', ');
+
+  const rows = db.prepare(
+    `SELECT ${colsSql} FROM csv_data ${patCond} ORDER BY id`
+  ).all(...allParams) as any[];
+
+  const columnDefs = cols.map(name => {
+    const def = COLUMNS.find(c => c.name === name);
+    return { name, label: def?.label ?? name, type: def?.type ?? 'text' };
+  });
+
+  return {
+    columns: columnDefs,
+    rows: rows.map(r => {
+      const obj: Record<string, string> = {};
+      for (const col of cols) obj[col] = String(r[col] ?? '');
+      return obj;
+    }),
+  };
 }
