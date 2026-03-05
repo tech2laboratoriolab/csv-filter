@@ -350,11 +350,19 @@ export function queryFiltered(
     ? selectedColumns.map(c => `"${c}"`).join(', ')
     : '*';
   const { sql: where, params } = buildWhereClause(conditions);
-  const orderBy = sortColumn ? `ORDER BY "${sortColumn}" ${sortDir}` : 'ORDER BY id';
+  const hasSpecificCols = selectedColumns.length > 0;
+  const groupBy = hasSpecificCols ? `GROUP BY ${cols}` : '';
+  const orderBy = sortColumn
+    ? `ORDER BY "${sortColumn}" ${sortDir}`
+    : hasSpecificCols ? 'ORDER BY MIN(id)' : 'ORDER BY id';
   const offset = (page - 1) * pageSize;
 
-  const { total } = db.prepare(`SELECT COUNT(*) as total FROM csv_data ${where}`).get(...params) as any;
-  const rows = db.prepare(`SELECT ${cols} FROM csv_data ${where} ${orderBy} LIMIT ? OFFSET ?`)
+  const countSql = hasSpecificCols
+    ? `SELECT COUNT(*) as total FROM (SELECT 1 FROM csv_data ${where} ${groupBy})`
+    : `SELECT COUNT(*) as total FROM csv_data ${where}`;
+
+  const { total } = db.prepare(countSql).get(...params) as any;
+  const rows = db.prepare(`SELECT ${cols} FROM csv_data ${where} ${groupBy} ${orderBy} LIMIT ? OFFSET ?`)
     .all(...params, pageSize, offset);
 
   return { rows, total };
@@ -389,7 +397,10 @@ export function exportFilteredCSV(selectedColumns: string[], conditions: FilterC
     ? selectedColumns.map(c => `"${c}"`).join(', ')
     : '*';
   const { sql: where, params } = buildWhereClause(conditions);
-  const rows = db.prepare(`SELECT ${cols} FROM csv_data ${where} ORDER BY id`).all(...params) as any[];
+  const hasSpecificCols = selectedColumns.length > 0;
+  const groupBy = hasSpecificCols ? `GROUP BY ${cols}` : '';
+  const orderBy = hasSpecificCols ? 'ORDER BY MIN(id)' : 'ORDER BY id';
+  const rows = db.prepare(`SELECT ${cols} FROM csv_data ${where} ${groupBy} ${orderBy}`).all(...params) as any[];
 
   if (!rows.length) return '';
 
@@ -510,8 +521,9 @@ export function getPatologistaRows(
   const cols = selectedColumns.length ? selectedColumns : COLUMNS.map(c => c.name);
   const colsSql = cols.map(c => `"${c}"`).join(', ');
 
+  const groupBy = `GROUP BY ${colsSql}`;
   const rows = db.prepare(
-    `SELECT ${colsSql} FROM csv_data ${patCond} ORDER BY id`
+    `SELECT ${colsSql} FROM csv_data ${patCond} ${groupBy} ORDER BY MIN(id)`
   ).all(...allParams) as any[];
 
   const columnDefs = cols.map(name => {
