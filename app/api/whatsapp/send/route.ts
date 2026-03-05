@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
 
       try {
         const summary = getPatologistaSummary(filter.conditions, pat.nome);
+        if (summary.total === 0) continue;
         const resumo = buildResumo(summary.eventos);
         const { columns, rows } = getPatologistaRows(
           filter.conditions,

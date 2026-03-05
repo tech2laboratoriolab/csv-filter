@@ -41,6 +41,7 @@ export interface SavedFilter {
   conditions: FilterCondition[];
   colorRules?: ColorRule[];
   formulaColumns?: FormulaColumn[];
+  whatsappLinhasColumns?: string[];
   createdAt: string;
   updatedAt?: string;
 }
