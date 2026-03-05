@@ -64,6 +64,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [scraping, setScraping] = useState(false);
   const [rowCount, setRowCount] = useState(0);
   const [minDate, setMinDate] = useState("");
   const [maxDate, setMaxDate] = useState("");
@@ -192,6 +193,34 @@ export default function Home() {
       setUploading(false);
     }
   }, []);
+
+  // Scraper
+  const handleScrape = useCallback(async () => {
+    setScraping(true);
+    try {
+      const res = await fetch("/api/scraper", { method: "POST" });
+      const d = await res.json();
+      if (d.success) {
+        const stats = await fetch("/api/stats").then((r) => r.json());
+        setColumns(stats.columns);
+        setRowCount(stats.total);
+        setMinDate(stats.minDate || "");
+        setMaxDate(stats.maxDate || "");
+        const allCols = stats.columns.map((c: ColumnDef) => c.name);
+        setSelectedCols(allCols);
+        setConditions([]);
+        setPage(1);
+        fetchData(allCols, [], 1);
+        alert("Dados atualizados com sucesso!");
+      } else {
+        alert(`Erro no scraper:\n${d.error || ""}\n\nLog:\n${d.output || ""}`);
+      }
+    } catch {
+      alert("Erro ao chamar o scraper");
+    } finally {
+      setScraping(false);
+    }
+  }, [fetchData]);
 
   // Column toggle
   const toggleCol = (name: string) => {
@@ -467,6 +496,14 @@ export default function Home() {
                 if (f) handleUpload(f);
               }}
             />
+            <button
+              className="btn btn-primary btn-full"
+              style={{ margin: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+              onClick={handleScrape}
+              disabled={scraping || uploading}
+            >
+              {scraping ? <span className="spinner" /> : "🔄"} {scraping ? "Coletando..." : "Atualizar dados"}
+            </button>
           </div>
 
           {hasData && (
