@@ -1,6 +1,7 @@
 'use client';
 
-import type { ColumnDef, ColorRule, FormulaColumn } from '@/lib/types';
+import { useRef } from 'react';
+import type { ColumnDef, ColorRule, FormulaColumn, AnnotationColumn } from '@/lib/types';
 import { evaluateColorRules } from '@/lib/colorRules';
 
 interface DataTableProps {
@@ -10,6 +11,9 @@ interface DataTableProps {
   colorRules: ColorRule[];
   formulaColumns: FormulaColumn[];
   formulaValues: string[][];
+  annotationColumns: AnnotationColumn[];
+  annotationValues: Record<string, string>;
+  onAnnotationChange: (rowId: number, colId: string, value: string) => void;
   sortCol?: string;
   sortDir: 'asc' | 'desc';
   onSort: (col: string) => void;
@@ -17,25 +21,39 @@ interface DataTableProps {
 
 type DisplayCol =
   | { type: 'data'; name: string }
-  | { type: 'formula'; fc: FormulaColumn; fcIdx: number };
+  | { type: 'formula'; fc: FormulaColumn; fcIdx: number }
+  | { type: 'annotation'; ac: AnnotationColumn; acIdx: number };
 
-function buildDisplayCols(selectedCols: string[], formulaColumns: FormulaColumn[]): DisplayCol[] {
+function buildDisplayCols(
+  selectedCols: string[],
+  formulaColumns: FormulaColumn[],
+  annotationColumns: AnnotationColumn[],
+): DisplayCol[] {
   const result: DisplayCol[] = [];
 
   for (const name of selectedCols) {
     result.push({ type: 'data', name });
-    // Insert formula columns that specify insertAfterColumn === this column
     formulaColumns.forEach((fc, fcIdx) => {
       if (fc.insertAfterColumn === name) {
         result.push({ type: 'formula', fc, fcIdx });
       }
     });
+    annotationColumns.forEach((ac, acIdx) => {
+      if (ac.insertAfterColumn === name) {
+        result.push({ type: 'annotation', ac, acIdx });
+      }
+    });
   }
 
-  // Append formula columns with no insertAfterColumn at the end
   formulaColumns.forEach((fc, fcIdx) => {
     if (!fc.insertAfterColumn) {
       result.push({ type: 'formula', fc, fcIdx });
+    }
+  });
+
+  annotationColumns.forEach((ac, acIdx) => {
+    if (!ac.insertAfterColumn) {
+      result.push({ type: 'annotation', ac, acIdx });
     }
   });
 
@@ -58,12 +76,17 @@ export default function DataTable({
   colorRules,
   formulaColumns,
   formulaValues,
+  annotationColumns,
+  annotationValues,
+  onAnnotationChange,
   sortCol,
   sortDir,
   onSort,
 }: DataTableProps) {
   const getLabel = (name: string) => columns.find(c => c.name === name)?.label ?? name;
-  const displayCols = buildDisplayCols(selectedCols, formulaColumns);
+  const displayCols = buildDisplayCols(selectedCols, formulaColumns, annotationColumns);
+  // Track pending (uncommitted) edits keyed by "rowId:colId"
+  const pendingRef = useRef<Record<string, string>>({});
 
   if (!rows.length) {
     return (
@@ -90,6 +113,16 @@ export default function DataTable({
                   </th>
                 );
               }
+              if (col.type === 'annotation') {
+                return (
+                  <th
+                    key={`ac-${col.ac.id}`}
+                    style={{ width: col.ac.width ?? 180, color: 'var(--green)' }}
+                  >
+                    ✏ {col.ac.label}
+                  </th>
+                );
+              }
               return (
                 <th
                   key={col.name}
@@ -107,8 +140,17 @@ export default function DataTable({
         </thead>
         <tbody>
           {rows.map((row, ri) => {
+            // Enrich row with annotation values so color rules can use them as condition columns
+            const enrichedRow = colorRules.length && annotationColumns.length
+              ? {
+                  ...row,
+                  ...Object.fromEntries(
+                    annotationColumns.map(ac => [ac.id, annotationValues[`${row._row_id}:${ac.id}`] ?? ''])
+                  ),
+                }
+              : row;
             const { rowStyle, cellStyles } = colorRules.length
-              ? evaluateColorRules(row, colorRules)
+              ? evaluateColorRules(enrichedRow, colorRules)
               : { rowStyle: {}, cellStyles: {} };
 
             return (
@@ -127,6 +169,39 @@ export default function DataTable({
                         title={val}
                       >
                         {val}
+                      </td>
+                    );
+                  }
+
+                  if (col.type === 'annotation') {
+                    const rowId = row._row_id as number;
+                    const key = `${rowId}:${col.ac.id}`;
+                    const saved = annotationValues[key] ?? '';
+                    const acCellStyle = (cellStyles[col.ac.id] || {}) as React.CSSProperties;
+                    return (
+                      <td key={`ac-${col.ac.id}`} style={{ width: col.ac.width ?? 180, padding: '2px 4px', ...acCellStyle }}>
+                        <input
+                          type="text"
+                          defaultValue={saved}
+                          key={saved}
+                          onChange={e => { pendingRef.current[key] = e.target.value; }}
+                          onBlur={e => {
+                            const val = e.target.value;
+                            if (val !== saved) {
+                              onAnnotationChange(rowId, col.ac.id, val);
+                            }
+                            delete pendingRef.current[key];
+                          }}
+                          style={{
+                            width: '100%',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid var(--border)',
+                            color: 'var(--text-1)',
+                            fontSize: 'inherit',
+                            padding: '1px 2px',
+                          }}
+                        />
                       </td>
                     );
                   }

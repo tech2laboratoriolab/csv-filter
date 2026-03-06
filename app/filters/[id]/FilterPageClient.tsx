@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { SavedFilter, ColumnDef, FilterCondition, ColorRule, FormulaColumn } from '@/lib/types';
+import type { SavedFilter, ColumnDef, FilterCondition, ColorRule, FormulaColumn, AnnotationColumn } from '@/lib/types';
 import ColumnPicker from '@/app/components/ColumnPicker';
 import ConditionEditor from '@/app/components/ConditionEditor';
 import DataTable from '@/app/components/DataTable';
 import ColorRuleEditor from '@/app/components/ColorRuleEditor';
 import FormulaColumnEditor from '@/app/components/FormulaColumnEditor';
+import AnnotationColumnEditor from '@/app/components/AnnotationColumnEditor';
 
-type Tab = 'columns' | 'filters' | 'color' | 'formula';
+type Tab = 'columns' | 'filters' | 'color' | 'formula' | 'annotation';
 const PAGE_SIZE = 50;
 
 interface Props {
@@ -20,6 +21,7 @@ export default function FilterPageClient({ initialFilter }: Props) {
     ...initialFilter,
     colorRules: initialFilter.colorRules ?? [],
     formulaColumns: initialFilter.formulaColumns ?? [],
+    annotationColumns: initialFilter.annotationColumns ?? [],
   });
   const [columns, setColumns] = useState<ColumnDef[]>([]);
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
@@ -32,6 +34,7 @@ export default function FilterPageClient({ initialFilter }: Props) {
   const [sortCol, setSortCol] = useState<string | undefined>();
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [formulaValues, setFormulaValues] = useState<string[][]>([]);
+  const [annotationValues, setAnnotationValues] = useState<Record<string, string>>({});
   const [editingName, setEditingName] = useState(false);
 
   // Load column definitions
@@ -82,6 +85,18 @@ export default function FilterPageClient({ initialFilter }: Props) {
   // Initial data fetch
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, []);
+
+  // Load annotation values whenever rows or annotation columns change
+  useEffect(() => {
+    const acs = filter.annotationColumns ?? [];
+    if (!acs.length || !rows.length) { setAnnotationValues({}); return; }
+    const rowIds = rows.map(r => r._row_id as number);
+    const colIds = acs.map(a => a.id);
+    fetch(`/api/annotations?rowIds=${rowIds.join(',')}&colIds=${colIds.join(',')}`)
+      .then(r => r.json())
+      .then(d => setAnnotationValues(d.annotations ?? {}))
+      .catch(() => {});
+  }, [rows, filter.annotationColumns]);
 
   // Recompute formula values whenever rows or formula columns change
   useEffect(() => {
@@ -169,13 +184,24 @@ export default function FilterPageClient({ initialFilter }: Props) {
 
   const colorRules: ColorRule[] = filter.colorRules ?? [];
   const formulaColumns: FormulaColumn[] = filter.formulaColumns ?? [];
+  const annotationColumns: AnnotationColumn[] = filter.annotationColumns ?? [];
   const sampleRow = rows[0];
+
+  const handleAnnotationChange = (rowId: number, colId: string, value: string) => {
+    setAnnotationValues(prev => ({ ...prev, [`${rowId}:${colId}`]: value }));
+    fetch('/api/annotations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rowId, colId, value }),
+    }).catch(() => {});
+  };
 
   const TABS: [Tab, string][] = [
     ['columns', 'Colunas'],
     ['filters', 'Filtros'],
     ['color', 'Regras de Cor'],
     ['formula', 'Colunas de Fórmula'],
+    ['annotation', 'Anotações'],
   ];
 
   return (
@@ -234,6 +260,9 @@ export default function FilterPageClient({ initialFilter }: Props) {
             {tab === 'formula' && formulaColumns.length > 0 && (
               <span className="fp-tab-badge">{formulaColumns.length}</span>
             )}
+            {tab === 'annotation' && annotationColumns.length > 0 && (
+              <span className="fp-tab-badge">{annotationColumns.length}</span>
+            )}
           </button>
         ))}
       </div>
@@ -262,6 +291,7 @@ export default function FilterPageClient({ initialFilter }: Props) {
           <ColorRuleEditor
             rules={colorRules}
             columns={columns}
+            annotationColumns={annotationColumns}
             onChange={rules => updateFilter({ colorRules: rules })}
           />
         )}
@@ -273,6 +303,15 @@ export default function FilterPageClient({ initialFilter }: Props) {
             selectedCols={filter.selectedColumns}
             sampleRow={sampleRow}
             onChange={fcs => updateFilter({ formulaColumns: fcs })}
+          />
+        )}
+
+        {activeTab === 'annotation' && (
+          <AnnotationColumnEditor
+            annotationColumns={annotationColumns}
+            columns={columns}
+            selectedCols={filter.selectedColumns}
+            onChange={acs => updateFilter({ annotationColumns: acs })}
           />
         )}
       </div>
@@ -296,6 +335,7 @@ export default function FilterPageClient({ initialFilter }: Props) {
           {filter.selectedColumns.length} coluna(s)
           {colorRules.length > 0 && ` · ${colorRules.length} regra(s) de cor`}
           {formulaColumns.length > 0 && ` · ${formulaColumns.length} fórmula(s)`}
+          {annotationColumns.length > 0 && ` · ${annotationColumns.length} anotação(ões)`}
         </span>
         <button
           className="btn btn-sm btn-primary"
@@ -321,6 +361,9 @@ export default function FilterPageClient({ initialFilter }: Props) {
             colorRules={colorRules}
             formulaColumns={formulaColumns}
             formulaValues={formulaValues}
+            annotationColumns={annotationColumns}
+            annotationValues={annotationValues}
+            onAnnotationChange={handleAnnotationChange}
             sortCol={sortCol}
             sortDir={sortDir}
             onSort={handleSort}
