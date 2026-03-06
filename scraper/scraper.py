@@ -53,7 +53,7 @@ def download_csv(debug: bool = False) -> Path | None:
     from playwright.sync_api import sync_playwright
 
     DOWNLOAD_DIR.mkdir(exist_ok=True)
-    log.info(f"Periodo: ultimos 90 dias")
+    log.info("Periodo: ultimos 90 dias")
 
     if not APLIS_USER or not APLIS_PASS:
         log.error("APLIS_USER / APLIS_PASS nao definidos no .env")

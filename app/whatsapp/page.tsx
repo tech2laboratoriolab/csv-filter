@@ -9,7 +9,6 @@ interface SavedFilter {
   description?: string;
   conditions: any[];
   selectedColumns: string[];
-  whatsappLinhasColumns?: string[];
   createdAt: string;
 }
 
@@ -58,7 +57,7 @@ function buildResumoPreview(
   eventos: { nome_evento: string; count: number }[],
 ): string {
   if (!eventos.length) return "📋 Nenhum evento encontrado.";
-  const lines = ["📋 Resumo dos exames:"];
+  const lines = ["📋 Resumo dos seus exames:"];
   for (const ev of eventos) {
     lines.push(`• ${ev.nome_evento}: ${ev.count}`);
   }
@@ -111,8 +110,6 @@ export default function WhatsAppPage() {
   const [sendResults, setSendResults] = useState<SendResult[]>([]);
   const [loadingPats, setLoadingPats] = useState(false);
   const [linhasColumns, setLinhasColumns] = useState<string[]>([]);
-  const [savingLinhas, setSavingLinhas] = useState(false);
-  const [linhasSaved, setLinhasSaved] = useState(false);
 
   // Load filters and pathologists on mount
   useEffect(() => {
@@ -139,9 +136,7 @@ export default function WhatsAppPage() {
   }, []);
 
   useEffect(() => {
-    setLinhasColumns(
-      selectedFilter?.whatsappLinhasColumns ?? selectedFilter?.selectedColumns ?? []
-    );
+    setLinhasColumns(selectedFilter?.selectedColumns ?? []);
   }, [selectedFilter?.id]);
 
   const insertVariable = (v: string) => {
@@ -165,23 +160,6 @@ export default function WhatsAppPage() {
   };
 
   const deselectAll = () => setSelectedPatIds(new Set());
-
-  const saveLinhasColumns = useCallback(async () => {
-    if (!selectedFilter) return;
-    setSavingLinhas(true);
-    const updated = { ...selectedFilter, whatsappLinhasColumns: linhasColumns };
-    try {
-      await fetch("/api/filters", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
-      });
-      setFilters((prev) => prev.map((f) => (f.id === updated.id ? updated : f)));
-      setLinhasSaved(true);
-      setTimeout(() => setLinhasSaved(false), 2000);
-    } catch {}
-    setSavingLinhas(false);
-  }, [selectedFilter, linhasColumns]);
 
   const savePhone = useCallback(
     async (nome: string) => {
@@ -233,14 +211,12 @@ export default function WhatsAppPage() {
           .replace(/\{data_hoje\}/g, dataHoje)
           .replace(/\{resumo\}/g, resumo)
           .replace(/\{linhas\}/g, linhas);
-        if ((summary.total ?? 0) > 0) {
-          newPreviews.push({
-            nome: pat.nome,
-            telefone,
-            total: summary.total,
-            message: msg,
-          });
-        }
+        newPreviews.push({
+          nome: pat.nome,
+          telefone,
+          total: summary.total ?? 0,
+          message: msg,
+        });
       } catch {
         newPreviews.push({
           nome: pat.nome,
@@ -456,31 +432,12 @@ export default function WhatsAppPage() {
               >
                 <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    fontWeight: 600,
                     marginBottom: 8,
+                    color: "var(--text-0)",
                   }}
                 >
-                  <span style={{ fontWeight: 600, color: "var(--text-0)" }}>
-                    Colunas para {"{linhas}"}:
-                  </span>
-                  <button
-                    onClick={saveLinhasColumns}
-                    disabled={savingLinhas}
-                    style={{
-                      fontSize: 11,
-                      padding: "2px 8px",
-                      borderRadius: 4,
-                      border: "1px solid var(--border)",
-                      background: linhasSaved ? "var(--green)" : "var(--bg-3)",
-                      color: linhasSaved ? "#fff" : "var(--text-1)",
-                      cursor: savingLinhas ? "default" : "pointer",
-                      opacity: savingLinhas ? 0.6 : 1,
-                    }}
-                  >
-                    {linhasSaved ? "Salvo ✓" : savingLinhas ? "Salvando…" : "Salvar"}
-                  </button>
+                  Colunas para {"{linhas}"}:
                 </div>
                 <div
                   style={{ display: "flex", flexDirection: "column", gap: 4 }}
