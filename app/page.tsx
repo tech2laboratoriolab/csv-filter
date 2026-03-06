@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { evaluateColorRules } from "@/lib/colorRules";
-import type { ColorRule } from "@/lib/types";
+import type { ColorRule, FormulaColumn, AnnotationColumn } from "@/lib/types";
+import DataTable from "@/app/components/DataTable";
 
 const SELECT_COLUMNS = new Set(["nom_medico"]);
 
@@ -26,6 +26,8 @@ interface SavedFilter {
   selectedColumns: string[];
   conditions: FilterCondition[];
   colorRules?: ColorRule[];
+  formulaColumns?: FormulaColumn[];
+  annotationColumns?: AnnotationColumn[];
   createdAt: string;
 }
 
@@ -74,6 +76,10 @@ export default function Home() {
   const [filterDesc, setFilterDesc] = useState("");
   const [colSearch, setColSearch] = useState("");
   const [colorRules, setColorRules] = useState<ColorRule[]>([]);
+  const [formulaColumns, setFormulaColumns] = useState<FormulaColumn[]>([]);
+  const [formulaValues, setFormulaValues] = useState<string[][]>([]);
+  const [annotationColumns, setAnnotationColumns] = useState<AnnotationColumn[]>([]);
+  const [annotationValues, setAnnotationValues] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState(false);
   const [distinctValues, setDistinctValues] = useState<Record<string, string[]>>({});
   const fetchedCols = useRef<Set<string>>(new Set());
@@ -124,6 +130,33 @@ export default function Home() {
         .catch(() => fetchedCols.current.delete(col));
     }
   }, [conditions]);
+
+  // Recompute formula values when rows/formulaColumns/columns change
+  useEffect(() => {
+    if (!formulaColumns.length || !rows.length || !columns.length) {
+      setFormulaValues([]);
+      return;
+    }
+    const colNames = columns.map((c) => c.name);
+    import("@/lib/formulaEngine")
+      .then((m) => m.evaluateFormulasAsync(rows, formulaColumns, colNames))
+      .then((vals) => setFormulaValues(vals))
+      .catch(() => setFormulaValues([]));
+  }, [rows, formulaColumns, columns]);
+
+  // Fetch annotation values when rows/annotationColumns change
+  useEffect(() => {
+    if (!annotationColumns.length || !rows.length) {
+      setAnnotationValues({});
+      return;
+    }
+    const rowIds = rows.map((r) => r._row_id as number);
+    const colIds = annotationColumns.map((a) => a.id);
+    fetch(`/api/annotations?rowIds=${rowIds.join(",")}&colIds=${colIds.join(",")}`)
+      .then((r) => r.json())
+      .then((d) => setAnnotationValues(d.annotations ?? {}))
+      .catch(() => {});
+  }, [rows, annotationColumns]);
 
   const fetchData = useCallback(
     async (
@@ -282,16 +315,6 @@ export default function Home() {
     return `${time} - ${d}/${m}/${y}`;
   }
 
-  // Date formatter for table cells — Brazilian format, no time
-  function formatDateBR(str: string): string {
-    if (!str) return '';
-    const [datePart] = str.split(' ');
-    const parts = datePart.split('-');
-    if (parts.length !== 3) return str;
-    const [y, m, d] = parts;
-    return `${d}/${m}/${y}`;
-  }
-
   // Pagination
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const goPage = (p: number) => {
@@ -334,8 +357,20 @@ export default function Home() {
     setSelectedCols(f.selectedColumns);
     setConditions(f.conditions);
     setColorRules(f.colorRules ?? []);
+    setFormulaColumns(f.formulaColumns ?? []);
+    setAnnotationColumns(f.annotationColumns ?? []);
+    setAnnotationValues({});
     setPage(1);
     fetchData(f.selectedColumns, f.conditions, 1);
+  };
+
+  const handleAnnotationChange = (rowId: number, colId: string, value: string) => {
+    setAnnotationValues((prev) => ({ ...prev, [`${rowId}:${colId}`]: value }));
+    fetch("/api/annotations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rowId, colId, value }),
+    }).catch(() => {});
   };
 
   const deleteFilter = async (id: string, e: React.MouseEvent) => {
@@ -410,9 +445,6 @@ export default function Home() {
     if (c?.type === "date") return OPS_DATE;
     return OPS_TEXT;
   };
-
-  const getLabel = (name: string) =>
-    columns.find((c) => c.name === name)?.label || name;
 
   const filteredCols = colSearch
     ? columns.filter((c) =>
@@ -496,14 +528,6 @@ export default function Home() {
                 if (f) handleUpload(f);
               }}
             />
-            <button
-              className="btn btn-primary btn-full"
-              style={{ margin: "0 4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-              onClick={handleScrape}
-              disabled={scraping || uploading}
-            >
-              {scraping ? <span className="spinner" /> : "🔄"} {scraping ? "Coletando..." : "Atualizar dados"}
-            </button>
           </div>
 
           {hasData && (
@@ -841,56 +865,20 @@ export default function Home() {
                   <p>Nenhum resultado com os filtros atuais</p>
                 </div>
               ) : (
-                <div className="table-container">
-                  <table>
-                    <thead>
-                      <tr>
-                        {selectedCols.map((col) => (
-                          <th
-                            key={col}
-                            onClick={() => handleSort(col)}
-                            className={sortCol === col ? "sorted" : ""}
-                          >
-                            {getLabel(col)}
-                            <span style={{ marginLeft: 3, opacity: 0.5 }}>
-                              {sortCol === col
-                                ? sortDir === "asc"
-                                  ? "↑"
-                                  : "↓"
-                                : "↕"}
-                            </span>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((row, i) => {
-                        const { rowStyle, cellStyles } = colorRules.length
-                          ? evaluateColorRules(row, colorRules)
-                          : { rowStyle: {}, cellStyles: {} };
-                        return (
-                          <tr key={i} style={rowStyle as React.CSSProperties}>
-                            {selectedCols.map((col) => {
-                              const colType = columns.find(c => c.name === col)?.type;
-                              const displayVal = colType === 'date'
-                                ? formatDateBR(String(row[col] ?? ''))
-                                : String(row[col] ?? '');
-                              return (
-                                <td
-                                  key={col}
-                                  title={displayVal}
-                                  style={(cellStyles[col] ?? {}) as React.CSSProperties}
-                                >
-                                  {displayVal}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  rows={rows}
+                  selectedCols={selectedCols}
+                  columns={columns}
+                  colorRules={colorRules}
+                  formulaColumns={formulaColumns}
+                  formulaValues={formulaValues}
+                  annotationColumns={annotationColumns}
+                  annotationValues={annotationValues}
+                  onAnnotationChange={handleAnnotationChange}
+                  sortCol={sortCol}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
               )}
             </div>
 
