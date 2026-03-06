@@ -1,11 +1,12 @@
 'use client';
 
-import type { ColorRule, ColumnDef } from '@/lib/types';
+import type { ColorRule, ColumnDef, AnnotationColumn } from '@/lib/types';
 import { getOpsForType } from '@/lib/operators';
 
 interface ColorRuleEditorProps {
   rules: ColorRule[];
   columns: ColumnDef[];
+  annotationColumns?: AnnotationColumn[];
   onChange: (rules: ColorRule[]) => void;
 }
 
@@ -22,7 +23,7 @@ function createRule(priority: number, defaultColumn: string): ColorRule {
   };
 }
 
-export default function ColorRuleEditor({ rules, columns, onChange }: ColorRuleEditorProps) {
+export default function ColorRuleEditor({ rules, columns, annotationColumns = [], onChange }: ColorRuleEditorProps) {
   const update = (i: number, field: string, val: unknown) => {
     const next = [...rules];
     (next[i] as unknown as Record<string, unknown>)[field] = val;
@@ -61,7 +62,8 @@ export default function ColorRuleEditor({ rules, columns, onChange }: ColorRuleE
       )}
       {rules.map((rule, i) => {
         const condCol = columns.find(c => c.name === rule.conditionColumn);
-        const ops = getOpsForType(condCol?.type ?? 'text');
+        const isAnnotationCond = annotationColumns.some(ac => ac.id === rule.conditionColumn);
+        const ops = getOpsForType(isAnnotationCond ? 'text' : (condCol?.type ?? 'text'));
         const isBetween = rule.operator === 'between' || rule.operator === 'date_between';
         return (
           <div key={rule.id} className="rule-card">
@@ -114,6 +116,15 @@ export default function ColorRuleEditor({ rules, columns, onChange }: ColorRuleE
                         {c.label}
                       </option>
                     ))}
+                    {annotationColumns.length > 0 && (
+                      <optgroup label="Anotações">
+                        {annotationColumns.map(ac => (
+                          <option key={ac.id} value={ac.id}>
+                            {ac.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 )}
               </div>
@@ -130,6 +141,15 @@ export default function ColorRuleEditor({ rules, columns, onChange }: ColorRuleE
                       {c.label}
                     </option>
                   ))}
+                  {annotationColumns.length > 0 && (
+                    <optgroup label="Anotações">
+                      {annotationColumns.map(ac => (
+                        <option key={ac.id} value={ac.id}>
+                          {ac.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
                 <select
                   value={rule.operator}
