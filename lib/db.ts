@@ -138,6 +138,13 @@ export function ensureTable() {
   ${colDefs}
 )`);
 
+  db.exec(`CREATE TABLE IF NOT EXISTS annotations (
+  row_id INTEGER NOT NULL,
+  col_id TEXT NOT NULL,
+  value TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (row_id, col_id)
+)`);
+
   // Create indexes on commonly filtered columns
   const indexCols = [
     'nom_convenio', 'nom_exame', 'nom_paciente', 'nom_medico',
@@ -187,6 +194,7 @@ export function importCSV(headers: string[], rows: string[][]): { rowCount: numb
 
   // Clear existing data and reimport
   db.exec('DELETE FROM csv_data');
+  db.exec('DELETE FROM annotations');
 
   const dbCols = colMapping.map(m => `"${m.dbCol}"`).join(', ');
   const placeholders = colMapping.map(() => '?').join(', ');
@@ -242,6 +250,7 @@ export interface SavedFilter {
   conditions: FilterCondition[];
   colorRules?: import('./types').ColorRule[];
   formulaColumns?: import('./types').FormulaColumn[];
+  annotationColumns?: import('./types').AnnotationColumn[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -305,32 +314,18 @@ function buildWhereClause(conditions: FilterCondition[]): { sql: string; params:
       case 'date_between':
         clauses.push(`${col} BETWEEN ? AND ?`);
         params.push(c.value, c.value2); break;
-      case 'is_today': {
-        const today = new Date().toISOString().split('T')[0];
-        clauses.push(`DATE(${col}) = ?`); params.push(today); break;
-      }
-      case 'is_today_or_tomorrow': {
-        const today = new Date().toISOString().split('T')[0];
-        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) BETWEEN ? AND ?)`);
-        params.push(today, tomorrow); break;
-      }
-      case 'is_future': {
-        const today = new Date().toISOString().split('T')[0];
-        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) > ?)`); params.push(today); break;
-      }
-      case 'is_future_or_today': {
-        const today = new Date().toISOString().split('T')[0];
-        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) >= ?)`); params.push(today); break;
-      }
-      case 'is_past': {
-        const today = new Date().toISOString().split('T')[0];
-        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) < ?)`); params.push(today); break;
-      }
-      case 'is_past_or_today': {
-        const today = new Date().toISOString().split('T')[0];
-        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) <= ?)`); params.push(today); break;
-      }
+      case 'is_today':
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime'))`); break;
+      case 'is_today_or_tomorrow':
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) BETWEEN date('now', 'localtime') AND date('now', 'localtime', '+1 day'))`); break;
+      case 'is_future':
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) > date('now', 'localtime'))`); break;
+      case 'is_future_or_today':
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) >= date('now', 'localtime'))`); break;
+      case 'is_past':
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) < date('now', 'localtime'))`); break;
+      case 'is_past_or_today':
+        clauses.push(`(${col} IS NOT NULL AND DATE(${col}) <= date('now', 'localtime'))`); break;
     }
   }
 
@@ -346,11 +341,12 @@ export function queryFiltered(
   sortDir: 'asc' | 'desc' = 'asc'
 ) {
   const db = getDb();
-  const cols = selectedColumns.length
+  const hasSpecificCols = selectedColumns.length > 0;
+  const cols = hasSpecificCols
     ? selectedColumns.map(c => `"${c}"`).join(', ')
     : '*';
+  const rowIdExpr = hasSpecificCols ? ', MIN(id) as _row_id' : ', id as _row_id';
   const { sql: where, params } = buildWhereClause(conditions);
-  const hasSpecificCols = selectedColumns.length > 0;
   const groupBy = hasSpecificCols ? `GROUP BY ${cols}` : '';
   const orderBy = sortColumn
     ? `ORDER BY "${sortColumn}" ${sortDir}`
@@ -362,10 +358,38 @@ export function queryFiltered(
     : `SELECT COUNT(*) as total FROM csv_data ${where}`;
 
   const { total } = db.prepare(countSql).get(...params) as any;
-  const rows = db.prepare(`SELECT ${cols} FROM csv_data ${where} ${groupBy} ${orderBy} LIMIT ? OFFSET ?`)
+  const rows = db.prepare(`SELECT ${cols}${rowIdExpr} FROM csv_data ${where} ${groupBy} ${orderBy} LIMIT ? OFFSET ?`)
     .all(...params, pageSize, offset);
 
   return { rows, total };
+}
+
+// --- Annotations ---
+
+export function getAnnotations(rowIds: number[], colIds: string[]): Record<string, string> {
+  if (!rowIds.length || !colIds.length) return {};
+  const db = getDb();
+  ensureTable();
+  const placeholders = rowIds.map(() => '?').join(',');
+  const colPlaceholders = colIds.map(() => '?').join(',');
+  const rows = db.prepare(
+    `SELECT row_id, col_id, value FROM annotations WHERE row_id IN (${placeholders}) AND col_id IN (${colPlaceholders})`
+  ).all(...rowIds, ...colIds) as { row_id: number; col_id: string; value: string }[];
+  const result: Record<string, string> = {};
+  for (const r of rows) {
+    result[`${r.row_id}:${r.col_id}`] = r.value;
+  }
+  return result;
+}
+
+export function setAnnotation(rowId: number, colId: string, value: string): void {
+  const db = getDb();
+  ensureTable();
+  if (value === '') {
+    db.prepare('DELETE FROM annotations WHERE row_id = ? AND col_id = ?').run(rowId, colId);
+  } else {
+    db.prepare('INSERT OR REPLACE INTO annotations (row_id, col_id, value) VALUES (?, ?, ?)').run(rowId, colId, value);
+  }
 }
 
 export function getDistinctValues(column: string, limit = 200): string[] {

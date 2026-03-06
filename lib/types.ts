@@ -33,6 +33,13 @@ export interface FormulaColumn {
   insertAfterColumn?: string; // undefined = append at end
 }
 
+export interface AnnotationColumn {
+  id: string;
+  label: string;
+  width?: number;
+  insertAfterColumn?: string;
+}
+
 export interface SavedFilter {
   id: string;
   name: string;
@@ -41,6 +48,7 @@ export interface SavedFilter {
   conditions: FilterCondition[];
   colorRules?: ColorRule[];
   formulaColumns?: FormulaColumn[];
+  annotationColumns?: AnnotationColumn[];
   whatsappLinhasColumns?: string[];
   createdAt: string;
   updatedAt?: string;
