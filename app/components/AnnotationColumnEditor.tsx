@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { AnnotationColumn, ColumnDef } from '@/lib/types';
+import type { AnnotationColumn, ColumnDef } from '@/lib/clientDb';
 
 interface AnnotationColumnEditorProps {
   annotationColumns: AnnotationColumn[];

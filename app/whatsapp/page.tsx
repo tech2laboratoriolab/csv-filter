@@ -2,20 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-
-interface SavedFilter {
-  id: string;
-  name: string;
-  description?: string;
-  conditions: any[];
-  selectedColumns: string[];
-  createdAt: string;
-}
-
-interface Pathologist {
-  nome: string;
-  telefone: string;
-}
+import {
+  getSavedFilters,
+  getSavedPathologists,
+  savePathologist,
+  getPatologistaSummary,
+  getPatologistaRows,
+  SavedFilter,
+  Pathologist
+} from "@/lib/clientDb";
 
 interface SendResult {
   nome: string;
@@ -113,16 +108,12 @@ export default function WhatsAppPage() {
 
   // Load filters and pathologists on mount
   useEffect(() => {
-    fetch("/api/filters")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.filters) setFilters(d.filters);
-      })
+    getSavedFilters()
+      .then((f) => setFilters(f))
       .catch(() => {});
 
     setLoadingPats(true);
-    fetch("/api/pathologists")
-      .then((r) => r.json())
+    getSavedPathologists()
       .then((d) => {
         if (Array.isArray(d)) {
           setPathologists(d);
@@ -164,17 +155,12 @@ export default function WhatsAppPage() {
   const savePhone = useCallback(
     async (nome: string) => {
       setSavingPhone(nome);
+      const tel = phoneEdits[nome] ?? pathologists.find(p => p.nome === nome)?.telefone ?? "";
       const updated = pathologists.map((p) =>
-        p.nome === nome
-          ? { ...p, telefone: phoneEdits[nome] ?? p.telefone }
-          : p,
+        p.nome === nome ? { ...p, telefone: tel } : p
       );
       try {
-        await fetch("/api/pathologists", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updated),
-        });
+        await savePathologist(nome, tel);
         setPathologists(updated);
       } catch {}
       setSavingPhone(null);
@@ -193,18 +179,12 @@ export default function WhatsAppPage() {
     for (const pat of selected) {
       const telefone = phoneEdits[pat.nome] ?? pat.telefone;
       try {
-        const colsParam = linhasColumns.length
-          ? `&linhasColumns=${linhasColumns.join(",")}`
-          : "";
-        const res = await fetch(
-          `/api/whatsapp/send?filterId=${selectedFilter.id}&patologista=${encodeURIComponent(pat.nome)}${colsParam}`,
-        );
-        const summary = await res.json();
+        const cols = linhasColumns.length ? linhasColumns : selectedFilter.selectedColumns;
+        const summary = await getPatologistaSummary(selectedFilter.conditions, pat.nome);
+        const rowData = await getPatologistaRows(selectedFilter.conditions, cols, pat.nome);
+        
         const resumo = buildResumoPreview(summary.eventos ?? []);
-        const linhas = buildLinhasPreview(
-          summary.columns ?? [],
-          summary.rows ?? [],
-        );
+        const linhas = buildLinhasPreview(rowData.columns ?? [], rowData.rows ?? []);
         const msg = template
           .replace(/\{nome\}/g, formatNome(pat.nome))
           .replace(/\{total\}/g, String(summary.total ?? 0))
@@ -243,17 +223,36 @@ export default function WhatsAppPage() {
         nome: p.nome,
         telefone: phoneEdits[p.nome] ?? p.telefone,
       }));
+      
+    // Create payloads with completed messages, so proxy just relays to WAHA
+    const dataHoje = formatDateBR(new Date());
+    const messagesToSend = [];
+    for (const pat of patsToSend) {
+      const cols = linhasColumns.length ? linhasColumns : selectedFilter.selectedColumns;
+      const summary = await getPatologistaSummary(selectedFilter.conditions, pat.nome);
+      const rowData = await getPatologistaRows(selectedFilter.conditions, cols, pat.nome);
+      
+      const resumo = buildResumoPreview(summary.eventos ?? []);
+      const linhas = buildLinhasPreview(rowData.columns ?? [], rowData.rows ?? []);
+      const finalMessage = template
+        .replace(/\{nome\}/g, formatNome(pat.nome))
+        .replace(/\{total\}/g, String(summary.total ?? 0))
+        .replace(/\{data_hoje\}/g, dataHoje)
+        .replace(/\{resumo\}/g, resumo)
+        .replace(/\{linhas\}/g, linhas);
+        
+      messagesToSend.push({
+        nome: pat.nome,
+        telefone: pat.telefone,
+        message: finalMessage
+      });
+    }
 
     try {
       const res = await fetch("/api/whatsapp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filterId: selectedFilter.id,
-          messageTemplate: template,
-          pathologists: patsToSend,
-          linhasColumns,
-        }),
+        body: JSON.stringify({ messages: messagesToSend }),
       });
       const data = await res.json();
       setSendResults(data.results ?? []);

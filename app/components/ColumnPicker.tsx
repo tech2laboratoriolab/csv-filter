@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ColumnDef } from '@/lib/types';
+import type { ColumnDef } from '@/lib/clientDb';
 
 interface ColumnPickerProps {
   columns: ColumnDef[];

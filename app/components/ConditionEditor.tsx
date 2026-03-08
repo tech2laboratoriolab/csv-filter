@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { ColumnDef, FilterCondition } from '@/lib/types';
+import type { ColumnDef, FilterCondition } from '@/lib/clientDb';
 import { getOpsForType } from '@/lib/operators';
+import { getDistinctValues } from '@/lib/clientDb';
 
 // Columns that render a select dropdown instead of a free-text input
 const SELECT_COLUMNS = new Set(['nom_medico']);
@@ -27,15 +28,14 @@ export default function ConditionEditor({
 
   // Fetch distinct values whenever a SELECT_COLUMNS column appears in conditions
   useEffect(() => {
-    const needed = [...new Set(conditions.map(c => c.column))].filter(
+    const needed = Array.from(new Set(conditions.map(c => c.column))).filter(
       col => SELECT_COLUMNS.has(col) && !fetchedCols.current.has(col),
     );
     for (const col of needed) {
       fetchedCols.current.add(col);
-      fetch(`/api/columns?column=${col}`)
-        .then(r => r.json())
-        .then(d => {
-          if (d.values) setDistinctValues(prev => ({ ...prev, [col]: d.values }));
+      getDistinctValues(col)
+        .then(values => {
+          if (values) setDistinctValues(prev => ({ ...prev, [col]: values }));
         })
         .catch(() => fetchedCols.current.delete(col));
     }

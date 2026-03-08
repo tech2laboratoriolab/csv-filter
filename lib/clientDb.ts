@@ -1,27 +1,7 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import fs from 'fs';
-
-const DB_DIR = path.join(process.cwd(), 'data');
-const DB_PATH = path.join(DB_DIR, 'database.sqlite');
-const FILTERS_DIR = path.join(DB_DIR, 'filters');
-
-if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
-if (!fs.existsSync(FILTERS_DIR)) fs.mkdirSync(FILTERS_DIR, { recursive: true });
-
-let _db: Database.Database | null = null;
-
-export function getDb(): Database.Database {
-  if (!_db) {
-    _db = new Database(DB_PATH);
-    _db.pragma('journal_mode = WAL');
-    _db.pragma('cache_size = -64000');
-  }
-  return _db;
-}
+import initSqlJs, { Database } from 'sql.js';
+import { openDB, IDBPDatabase } from 'idb';
 
 // --- Column definitions (fixed schema) ---
-
 export interface ColumnDef {
   name: string;
   label: string;
@@ -118,57 +98,95 @@ export const COLUMNS: ColumnDef[] = [
   { name: 'dta_autorizacao_req', label: 'DtaAutorizacaoReq', type: 'date' },
 ];
 
-// Map from CSV header to db column name
 const HEADER_MAP: Record<string, string> = {};
 COLUMNS.forEach(c => {
   HEADER_MAP[c.label.toLowerCase()] = c.name;
 });
 
-// --- Table creation ---
+// --- In-Memory SQLite Setup ---
+let _dbPromise: Promise<Database> | null = null;
+export function getDb(): Promise<Database> {
+  if (!_dbPromise) {
+    _dbPromise = (async () => {
+      // Fetch WASM manually to avoid path issues in different environments
+      const wasmResponse = await fetch('/sql-wasm.wasm');
+      if (!wasmResponse.ok) {
+        throw new Error(`Failed to fetch sql-wasm.wasm: ${wasmResponse.statusText}`);
+      }
+      const wasmBinary = await wasmResponse.arrayBuffer();
+      
+      const SQL = await initSqlJs({
+        wasmBinary
+      });
+      
+      const db = new SQL.Database();
+      
+      const colDefs = COLUMNS.map(c => {
+        const sqlType = c.type === 'number' ? 'REAL' : 'TEXT';
+        return `"${c.name}" ${sqlType}`;
+      }).join(',\n  ');
+    
+      db.run(`CREATE TABLE csv_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ${colDefs}
+      )`);
 
-export function ensureTable() {
-  const db = getDb();
-  const colDefs = COLUMNS.map(c => {
-    const sqlType = c.type === 'number' ? 'REAL' : 'TEXT';
-    return `"${c.name}" ${sqlType}`;
-  }).join(',\n  ');
+      const indexCols = [
+        'nom_convenio', 'nom_exame', 'nom_paciente', 'nom_medico',
+        'dta_solicitacao', 'dta_coleta', 'dta_finalizacao', 'dta_vencimento',
+        'nom_fonte_pagadora', 'nom_segmento', 'nom_unidade', 'nom_laboratorio',
+        'vlr_bruto', 'vlr_liquido', 'vlr_recebido', 'ano', 'mes',
+        'nom_exame_tipo', 'nom_evento', 'nom_cobranca',
+      ];
+      for (const col of indexCols) {
+        db.run(`CREATE INDEX idx_${col} ON csv_data("${col}")`);
+      }
 
-  db.exec(`CREATE TABLE IF NOT EXISTS csv_data (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  ${colDefs}
-)`);
-
-  db.exec(`CREATE TABLE IF NOT EXISTS annotations (
-  row_id INTEGER NOT NULL,
-  col_id TEXT NOT NULL,
-  value TEXT NOT NULL DEFAULT '',
-  PRIMARY KEY (row_id, col_id)
-)`);
-
-  // Create indexes on commonly filtered columns
-  const indexCols = [
-    'nom_convenio', 'nom_exame', 'nom_paciente', 'nom_medico',
-    'dta_solicitacao', 'dta_coleta', 'dta_finalizacao', 'dta_vencimento',
-    'nom_fonte_pagadora', 'nom_segmento', 'nom_unidade', 'nom_laboratorio',
-    'vlr_bruto', 'vlr_liquido', 'vlr_recebido', 'ano', 'mes',
-    'nom_exame_tipo', 'nom_evento', 'nom_cobranca',
-  ];
-  for (const col of indexCols) {
-    db.exec(`CREATE INDEX IF NOT EXISTS idx_${col} ON csv_data("${col}")`);
+      return db;
+    })();
   }
+  return _dbPromise;
+}
+
+// Map sql.js output to array of objects
+function resultToObjects(result: any[]): any[] {
+  if (!result || result.length === 0) return [];
+  const { columns, values } = result[0];
+  return values.map((row: any[]) => {
+    const obj: any = {};
+    columns.forEach((col: string, i: number) => {
+      obj[col] = row[i];
+    });
+    return obj;
+  });
+}
+
+// --- IndexedDB Setup (Persistence) ---
+let idbPromise: Promise<IDBPDatabase> | null = null;
+function getIdb() {
+  if (typeof window === 'undefined') return null; // SSR safety
+  if (!idbPromise) {
+    idbPromise = openDB('csv-filter-pro', 1, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains('filters')) {
+          db.createObjectStore('filters', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('annotations')) {
+          db.createObjectStore('annotations');
+        }
+        if (!db.objectStoreNames.contains('pathologists')) {
+          db.createObjectStore('pathologists', { keyPath: 'nome' });
+        }
+      },
+    });
+  }
+  return idbPromise;
 }
 
 // --- CSV Import ---
+export async function importCSV(headers: string[], rows: string[][]): Promise<{ rowCount: number; skipped: number }> {
+  const db = await getDb();
 
-export function importCSV(headers: string[], rows: string[][]): { rowCount: number; skipped: number } {
-  const db = getDb();
-  ensureTable();
-
-  // This CSV export omits 'SetorLocal' from the header but includes it as an
-  // empty column in every data row (between NomSegmentoLocal and IdConvenio).
-  // Without correction this creates a +1 shift for every column from IdConvenio
-  // onwards, causing NomPatologista to land in the QtdCobranca (numeric) slot
-  // and be silently discarded. We inject the missing header here to realign.
   const hasSetorLocal = headers.some(h => h.trim().toLowerCase() === 'setorlocal');
   if (!hasSetorLocal) {
     const nomSegLocalIdx = headers.findIndex(h => h.trim().toLowerCase() === 'nomsegmentolocal');
@@ -177,7 +195,6 @@ export function importCSV(headers: string[], rows: string[][]): { rowCount: numb
     }
   }
 
-  // Map CSV headers to column names
   const colMapping: { csvIndex: number; dbCol: string; colDef: ColumnDef }[] = [];
   headers.forEach((h, i) => {
     const key = h.trim().toLowerCase();
@@ -192,54 +209,76 @@ export function importCSV(headers: string[], rows: string[][]): { rowCount: numb
     throw new Error('Nenhuma coluna do CSV corresponde ao schema esperado');
   }
 
-  // Clear existing data and reimport
-  db.exec('DELETE FROM csv_data');
-  db.exec('DELETE FROM annotations');
+  db.run('DELETE FROM csv_data');
 
   const dbCols = colMapping.map(m => `"${m.dbCol}"`).join(', ');
   const placeholders = colMapping.map(() => '?').join(', ');
-  const insertStmt = db.prepare(
-    `INSERT INTO csv_data (${dbCols}) VALUES (${placeholders})`
-  );
-
+  
   let imported = 0;
   let skipped = 0;
 
-  const insertBatch = db.transaction((batch: string[][]) => {
-    for (const row of batch) {
-      try {
-        const values = colMapping.map(m => {
-          const raw = (row[m.csvIndex] || '').trim();
-          if (!raw) return null;
-          if (m.colDef.type === 'number') {
-            const num = parseFloat(raw.replace(',', '.'));
-            return isNaN(num) ? null : num;
-          }
-          return raw;
-        });
-        insertStmt.run(...values);
-        imported++;
-      } catch {
-        skipped++;
-      }
-    }
-  });
+  db.run('BEGIN TRANSACTION;');
+  const stmt = db.prepare(`INSERT INTO csv_data (${dbCols}) VALUES (${placeholders})`);
 
-  const CHUNK = 5000;
-  for (let i = 0; i < rows.length; i += CHUNK) {
-    insertBatch(rows.slice(i, i + CHUNK));
+  for (const row of rows) {
+    try {
+      const values = colMapping.map(m => {
+        const raw = (row[m.csvIndex] || '').trim();
+        if (!raw) return null;
+        if (m.colDef.type === 'number') {
+          const num = parseFloat(raw.replace(',', '.'));
+          return isNaN(num) ? null : num;
+        }
+        return raw;
+      });
+      stmt.run(values);
+      imported++;
+    } catch (e) {
+      skipped++;
+    }
   }
+
+  stmt.free();
+  db.run('COMMIT;');
 
   return { rowCount: imported, skipped };
 }
 
 // --- Query ---
-
 export interface FilterCondition {
   column: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'in' | 'not_in' | 'is_null' | 'is_not_null' | 'date_after' | 'date_before' | 'date_between' | 'is_today' | 'is_future' | 'is_past';
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'in' | 'not_in' | 'is_null' | 'is_not_null' | 'date_after' | 'date_before' | 'date_between' | 'is_today' | 'is_future' | 'is_past' | 'is_today_or_tomorrow' | 'is_future_or_today' | 'is_past_or_today';
   value: string | number;
   value2?: string | number;
+}
+
+export interface ColorRule {
+  id: string;
+  name: string;
+  targetType: 'row' | 'cell';
+  targetColumn?: string;
+  conditionColumn: string;
+  operator: string;
+  value: string;
+  value2?: string;
+  backgroundColor: string;
+  textColor?: string;
+  priority: number;
+}
+
+export interface FormulaColumn {
+  id: string;
+  label: string;
+  formula: string;
+  width?: number;
+  insertAfterColumn?: string;
+}
+
+export interface AnnotationColumn {
+  id: string;
+  label: string;
+  width?: number;
+  insertAfterColumn?: string;
 }
 
 export interface SavedFilter {
@@ -248,9 +287,10 @@ export interface SavedFilter {
   description?: string;
   selectedColumns: string[];
   conditions: FilterCondition[];
-  colorRules?: import('./types').ColorRule[];
-  formulaColumns?: import('./types').FormulaColumn[];
-  annotationColumns?: import('./types').AnnotationColumn[];
+  colorRules?: ColorRule[];
+  formulaColumns?: FormulaColumn[];
+  annotationColumns?: AnnotationColumn[];
+  whatsappLinhasColumns?: string[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -332,7 +372,7 @@ function buildWhereClause(conditions: FilterCondition[]): { sql: string; params:
   return { sql: `WHERE ${clauses.join(' AND ')}`, params };
 }
 
-export function queryFiltered(
+export async function queryFiltered(
   selectedColumns: string[],
   conditions: FilterCondition[],
   page = 1,
@@ -340,7 +380,7 @@ export function queryFiltered(
   sortColumn?: string,
   sortDir: 'asc' | 'desc' = 'asc'
 ) {
-  const db = getDb();
+  const db = await getDb();
   const hasSpecificCols = selectedColumns.length > 0;
   const cols = hasSpecificCols
     ? selectedColumns.map(c => `"${c}"`).join(', ')
@@ -357,66 +397,40 @@ export function queryFiltered(
     ? `SELECT COUNT(*) as total FROM (SELECT 1 FROM csv_data ${where} ${groupBy})`
     : `SELECT COUNT(*) as total FROM csv_data ${where}`;
 
-  const { total } = db.prepare(countSql).get(...params) as any;
-  const rows = db.prepare(`SELECT ${cols}${rowIdExpr} FROM csv_data ${where} ${groupBy} ${orderBy} LIMIT ? OFFSET ?`)
-    .all(...params, pageSize, offset);
+  const resTotal = db.exec(countSql, params);
+  const total = resTotal.length > 0 ? resTotal[0].values[0][0] : 0;
+
+  const resRows = db.exec(`SELECT ${cols}${rowIdExpr} FROM csv_data ${where} ${groupBy} ${orderBy} LIMIT ? OFFSET ?`, [...params, pageSize, offset]);
+  const rows = resultToObjects(resRows);
 
   return { rows, total };
 }
 
-// --- Annotations ---
-
-export function getAnnotations(rowIds: number[], colIds: string[]): Record<string, string> {
-  if (!rowIds.length || !colIds.length) return {};
-  const db = getDb();
-  ensureTable();
-  const placeholders = rowIds.map(() => '?').join(',');
-  const colPlaceholders = colIds.map(() => '?').join(',');
-  const rows = db.prepare(
-    `SELECT row_id, col_id, value FROM annotations WHERE row_id IN (${placeholders}) AND col_id IN (${colPlaceholders})`
-  ).all(...rowIds, ...colIds) as { row_id: number; col_id: string; value: string }[];
-  const result: Record<string, string> = {};
-  for (const r of rows) {
-    result[`${r.row_id}:${r.col_id}`] = r.value;
-  }
-  return result;
-}
-
-export function setAnnotation(rowId: number, colId: string, value: string): void {
-  const db = getDb();
-  ensureTable();
-  if (value === '') {
-    db.prepare('DELETE FROM annotations WHERE row_id = ? AND col_id = ?').run(rowId, colId);
-  } else {
-    db.prepare('INSERT OR REPLACE INTO annotations (row_id, col_id, value) VALUES (?, ?, ?)').run(rowId, colId, value);
-  }
-}
-
-export function getDistinctValues(column: string, limit = 200): string[] {
-  const db = getDb();
-  const rows = db.prepare(
-    `SELECT DISTINCT "${column}" FROM csv_data WHERE "${column}" IS NOT NULL AND "${column}" != '' ORDER BY "${column}" LIMIT ?`
-  ).all(limit) as any[];
+export async function getDistinctValues(column: string, limit = 200): Promise<string[]> {
+  const db = await getDb();
+  const res = db.exec(`SELECT DISTINCT "${column}" FROM csv_data WHERE "${column}" IS NOT NULL AND "${column}" != '' ORDER BY "${column}" LIMIT ?`, [limit]);
+  const rows = resultToObjects(res);
   return rows.map(r => String(r[column]));
 }
 
-export function getTableStats() {
-  const db = getDb();
+export async function getTableStats() {
   try {
-    const { total } = db.prepare('SELECT COUNT(*) as total FROM csv_data').get() as any;
-    const dateRange = db.prepare(
-      'SELECT MIN(dta_solicitacao) as min_date, MAX(dta_solicitacao) as max_date FROM csv_data WHERE dta_solicitacao IS NOT NULL'
-    ).get() as any;
-    return { total, minDate: dateRange?.min_date, maxDate: dateRange?.max_date };
+    const db = await getDb();
+    const resCount = db.exec('SELECT COUNT(*) as total FROM csv_data');
+    const total = resCount.length > 0 ? resCount[0].values[0][0] : 0;
+    
+    const resDate = db.exec('SELECT MIN(dta_solicitacao) as min_date, MAX(dta_solicitacao) as max_date FROM csv_data WHERE dta_solicitacao IS NOT NULL');
+    const minDate = resDate.length > 0 ? resDate[0].values[0][0] : null;
+    const maxDate = resDate.length > 0 ? resDate[0].values[0][1] : null;
+    
+    return { total, minDate, maxDate };
   } catch {
     return { total: 0, minDate: null, maxDate: null };
   }
 }
 
-// --- Export filtered CSV ---
-
-export function exportFilteredCSV(selectedColumns: string[], conditions: FilterCondition[]): string {
-  const db = getDb();
+export async function exportFilteredCSV(selectedColumns: string[], conditions: FilterCondition[]): Promise<string> {
+  const db = await getDb();
   const cols = selectedColumns.length
     ? selectedColumns.map(c => `"${c}"`).join(', ')
     : '*';
@@ -424,12 +438,12 @@ export function exportFilteredCSV(selectedColumns: string[], conditions: FilterC
   const hasSpecificCols = selectedColumns.length > 0;
   const groupBy = hasSpecificCols ? `GROUP BY ${cols}` : '';
   const orderBy = hasSpecificCols ? 'ORDER BY MIN(id)' : 'ORDER BY id';
-  const rows = db.prepare(`SELECT ${cols} FROM csv_data ${where} ${groupBy} ${orderBy}`).all(...params) as any[];
+  const res = db.exec(`SELECT ${cols} FROM csv_data ${where} ${groupBy} ${orderBy}`, params);
+  const rows = resultToObjects(res);
 
   if (!rows.length) return '';
 
   const headers = Object.keys(rows[0]);
-  // Map back to original labels
   const headerLabels = headers.map(h => {
     const col = COLUMNS.find(c => c.name === h);
     return col ? col.label : h;
@@ -447,59 +461,97 @@ export function exportFilteredCSV(selectedColumns: string[], conditions: FilterC
   return lines.join('\n');
 }
 
-// --- Saved Filters (JSON files) ---
-
-export function getSavedFilters(): SavedFilter[] {
-  const files = fs.readdirSync(FILTERS_DIR).filter(f => f.endsWith('.json'));
-  return files.map(f => {
-    const data = fs.readFileSync(path.join(FILTERS_DIR, f), 'utf-8');
-    return JSON.parse(data) as SavedFilter;
-  }).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+// --- IndexedDB: Filters ---
+export async function getSavedFilters(): Promise<SavedFilter[]> {
+  const idb = await getIdb();
+  if (!idb) return [];
+  const filters = await idb.getAll('filters');
+  return filters.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export function saveFilterToFile(filter: SavedFilter): void {
+export async function saveFilterToFile(filter: SavedFilter): Promise<void> {
   filter.updatedAt = new Date().toISOString();
-  const filePath = path.join(FILTERS_DIR, `${filter.id}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(filter, null, 2));
+  const idb = await getIdb();
+  if (!idb) return;
+  await idb.put('filters', filter);
 }
 
-export function deleteFilterFile(id: string): void {
-  const filePath = path.join(FILTERS_DIR, `${id}.json`);
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+export async function deleteFilterFile(id: string): Promise<void> {
+  const idb = await getIdb();
+  if (!idb) return;
+  await idb.delete('filters', id);
 }
 
-export function getFilterById(id: string): SavedFilter | null {
-  const filePath = path.join(FILTERS_DIR, `${id}.json`);
-  if (!fs.existsSync(filePath)) return null;
-  return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+export async function getFilterById(id: string): Promise<SavedFilter | null> {
+  const idb = await getIdb();
+  if (!idb) return null;
+  return (await idb.get('filters', id)) || null;
 }
 
-// --- Patologistas ---
+// --- IndexedDB: Annotations ---
+export async function getAnnotations(rowIds: number[], colIds: string[]): Promise<Record<string, string>> {
+  const idb = await getIdb();
+  if (!idb || !rowIds.length || !colIds.length) return {};
+  
+  const result: Record<string, string> = {};
+  for (const rId of rowIds) {
+    for (const cId of colIds) {
+      const key = `${rId}:${cId}`;
+      const val = await idb.get('annotations', key);
+      if (val !== undefined) result[key] = val;
+    }
+  }
+  return result;
+}
 
-export function getDistinctPatologists(): string[] {
-  const db = getDb();
+export async function setAnnotation(rowId: number, colId: string, value: string): Promise<void> {
+  const idb = await getIdb();
+  if (!idb) return;
+  const key = `${rowId}:${colId}`;
+  if (value === '') {
+    await idb.delete('annotations', key);
+  } else {
+    await idb.put('annotations', value, key);
+  }
+}
+
+// --- Pathologists ---
+export async function getDistinctPatologists(): Promise<string[]> {
+  const db = await getDb();
   try {
-    const rows = db.prepare(
-      `SELECT DISTINCT nom_patologista FROM csv_data
+    const res = db.exec(`SELECT DISTINCT nom_patologista FROM csv_data
        WHERE nom_patologista IS NOT NULL AND nom_patologista != ''
-       ORDER BY nom_patologista`
-    ).all() as any[];
+       ORDER BY nom_patologista`);
+    const rows = resultToObjects(res);
     return rows.map(r => String(r.nom_patologista));
   } catch {
     return [];
   }
 }
 
-export interface PatologistaSummary {
-  total: number;
-  eventos: { nome_evento: string; count: number }[];
+export interface Pathologist {
+  nome: string;
+  telefone: string;
 }
 
-export function getPatologistaSummary(
+export async function getSavedPathologists(): Promise<Pathologist[]> {
+  const idb = await getIdb();
+  if (!idb) return [];
+  const pats = await idb.getAll('pathologists');
+  return pats;
+}
+
+export async function savePathologist(nome: string, telefone: string): Promise<void> {
+  const idb = await getIdb();
+  if (!idb) return;
+  await idb.put('pathologists', { nome, telefone });
+}
+
+export async function getPatologistaSummary(
   conditions: FilterCondition[],
   patologistaNome: string
-): PatologistaSummary {
-  const db = getDb();
+): Promise<{ total: number; eventos: { nome_evento: string; count: number }[] }> {
+  const db = await getDb();
   const { sql: where, params } = buildWhereClause(conditions);
 
   const patCond = where
@@ -507,35 +559,28 @@ export function getPatologistaSummary(
     : `WHERE "nom_patologista" = ?`;
   const allParams = [...params, patologistaNome];
 
-  const { total } = db.prepare(
-    `SELECT COUNT(*) as total FROM csv_data ${patCond}`
-  ).get(...allParams) as any;
+  const resCount = db.exec(`SELECT COUNT(*) as total FROM csv_data ${patCond}`, allParams);
+  const total = resCount.length > 0 ? resCount[0].values[0][0] : 0;
 
-  const eventoRows = db.prepare(
-    `SELECT nom_evento_fatur as nome_evento, COUNT(*) as count
+  const resEventos = db.exec(`SELECT nom_evento_fatur as nome_evento, COUNT(*) as count
      FROM csv_data ${patCond}
      AND nom_evento_fatur IS NOT NULL AND nom_evento_fatur != ''
      GROUP BY nom_evento_fatur
-     ORDER BY count DESC`
-  ).all(...allParams) as any[];
+     ORDER BY count DESC`, allParams);
+  const eventoRows = resultToObjects(resEventos);
 
   return {
-    total: total ?? 0,
+    total: total as number ?? 0,
     eventos: eventoRows.map(r => ({ nome_evento: String(r.nome_evento), count: Number(r.count) })),
   };
 }
 
-export interface PatologistaRows {
-  columns: { name: string; label: string; type: string }[];
-  rows: Record<string, string>[];
-}
-
-export function getPatologistaRows(
+export async function getPatologistaRows(
   conditions: FilterCondition[],
   selectedColumns: string[],
   patologistaNome: string
-): PatologistaRows {
-  const db = getDb();
+): Promise<{ columns: { name: string; label: string; type: string }[]; rows: Record<string, string>[] }> {
+  const db = await getDb();
   const { sql: where, params } = buildWhereClause(conditions);
   const patCond = where
     ? `${where} AND "nom_patologista" = ?`
@@ -546,9 +591,8 @@ export function getPatologistaRows(
   const colsSql = cols.map(c => `"${c}"`).join(', ');
 
   const groupBy = `GROUP BY ${colsSql}`;
-  const rows = db.prepare(
-    `SELECT ${colsSql} FROM csv_data ${patCond} ${groupBy} ORDER BY MIN(id)`
-  ).all(...allParams) as any[];
+  const resRows = db.exec(`SELECT ${colsSql} FROM csv_data ${patCond} ${groupBy} ORDER BY MIN(id)`, allParams);
+  const rows = resultToObjects(resRows);
 
   const columnDefs = cols.map(name => {
     const def = COLUMNS.find(c => c.name === name);

@@ -1,4 +1,4 @@
-import type { FormulaColumn } from './types';
+import type { FormulaColumn } from './clientDb';
 
 // Shifts all A1-style row references by rowIdx.
 // e.g. adjustFormula("=A1+B1", 2) → "=A3+B3"

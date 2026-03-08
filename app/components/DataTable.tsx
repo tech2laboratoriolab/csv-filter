@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import type { ColumnDef, ColorRule, FormulaColumn, AnnotationColumn } from '@/lib/types';
+import type { ColumnDef, ColorRule, FormulaColumn, AnnotationColumn } from '@/lib/clientDb';
 import { evaluateColorRules } from '@/lib/colorRules';
 
 interface DataTableProps {

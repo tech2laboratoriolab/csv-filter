@@ -1,29 +1,34 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { SavedFilter, ColumnDef, FilterCondition, ColorRule, FormulaColumn, AnnotationColumn } from '@/lib/types';
+import type { SavedFilter, ColumnDef, FilterCondition, ColorRule, FormulaColumn, AnnotationColumn } from '@/lib/clientDb';
 import ColumnPicker from '@/app/components/ColumnPicker';
 import ConditionEditor from '@/app/components/ConditionEditor';
 import DataTable from '@/app/components/DataTable';
 import ColorRuleEditor from '@/app/components/ColorRuleEditor';
 import FormulaColumnEditor from '@/app/components/FormulaColumnEditor';
 import AnnotationColumnEditor from '@/app/components/AnnotationColumnEditor';
+import {
+  getTableStats,
+  queryFiltered,
+  getAnnotations,
+  setAnnotation,
+  getFilterById,
+  saveFilterToFile,
+  exportFilteredCSV,
+  COLUMNS
+} from '@/lib/clientDb';
 
 type Tab = 'columns' | 'filters' | 'color' | 'formula' | 'annotation';
 const PAGE_SIZE = 50;
 
 interface Props {
-  initialFilter: SavedFilter;
+  filterId: string;
 }
 
-export default function FilterPageClient({ initialFilter }: Props) {
-  const [filter, setFilter] = useState<SavedFilter>({
-    ...initialFilter,
-    colorRules: initialFilter.colorRules ?? [],
-    formulaColumns: initialFilter.formulaColumns ?? [],
-    annotationColumns: initialFilter.annotationColumns ?? [],
-  });
-  const [columns, setColumns] = useState<ColumnDef[]>([]);
+export default function FilterPageClient({ filterId }: Props) {
+  const [filter, setFilter] = useState<SavedFilter | null>(null);
+  const [columns, setColumns] = useState<ColumnDef[]>(COLUMNS);
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -37,15 +42,19 @@ export default function FilterPageClient({ initialFilter }: Props) {
   const [annotationValues, setAnnotationValues] = useState<Record<string, string>>({});
   const [editingName, setEditingName] = useState(false);
 
-  // Load column definitions
+  // Initial load
   useEffect(() => {
-    fetch('/api/stats')
-      .then(r => r.json())
-      .then(d => {
-        if (d.columns) setColumns(d.columns);
-      })
-      .catch(() => {});
-  }, []);
+    getFilterById(filterId).then(f => {
+      if (f) {
+        setFilter({
+          ...f,
+          colorRules: f.colorRules ?? [],
+          formulaColumns: f.formulaColumns ?? [],
+          annotationColumns: f.annotationColumns ?? [],
+        });
+      }
+    });
+  }, [filterId]);
 
   const fetchData = useCallback(
     async (
@@ -55,51 +64,48 @@ export default function FilterPageClient({ initialFilter }: Props) {
       sCol?: string,
       sDir?: 'asc' | 'desc',
     ) => {
+      if (!filter) return;
       setLoading(true);
       try {
-        const res = await fetch('/api/query', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            selectedColumns: selectedCols ?? filter.selectedColumns,
-            conditions: conditions ?? filter.conditions,
-            page: pg ?? page,
-            pageSize: PAGE_SIZE,
-            sortColumn: sCol ?? sortCol,
-            sortDir: sDir ?? sortDir,
-          }),
-        });
-        const d = await res.json();
-        setRows(d.rows ?? []);
-        setTotal(d.total ?? 0);
+        const result = await queryFiltered(
+          selectedCols ?? filter.selectedColumns,
+          conditions ?? filter.conditions,
+          pg ?? page,
+          PAGE_SIZE,
+          sCol ?? sortCol,
+          sDir ?? sortDir
+        );
+        setRows(result.rows ?? []);
+        setTotal(Number(result.total) ?? 0);
       } catch (e) {
         console.error(e);
       } finally {
         setLoading(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filter.selectedColumns, filter.conditions, page, sortCol, sortDir],
+    [filter, page, sortCol, sortDir],
   );
 
   // Initial data fetch
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    if (filter) fetchData();
+  }, [filter, fetchData]); // Only initial when filter is ready
 
   // Load annotation values whenever rows or annotation columns change
   useEffect(() => {
+    if (!filter) return;
     const acs = filter.annotationColumns ?? [];
     if (!acs.length || !rows.length) { setAnnotationValues({}); return; }
     const rowIds = rows.map(r => r._row_id as number);
     const colIds = acs.map(a => a.id);
-    fetch(`/api/annotations?rowIds=${rowIds.join(',')}&colIds=${colIds.join(',')}`)
-      .then(r => r.json())
-      .then(d => setAnnotationValues(d.annotations ?? {}))
-      .catch(() => {});
-  }, [rows, filter.annotationColumns]);
+    getAnnotations(rowIds, colIds).then(annotations => {
+      setAnnotationValues(annotations ?? {});
+    }).catch(() => {});
+  }, [rows, filter?.annotationColumns]);
 
   // Recompute formula values whenever rows or formula columns change
   useEffect(() => {
+    if (!filter) return;
     const fcs = filter.formulaColumns ?? [];
     if (!fcs.length || !rows.length || !columns.length) {
       setFormulaValues([]);
@@ -110,10 +116,14 @@ export default function FilterPageClient({ initialFilter }: Props) {
       .then(m => m.evaluateFormulasAsync(rows, fcs, colNames))
       .then(vals => setFormulaValues(vals))
       .catch(() => setFormulaValues([]));
-  }, [rows, filter.formulaColumns, columns]);
+  }, [rows, filter?.formulaColumns, columns]);
+
+  if (!filter) {
+    return <div style={{ padding: 20 }}>Carregando filtro...</div>;
+  }
 
   const updateFilter = (patch: Partial<SavedFilter>) =>
-    setFilter(f => ({ ...f, ...patch }));
+    setFilter(f => f ? ({ ...f, ...patch }) : f);
 
   const applyFilters = (
     cols?: string[],
@@ -129,28 +139,19 @@ export default function FilterPageClient({ initialFilter }: Props) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch('/api/filters', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...filter, updatedAt: new Date().toISOString() }),
-      });
+      await saveFilterToFile({ ...filter, updatedAt: new Date().toISOString() });
       setSaveOk(true);
       setTimeout(() => setSaveOk(false), 2000);
+    } catch (e) {
+      console.error(e);
     } finally {
       setSaving(false);
     }
   };
 
   const handleExportCSV = async () => {
-    const res = await fetch('/api/export', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        selectedColumns: filter.selectedColumns,
-        conditions: filter.conditions,
-      }),
-    });
-    const blob = await res.blob();
+    const csvContent = await exportFilteredCSV(filter.selectedColumns, filter.conditions);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -189,11 +190,7 @@ export default function FilterPageClient({ initialFilter }: Props) {
 
   const handleAnnotationChange = (rowId: number, colId: string, value: string) => {
     setAnnotationValues(prev => ({ ...prev, [`${rowId}:${colId}`]: value }));
-    fetch('/api/annotations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rowId, colId, value }),
-    }).catch(() => {});
+    setAnnotation(rowId, colId, value).catch(() => {});
   };
 
   const TABS: [Tab, string][] = [

@@ -1,4 +1,4 @@
-import type { ColorRule } from './types';
+import type { ColorRule } from './clientDb';
 
 type StyleObj = Record<string, string>;
 

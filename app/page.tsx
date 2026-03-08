@@ -1,35 +1,27 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import type { ColorRule, FormulaColumn, AnnotationColumn } from "@/lib/types";
+import Papa from 'papaparse';
+import type { ColorRule, FormulaColumn, AnnotationColumn } from "@/lib/clientDb";
 import DataTable from "@/app/components/DataTable";
+import {
+  importCSV,
+  getTableStats,
+  getSavedFilters,
+  getDistinctValues,
+  queryFiltered,
+  exportFilteredCSV,
+  saveFilterToFile,
+  deleteFilterFile,
+  getAnnotations,
+  setAnnotation,
+  COLUMNS,
+  ColumnDef,
+  FilterCondition,
+  SavedFilter
+} from "@/lib/clientDb";
 
 const SELECT_COLUMNS = new Set(["nom_medico"]);
-
-interface ColumnDef {
-  name: string;
-  label: string;
-  type: "text" | "number" | "date";
-}
-
-interface FilterCondition {
-  column: string;
-  operator: string;
-  value: string;
-  value2?: string;
-}
-
-interface SavedFilter {
-  id: string;
-  name: string;
-  description?: string;
-  selectedColumns: string[];
-  conditions: FilterCondition[];
-  colorRules?: ColorRule[];
-  formulaColumns?: FormulaColumn[];
-  annotationColumns?: AnnotationColumn[];
-  createdAt: string;
-}
 
 const OPS_TEXT = [
   { v: "equals", l: "Igual" },
@@ -55,7 +47,7 @@ const OPS_DATE = [
 ];
 
 export default function Home() {
-  const [columns, setColumns] = useState<ColumnDef[]>([]);
+  const [columns, setColumns] = useState<ColumnDef[]>(COLUMNS);
   const [selectedCols, setSelectedCols] = useState<string[]>([]);
   const [conditions, setConditions] = useState<FilterCondition[]>([]);
   const [rows, setRows] = useState<any[]>([]);
@@ -66,7 +58,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [scraping, setScraping] = useState(false);
   const [rowCount, setRowCount] = useState(0);
   const [minDate, setMinDate] = useState("");
   const [maxDate, setMaxDate] = useState("");
@@ -89,45 +80,37 @@ export default function Home() {
 
   // Init: load stats and saved filters
   useEffect(() => {
-    fetch("/api/stats")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.columns) setColumns(d.columns);
-        if (d.total > 0) {
-          setRowCount(d.total);
-          setMinDate(d.minDate || "");
-          setMaxDate(d.maxDate || "");
-          setSelectedCols(d.columns.map((c: ColumnDef) => c.name));
-          fetchData(
-            d.columns.map((c: ColumnDef) => c.name),
-            [],
-            1,
-          );
+    const init = async () => {
+      try {
+        const stats = await getTableStats();
+        if (stats.total && Number(stats.total) > 0) {
+          setRowCount(Number(stats.total));
+          setMinDate(stats.minDate ? String(stats.minDate) : "");
+          setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
+          const allCols = COLUMNS.map((c: ColumnDef) => c.name);
+          setSelectedCols(allCols);
+          fetchData(allCols, [], 1);
         }
-      })
-      .catch(() => {});
-    fetch("/api/filters")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.filters) setSavedFilters(d.filters);
-      })
-      .catch(() => {});
+        
+        const filters = await getSavedFilters();
+        setSavedFilters(filters);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    init();
   }, []);
 
   // Fetch distinct values for SELECT_COLUMNS when those columns appear in conditions
   useEffect(() => {
-    const needed = [...new Set(conditions.map((c) => c.column))].filter(
+    const needed = Array.from(new Set(conditions.map((c) => c.column))).filter(
       (col) => SELECT_COLUMNS.has(col) && !fetchedCols.current.has(col),
     );
     for (const col of needed) {
       fetchedCols.current.add(col);
-      fetch(`/api/columns?column=${col}`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.values)
-            setDistinctValues((prev) => ({ ...prev, [col]: d.values }));
-        })
-        .catch(() => fetchedCols.current.delete(col));
+      getDistinctValues(col).then(values => {
+        if (values) setDistinctValues((prev) => ({ ...prev, [col]: values }));
+      }).catch(() => fetchedCols.current.delete(col));
     }
   }, [conditions]);
 
@@ -152,10 +135,9 @@ export default function Home() {
     }
     const rowIds = rows.map((r) => r._row_id as number);
     const colIds = annotationColumns.map((a) => a.id);
-    fetch(`/api/annotations?rowIds=${rowIds.join(",")}&colIds=${colIds.join(",")}`)
-      .then((r) => r.json())
-      .then((d) => setAnnotationValues(d.annotations ?? {}))
-      .catch(() => {});
+    getAnnotations(rowIds, colIds).then(annotations => {
+      setAnnotationValues(annotations);
+    }).catch(() => {});
   }, [rows, annotationColumns]);
 
   const fetchData = useCallback(
@@ -168,21 +150,16 @@ export default function Home() {
     ) => {
       setLoading(true);
       try {
-        const res = await fetch("/api/query", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            selectedColumns: cols ?? selectedCols,
-            conditions: conds ?? conditions,
-            page: pg ?? page,
-            pageSize: PAGE_SIZE,
-            sortColumn: sCol ?? sortCol,
-            sortDir: sDir ?? sortDir,
-          }),
-        });
-        const d = await res.json();
-        setRows(d.rows || []);
-        setTotal(d.total || 0);
+        const result = await queryFiltered(
+          cols ?? selectedCols,
+          conds ?? conditions,
+          pg ?? page,
+          PAGE_SIZE,
+          sCol ?? sortCol,
+          sDir ?? sortDir
+        );
+        setRows(result.rows || []);
+        setTotal(Number(result.total) || 0);
       } catch (e) {
         console.error(e);
       } finally {
@@ -193,66 +170,51 @@ export default function Home() {
   );
 
   // Upload
-  const handleUpload = useCallback(async (file: File) => {
+  const handleUpload = useCallback((file: File) => {
     setUploading(true);
     setProgress(0);
     const iv = setInterval(() => setProgress((p) => Math.min(p + 3, 90)), 150);
-    const fd = new FormData();
-    fd.append("file", file);
-    try {
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const d = await res.json();
-      clearInterval(iv);
-      setProgress(100);
-      if (d.success) {
-        // Reload stats
-        const stats = await fetch("/api/stats").then((r) => r.json());
-        setColumns(stats.columns);
-        setRowCount(stats.total);
-        setMinDate(stats.minDate || "");
-        setMaxDate(stats.maxDate || "");
-        const allCols = stats.columns.map((c: ColumnDef) => c.name);
-        setSelectedCols(allCols);
-        setConditions([]);
-        setPage(1);
-        fetchData(allCols, [], 1);
-      } else {
-        alert(d.error);
-      }
-    } catch {
-      clearInterval(iv);
-      alert("Erro no upload");
-    } finally {
-      setUploading(false);
-    }
-  }, []);
+    
+    Papa.parse<string[]>(file, {
+      skipEmptyLines: true,
+      complete: async (results) => {
+        clearInterval(iv);
+        setProgress(95);
+        if (results.data.length < 2) {
+          setUploading(false);
+          alert('CSV precisa ter cabeçalho + dados');
+          return;
+        }
 
-  // Scraper
-  const handleScrape = useCallback(async () => {
-    setScraping(true);
-    try {
-      const res = await fetch("/api/scraper", { method: "POST" });
-      const d = await res.json();
-      if (d.success) {
-        const stats = await fetch("/api/stats").then((r) => r.json());
-        setColumns(stats.columns);
-        setRowCount(stats.total);
-        setMinDate(stats.minDate || "");
-        setMaxDate(stats.maxDate || "");
-        const allCols = stats.columns.map((c: ColumnDef) => c.name);
-        setSelectedCols(allCols);
-        setConditions([]);
-        setPage(1);
-        fetchData(allCols, [], 1);
-        alert("Dados atualizados com sucesso!");
-      } else {
-        alert(`Erro no scraper:\n${d.error || ""}\n\nLog:\n${d.output || ""}`);
+        try {
+          const headers = results.data[0];
+          const dataRows = results.data.slice(1);
+          const { rowCount, skipped } = await importCSV(headers, dataRows);
+          
+          setProgress(100);
+          
+          const stats = await getTableStats();
+          setRowCount(Number(stats.total) || 0);
+          setMinDate(stats.minDate ? String(stats.minDate) : "");
+          setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
+          
+          const allCols = COLUMNS.map(c => c.name);
+          setSelectedCols(allCols);
+          setConditions([]);
+          setPage(1);
+          fetchData(allCols, [], 1);
+        } catch (e: any) {
+          alert('Erro no upload: ' + e.message);
+        } finally {
+          setUploading(false);
+        }
+      },
+      error: (err) => {
+        clearInterval(iv);
+        alert("Erro ao ler arquivo: " + err.message);
+        setUploading(false);
       }
-    } catch {
-      alert("Erro ao chamar o scraper");
-    } finally {
-      setScraping(false);
-    }
+    });
   }, [fetchData]);
 
   // Column toggle
@@ -310,9 +272,12 @@ export default function Home() {
 
   // Date formatter (for status bar — keeps time)
   function formatDate(str: string) {
+    if (!str) return "";
     const [date, time] = str.split(" ");
+    if (!date) return "";
     const [y, m, d] = date.split("-");
-    return `${time} - ${d}/${m}/${y}`;
+    if (!y || !m || !d) return str;
+    return `${time ? time + ' - ' : ''}${d}/${m}/${y}`;
   }
 
   // Pagination
@@ -342,12 +307,11 @@ export default function Home() {
       conditions,
       createdAt: new Date().toISOString(),
     };
-    await fetch("/api/filters", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(f),
-    });
-    setSavedFilters((p) => [f, ...p]);
+    
+    await saveFilterToFile(f);
+    const updatedFilters = await getSavedFilters();
+    setSavedFilters(updatedFilters);
+    
     setShowSave(false);
     setFilterName("");
     setFilterDesc("");
@@ -366,20 +330,12 @@ export default function Home() {
 
   const handleAnnotationChange = (rowId: number, colId: string, value: string) => {
     setAnnotationValues((prev) => ({ ...prev, [`${rowId}:${colId}`]: value }));
-    fetch("/api/annotations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rowId, colId, value }),
-    }).catch(() => {});
+    setAnnotation(rowId, colId, value).catch(() => {});
   };
 
   const deleteFilter = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    await fetch("/api/filters", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
+    await deleteFilterFile(id);
     setSavedFilters((p) => p.filter((f) => f.id !== id));
   };
 
@@ -411,26 +367,41 @@ export default function Home() {
   };
 
   // Import filters from JSON
-  const importFilters = async (file: File) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch("/api/filters", { method: "POST", body: fd });
-    const d = await res.json();
-    if (d.success) {
-      const updated = await fetch("/api/filters").then((r) => r.json());
-      setSavedFilters(updated.filters || []);
-      alert(`${d.imported} filtro(s) importado(s)!`);
-    }
+  const importFilters = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const parsed = JSON.parse(e.target?.result as string);
+        const filtersToImport: SavedFilter[] = Array.isArray(parsed) ? parsed : [parsed];
+        let imported = 0;
+        
+        for (const f of filtersToImport) {
+          if (f.selectedColumns && f.conditions) {
+            const filter: SavedFilter = {
+              ...f,
+              id: `imported_${Date.now()}_${imported}`,
+              name: f.name || `Filtro importado ${imported + 1}`,
+              createdAt: f.createdAt || new Date().toISOString()
+            };
+            await saveFilterToFile(filter);
+            imported++;
+          }
+        }
+        
+        const updated = await getSavedFilters();
+        setSavedFilters(updated);
+        alert(`${imported} filtro(s) importado(s)!`);
+      } catch (err) {
+        alert("Erro ao importar filtros. Arquivo inválido.");
+      }
+    };
+    reader.readAsText(file);
   };
 
   // Export CSV
   const exportCSV = async () => {
-    const res = await fetch("/api/export", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ selectedColumns: selectedCols, conditions }),
-    });
-    const blob = await res.blob();
+    const csvContent = await exportFilteredCSV(selectedCols, conditions);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -830,9 +801,10 @@ export default function Home() {
           >
             <div className="empty">
               <div className="icon">📊</div>
-              <p>Faça upload de um CSV ou aguarde a coleta automática</p>
+              <p>Faça upload de um CSV para analisar localmente</p>
               <p style={{ fontSize: 11, marginTop: 4 }}>
-                O scraper roda às 06:00, 12:00 e 18:00
+                Os dados são processados diretamente no seu navegador,
+                garantindo velocidade e privacidade.
               </p>
             </div>
           </div>
@@ -940,7 +912,7 @@ export default function Home() {
                 {formatDate(minDate) &&
                   ` • ${formatDate(minDate)} a ${formatDate(maxDate)}`}
               </div>
-              <div>Coleta automática: 06:00, 12:00, 18:00</div>
+              <div>Processamento 100% Local (Client-side)</div>
             </div>
           </>
         )}

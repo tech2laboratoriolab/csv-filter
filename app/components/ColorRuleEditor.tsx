@@ -1,6 +1,6 @@
 'use client';
 
-import type { ColorRule, ColumnDef, AnnotationColumn } from '@/lib/types';
+import type { ColorRule, ColumnDef, AnnotationColumn } from '@/lib/clientDb';
 import { getOpsForType } from '@/lib/operators';
 
 interface ColorRuleEditorProps {

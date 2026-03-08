@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { FormulaColumn, ColumnDef } from '@/lib/types';
+import type { FormulaColumn, ColumnDef } from '@/lib/clientDb';
 
 interface FormulaColumnEditorProps {
   formulaColumns: FormulaColumn[];
