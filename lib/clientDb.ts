@@ -174,7 +174,7 @@ let idbPromise: Promise<IDBPDatabase> | null = null;
 function getIdb() {
   if (typeof window === 'undefined') return null; // SSR safety
   if (!idbPromise) {
-    idbPromise = openDB('csv-filter-pro', 2, {
+    idbPromise = openDB('csv-filter-pro', 3, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           if (!db.objectStoreNames.contains('filters')) {
@@ -190,6 +190,11 @@ function getIdb() {
         if (oldVersion < 2) {
           if (!db.objectStoreNames.contains('csv_database')) {
             db.createObjectStore('csv_database');
+          }
+        }
+        if (oldVersion < 3) {
+          if (!db.objectStoreNames.contains('clinics')) {
+            db.createObjectStore('clinics', { keyPath: 'nome' });
           }
         }
       },
@@ -614,6 +619,97 @@ export async function getPatologistaRows(
 
   const groupBy = `GROUP BY ${colsSql}`;
   const resRows = db.exec(`SELECT ${colsSql} FROM csv_data ${patCond} ${groupBy} ORDER BY MIN(id)`, allParams);
+  const rows = resultToObjects(resRows);
+
+  const columnDefs = cols.map(name => {
+    const def = COLUMNS.find(c => c.name === name);
+    return { name, label: def?.label ?? name, type: def?.type ?? 'text' };
+  });
+
+  return {
+    columns: columnDefs,
+    rows: rows.map(r => {
+      const obj: Record<string, string> = {};
+      for (const col of cols) obj[col] = String(r[col] ?? '');
+      return obj;
+    }),
+  };
+}
+
+// --- Clinics ---
+export interface Clinic {
+  nome: string;
+  telefone: string;
+}
+
+export async function getDistinctClinics(): Promise<string[]> {
+  const db = await getDb();
+  try {
+    const res = db.exec(`SELECT DISTINCT nom_local_origem FROM csv_data
+       WHERE nom_local_origem IS NOT NULL AND nom_local_origem != ''
+       ORDER BY nom_local_origem`);
+    const rows = resultToObjects(res);
+    return rows.map(r => String(r.nom_local_origem));
+  } catch {
+    return [];
+  }
+}
+
+export async function getSavedClinics(): Promise<Clinic[]> {
+  const idb = await getIdb();
+  if (!idb) return [];
+  return idb.getAll('clinics');
+}
+
+export async function saveClinic(nome: string, telefone: string): Promise<void> {
+  const idb = await getIdb();
+  if (!idb) return;
+  await idb.put('clinics', { nome, telefone });
+}
+
+export async function getClinicaSummary(
+  conditions: FilterCondition[],
+  clinicaNome: string
+): Promise<{ total: number; eventos: { nome_evento: string; count: number }[] }> {
+  const db = await getDb();
+  const { sql: where, params } = buildWhereClause(conditions);
+  const cond = where
+    ? `${where} AND "nom_local_origem" = ?`
+    : `WHERE "nom_local_origem" = ?`;
+  const allParams = [...params, clinicaNome];
+
+  const resCount = db.exec(`SELECT COUNT(*) as total FROM csv_data ${cond}`, allParams);
+  const total = resCount.length > 0 ? resCount[0].values[0][0] : 0;
+
+  const resEventos = db.exec(`SELECT nom_evento_fatur as nome_evento, COUNT(*) as count
+     FROM csv_data ${cond}
+     AND nom_evento_fatur IS NOT NULL AND nom_evento_fatur != ''
+     GROUP BY nom_evento_fatur
+     ORDER BY count DESC`, allParams);
+  const eventoRows = resultToObjects(resEventos);
+
+  return {
+    total: total as number ?? 0,
+    eventos: eventoRows.map(r => ({ nome_evento: String(r.nome_evento), count: Number(r.count) })),
+  };
+}
+
+export async function getClinicaRows(
+  conditions: FilterCondition[],
+  selectedColumns: string[],
+  clinicaNome: string
+): Promise<{ columns: { name: string; label: string; type: string }[]; rows: Record<string, string>[] }> {
+  const db = await getDb();
+  const { sql: where, params } = buildWhereClause(conditions);
+  const cond = where
+    ? `${where} AND "nom_local_origem" = ?`
+    : `WHERE "nom_local_origem" = ?`;
+  const allParams = [...params, clinicaNome];
+
+  const cols = selectedColumns.length ? selectedColumns : COLUMNS.map(c => c.name);
+  const colsSql = cols.map(c => `"${c}"`).join(', ');
+  const groupBy = `GROUP BY ${colsSql}`;
+  const resRows = db.exec(`SELECT ${colsSql} FROM csv_data ${cond} ${groupBy} ORDER BY MIN(id)`, allParams);
   const rows = resultToObjects(resRows);
 
   const columnDefs = cols.map(name => {
