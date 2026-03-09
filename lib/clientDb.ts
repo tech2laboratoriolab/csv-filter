@@ -489,9 +489,29 @@ export async function exportFilteredCSV(selectedColumns: string[], conditions: F
 }
 
 // --- IndexedDB: Filters ---
+const SEED_KEY = 'csv-filter-defaults-seeded';
+
+async function seedDefaultFilters(idb: IDBPDatabase): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (localStorage.getItem(SEED_KEY)) return;
+
+  try {
+    const res = await fetch('/default-filters.json');
+    if (!res.ok) return;
+    const defaults: SavedFilter[] = await res.json();
+    const tx = idb.transaction('filters', 'readwrite');
+    await Promise.all(defaults.map(f => tx.store.put(f)));
+    await tx.done;
+    localStorage.setItem(SEED_KEY, '1');
+  } catch {
+    // silently ignore — default filters are optional
+  }
+}
+
 export async function getSavedFilters(): Promise<SavedFilter[]> {
   const idb = await getIdb();
   if (!idb) return [];
+  await seedDefaultFilters(idb);
   const filters = await idb.getAll('filters');
   return filters.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
