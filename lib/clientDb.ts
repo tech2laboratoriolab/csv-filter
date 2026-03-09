@@ -105,44 +105,52 @@ COLUMNS.forEach(c => {
 
 // --- In-Memory SQLite Setup ---
 let _dbPromise: Promise<Database> | null = null;
+
+function createEmptyDb(SQL: any): Database {
+  const colDefs = COLUMNS.map(c => {
+    const sqlType = c.type === 'number' ? 'REAL' : 'TEXT';
+    return `"${c.name}" ${sqlType}`;
+  }).join(',\n  ');
+
+  const db = new SQL.Database();
+  db.run(`CREATE TABLE csv_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ${colDefs}
+  )`);
+
+  const indexCols = [
+    'nom_convenio', 'nom_exame', 'nom_paciente', 'nom_medico',
+    'dta_solicitacao', 'dta_coleta', 'dta_finalizacao', 'dta_vencimento',
+    'nom_fonte_pagadora', 'nom_segmento', 'nom_unidade', 'nom_laboratorio',
+    'vlr_bruto', 'vlr_liquido', 'vlr_recebido', 'ano', 'mes',
+    'nom_exame_tipo', 'nom_evento', 'nom_cobranca',
+  ];
+  for (const col of indexCols) {
+    db.run(`CREATE INDEX idx_${col} ON csv_data("${col}")`);
+  }
+  return db;
+}
+
 export function getDb(): Promise<Database> {
   if (!_dbPromise) {
     _dbPromise = (async () => {
-      // Fetch WASM manually to avoid path issues in different environments
       const wasmResponse = await fetch('/sql-wasm.wasm');
       if (!wasmResponse.ok) {
         throw new Error(`Failed to fetch sql-wasm.wasm: ${wasmResponse.statusText}`);
       }
       const wasmBinary = await wasmResponse.arrayBuffer();
-      
-      const SQL = await initSqlJs({
-        wasmBinary
-      });
-      
-      const db = new SQL.Database();
-      
-      const colDefs = COLUMNS.map(c => {
-        const sqlType = c.type === 'number' ? 'REAL' : 'TEXT';
-        return `"${c.name}" ${sqlType}`;
-      }).join(',\n  ');
-    
-      db.run(`CREATE TABLE csv_data (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ${colDefs}
-      )`);
+      const SQL = await initSqlJs({ wasmBinary });
 
-      const indexCols = [
-        'nom_convenio', 'nom_exame', 'nom_paciente', 'nom_medico',
-        'dta_solicitacao', 'dta_coleta', 'dta_finalizacao', 'dta_vencimento',
-        'nom_fonte_pagadora', 'nom_segmento', 'nom_unidade', 'nom_laboratorio',
-        'vlr_bruto', 'vlr_liquido', 'vlr_recebido', 'ano', 'mes',
-        'nom_exame_tipo', 'nom_evento', 'nom_cobranca',
-      ];
-      for (const col of indexCols) {
-        db.run(`CREATE INDEX idx_${col} ON csv_data("${col}")`);
+      // Try to restore persisted database from IndexedDB
+      const idb = await getIdb();
+      if (idb) {
+        const snapshot = await idb.get('csv_database', 'snapshot') as Uint8Array | undefined;
+        if (snapshot) {
+          return new SQL.Database(snapshot);
+        }
       }
 
-      return db;
+      return createEmptyDb(SQL);
     })();
   }
   return _dbPromise;
@@ -166,16 +174,23 @@ let idbPromise: Promise<IDBPDatabase> | null = null;
 function getIdb() {
   if (typeof window === 'undefined') return null; // SSR safety
   if (!idbPromise) {
-    idbPromise = openDB('csv-filter-pro', 1, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains('filters')) {
-          db.createObjectStore('filters', { keyPath: 'id' });
+    idbPromise = openDB('csv-filter-pro', 2, {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          if (!db.objectStoreNames.contains('filters')) {
+            db.createObjectStore('filters', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('annotations')) {
+            db.createObjectStore('annotations');
+          }
+          if (!db.objectStoreNames.contains('pathologists')) {
+            db.createObjectStore('pathologists', { keyPath: 'nome' });
+          }
         }
-        if (!db.objectStoreNames.contains('annotations')) {
-          db.createObjectStore('annotations');
-        }
-        if (!db.objectStoreNames.contains('pathologists')) {
-          db.createObjectStore('pathologists', { keyPath: 'nome' });
+        if (oldVersion < 2) {
+          if (!db.objectStoreNames.contains('csv_database')) {
+            db.createObjectStore('csv_database');
+          }
         }
       },
     });
@@ -240,6 +255,13 @@ export async function importCSV(headers: string[], rows: string[][]): Promise<{ 
 
   stmt.free();
   db.run('COMMIT;');
+
+  // Persist snapshot to IndexedDB so data survives page navigation
+  const idb = await getIdb();
+  if (idb) {
+    const snapshot = db.export();
+    await idb.put('csv_database', snapshot, 'snapshot');
+  }
 
   return { rowCount: imported, skipped };
 }
