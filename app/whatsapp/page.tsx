@@ -5,11 +5,19 @@ import Link from "next/link";
 import {
   getSavedFilters,
   getSavedPathologists,
+  getDistinctPatologists,
   savePathologist,
+  saveFilterToFile,
   getPatologistaSummary,
   getPatologistaRows,
   SavedFilter,
-  Pathologist
+  Pathologist,
+  Clinic,
+  getDistinctClinics,
+  getSavedClinics,
+  saveClinic,
+  getClinicaSummary,
+  getClinicaRows,
 } from "@/lib/clientDb";
 
 interface SendResult {
@@ -28,7 +36,7 @@ interface Preview {
 }
 
 const DEFAULT_TEMPLATE =
-  "Olá Dr(a) {nome}.\n\nSegue abaixo os casos do dia e de amanhã. Caso tenha necessidade de novas lâminas/reclivagem/cortes, por favor, avise-me. Ótimo dia!\n\nHá *{total}* exame(s) pendente(s) em {data_hoje}.\n\n{resumo}\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
+  "Olá Dr(a) {nome}.\n\nSegue abaixo os casos do dia e de amanhã. Caso tenha necessidade de novas lâminas/reclivagem/cortes, por favor, avise-me. Ótimo dia!\n\nExame(s) pendente(s) em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
 
 const VARIABLES = [
   { key: "{nome}", desc: "Nome do patologista" },
@@ -105,6 +113,13 @@ export default function WhatsAppPage() {
   const [sendResults, setSendResults] = useState<SendResult[]>([]);
   const [loadingPats, setLoadingPats] = useState(false);
   const [linhasColumns, setLinhasColumns] = useState<string[]>([]);
+  type ActiveTab = 'patologistas' | 'clinicas';
+  const [activeTab, setActiveTab] = useState<ActiveTab>('patologistas');
+  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [selectedClinicIds, setSelectedClinicIds] = useState<Set<string>>(new Set());
+  const [clinicPhoneEdits, setClinicPhoneEdits] = useState<Record<string, string>>({});
+  const [savingClinicPhone, setSavingClinicPhone] = useState<string | null>(null);
+  const [loadingClinics, setLoadingClinics] = useState(false);
 
   // Load filters and pathologists on mount
   useEffect(() => {
@@ -113,22 +128,67 @@ export default function WhatsAppPage() {
       .catch(() => {});
 
     setLoadingPats(true);
-    getSavedPathologists()
-      .then((d) => {
-        if (Array.isArray(d)) {
-          setPathologists(d);
-          const phones: Record<string, string> = {};
-          for (const p of d) phones[p.nome] = p.telefone;
-          setPhoneEdits(phones);
+    Promise.all([getDistinctPatologists(), getSavedPathologists()])
+      .then(([distinctNames, savedPats]) => {
+        const savedMap: Record<string, string> = {};
+        for (const p of savedPats) savedMap[p.nome] = p.telefone;
+
+        const merged: Pathologist[] = distinctNames.map((nome) => ({
+          nome,
+          telefone: savedMap[nome] ?? "",
+        }));
+
+        for (const p of savedPats) {
+          if (!distinctNames.includes(p.nome)) {
+            merged.push(p);
+          }
         }
+
+        setPathologists(merged);
+        const phones: Record<string, string> = {};
+        for (const p of merged) phones[p.nome] = p.telefone;
+        setPhoneEdits(phones);
       })
       .catch(() => {})
       .finally(() => setLoadingPats(false));
+
+    setLoadingClinics(true);
+    Promise.all([getDistinctClinics(), getSavedClinics()])
+      .then(([distinctNames, savedClinics]) => {
+        const savedMap: Record<string, string> = {};
+        for (const c of savedClinics) savedMap[c.nome] = c.telefone;
+        const merged: Clinic[] = distinctNames.map((nome) => ({
+          nome,
+          telefone: savedMap[nome] ?? "",
+        }));
+        for (const c of savedClinics) {
+          if (!distinctNames.includes(c.nome)) merged.push(c);
+        }
+        setClinics(merged);
+        const phones: Record<string, string> = {};
+        for (const c of merged) phones[c.nome] = c.telefone;
+        setClinicPhoneEdits(phones);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingClinics(false));
   }, []);
 
   useEffect(() => {
-    setLinhasColumns(selectedFilter?.selectedColumns ?? []);
+    setLinhasColumns(
+      selectedFilter?.whatsappLinhasColumns ?? selectedFilter?.selectedColumns ?? []
+    );
   }, [selectedFilter?.id]);
+
+  const saveLinhasColumns = useCallback(
+    async (cols: string[]) => {
+      if (!selectedFilter) return;
+      const updated: SavedFilter = { ...selectedFilter, whatsappLinhasColumns: cols };
+      await saveFilterToFile(updated);
+      setFilters((prev) => prev.map((f) => (f.id === updated.id ? updated : f)));
+      setSelectedFilter(updated);
+    },
+    [selectedFilter],
+  );
 
   const insertVariable = (v: string) => {
     setTemplate((prev) => prev + v);
@@ -155,9 +215,12 @@ export default function WhatsAppPage() {
   const savePhone = useCallback(
     async (nome: string) => {
       setSavingPhone(nome);
-      const tel = phoneEdits[nome] ?? pathologists.find(p => p.nome === nome)?.telefone ?? "";
+      const tel =
+        phoneEdits[nome] ??
+        pathologists.find((p) => p.nome === nome)?.telefone ??
+        "";
       const updated = pathologists.map((p) =>
-        p.nome === nome ? { ...p, telefone: tel } : p
+        p.nome === nome ? { ...p, telefone: tel } : p,
       );
       try {
         await savePathologist(nome, tel);
@@ -168,39 +231,89 @@ export default function WhatsAppPage() {
     [pathologists, phoneEdits],
   );
 
+  const saveClinicPhone = useCallback(
+    async (nome: string) => {
+      setSavingClinicPhone(nome);
+      const tel =
+        clinicPhoneEdits[nome] ??
+        clinics.find((c) => c.nome === nome)?.telefone ??
+        "";
+      try {
+        await saveClinic(nome, tel);
+        setClinics((prev) =>
+          prev.map((c) => (c.nome === nome ? { ...c, telefone: tel } : c)),
+        );
+      } catch {}
+      setSavingClinicPhone(null);
+    },
+    [clinics, clinicPhoneEdits],
+  );
+
+  const toggleClinicSelect = (nome: string) => {
+    setSelectedClinicIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(nome)) next.delete(nome);
+      else next.add(nome);
+      return next;
+    });
+  };
+
+  const selectAllClinicsWithPhone = () => {
+    const ids = clinics
+      .filter((c) => (clinicPhoneEdits[c.nome] || c.telefone).trim())
+      .map((c) => c.nome);
+    setSelectedClinicIds(new Set(ids));
+  };
+
+  const deselectAllClinics = () => setSelectedClinicIds(new Set());
+
   const handlePreview = async () => {
     if (!selectedFilter || !template.trim()) return;
     setLoadingPreview(true);
     setPreviews([]);
-    const selected = pathologists.filter((p) => selectedPatIds.has(p.nome));
     const dataHoje = formatDateBR(new Date());
 
+    const isClinicTab = activeTab === 'clinicas';
+    const lista = isClinicTab
+      ? clinics
+          .filter((c) => selectedClinicIds.has(c.nome))
+          .map((c) => ({ nome: c.nome, telefone: clinicPhoneEdits[c.nome] ?? c.telefone }))
+      : pathologists
+          .filter((p) => selectedPatIds.has(p.nome))
+          .map((p) => ({ nome: p.nome, telefone: phoneEdits[p.nome] ?? p.telefone }));
+    const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
+    const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
+
     const newPreviews: Preview[] = [];
-    for (const pat of selected) {
-      const telefone = phoneEdits[pat.nome] ?? pat.telefone;
+    for (const item of lista) {
       try {
-        const cols = linhasColumns.length ? linhasColumns : selectedFilter.selectedColumns;
-        const summary = await getPatologistaSummary(selectedFilter.conditions, pat.nome);
-        const rowData = await getPatologistaRows(selectedFilter.conditions, cols, pat.nome);
-        
+        const cols = linhasColumns.length
+          ? linhasColumns
+          : selectedFilter.selectedColumns;
+        const summary = await getSummary(selectedFilter.conditions, item.nome);
+        const rowData = await getRows(selectedFilter.conditions, cols, item.nome);
+
         const resumo = buildResumoPreview(summary.eventos ?? []);
-        const linhas = buildLinhasPreview(rowData.columns ?? [], rowData.rows ?? []);
+        const linhas = buildLinhasPreview(
+          rowData.columns ?? [],
+          rowData.rows ?? [],
+        );
         const msg = template
-          .replace(/\{nome\}/g, formatNome(pat.nome))
+          .replace(/\{nome\}/g, formatNome(item.nome))
           .replace(/\{total\}/g, String(summary.total ?? 0))
           .replace(/\{data_hoje\}/g, dataHoje)
           .replace(/\{resumo\}/g, resumo)
           .replace(/\{linhas\}/g, linhas);
         newPreviews.push({
-          nome: pat.nome,
-          telefone,
+          nome: item.nome,
+          telefone: item.telefone,
           total: summary.total ?? 0,
           message: msg,
         });
       } catch {
         newPreviews.push({
-          nome: pat.nome,
-          telefone,
+          nome: item.nome,
+          telefone: item.telefone,
           total: 0,
           message: "(Erro ao carregar dados)",
         });
@@ -211,40 +324,50 @@ export default function WhatsAppPage() {
   };
 
   const handleSend = async () => {
-    if (!selectedFilter || !template.trim() || selectedPatIds.size === 0)
+    const isClinicTab = activeTab === 'clinicas';
+    const activeSelectedIds = isClinicTab ? selectedClinicIds : selectedPatIds;
+    if (!selectedFilter || !template.trim() || activeSelectedIds.size === 0)
       return;
     setSending(true);
     setSendProgress(0);
     setSendResults([]);
 
-    const patsToSend = pathologists
-      .filter((p) => selectedPatIds.has(p.nome))
-      .map((p) => ({
-        nome: p.nome,
-        telefone: phoneEdits[p.nome] ?? p.telefone,
-      }));
-      
+    const itemsToSend = isClinicTab
+      ? clinics
+          .filter((c) => selectedClinicIds.has(c.nome))
+          .map((c) => ({ nome: c.nome, telefone: clinicPhoneEdits[c.nome] ?? c.telefone }))
+      : pathologists
+          .filter((p) => selectedPatIds.has(p.nome))
+          .map((p) => ({ nome: p.nome, telefone: phoneEdits[p.nome] ?? p.telefone }));
+    const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
+    const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
+
     // Create payloads with completed messages, so proxy just relays to WAHA
     const dataHoje = formatDateBR(new Date());
     const messagesToSend = [];
-    for (const pat of patsToSend) {
-      const cols = linhasColumns.length ? linhasColumns : selectedFilter.selectedColumns;
-      const summary = await getPatologistaSummary(selectedFilter.conditions, pat.nome);
-      const rowData = await getPatologistaRows(selectedFilter.conditions, cols, pat.nome);
-      
+    for (const item of itemsToSend) {
+      const cols = linhasColumns.length
+        ? linhasColumns
+        : selectedFilter.selectedColumns;
+      const summary = await getSummary(selectedFilter.conditions, item.nome);
+      const rowData = await getRows(selectedFilter.conditions, cols, item.nome);
+
       const resumo = buildResumoPreview(summary.eventos ?? []);
-      const linhas = buildLinhasPreview(rowData.columns ?? [], rowData.rows ?? []);
+      const linhas = buildLinhasPreview(
+        rowData.columns ?? [],
+        rowData.rows ?? [],
+      );
       const finalMessage = template
-        .replace(/\{nome\}/g, formatNome(pat.nome))
+        .replace(/\{nome\}/g, formatNome(item.nome))
         .replace(/\{total\}/g, String(summary.total ?? 0))
         .replace(/\{data_hoje\}/g, dataHoje)
         .replace(/\{resumo\}/g, resumo)
         .replace(/\{linhas\}/g, linhas);
-        
+
       messagesToSend.push({
-        nome: pat.nome,
-        telefone: pat.telefone,
-        message: finalMessage
+        nome: item.nome,
+        telefone: item.telefone,
+        message: finalMessage,
       });
     }
 
@@ -265,18 +388,22 @@ export default function WhatsAppPage() {
     setSending(false);
   };
 
-  const withPhone = pathologists.filter((p) =>
-    (phoneEdits[p.nome] || p.telefone).trim(),
+  const activeList = activeTab === 'clinicas' ? clinics : pathologists;
+  const activeSelectedIds = activeTab === 'clinicas' ? selectedClinicIds : selectedPatIds;
+  const activePhoneEdits = activeTab === 'clinicas' ? clinicPhoneEdits : phoneEdits;
+
+  const withPhone = activeList.filter((p) =>
+    (activePhoneEdits[p.nome] || p.telefone).trim(),
   ).length;
-  const withoutPhone = pathologists.length - withPhone;
-  const selectedCount = selectedPatIds.size;
+  const withoutPhone = activeList.length - withPhone;
+  const selectedCount = activeSelectedIds.size;
   const canSend =
     !!selectedFilter &&
     template.trim().length > 0 &&
     selectedCount > 0 &&
-    pathologists.some(
+    activeList.some(
       (p) =>
-        selectedPatIds.has(p.nome) && (phoneEdits[p.nome] || p.telefone).trim(),
+        activeSelectedIds.has(p.nome) && (activePhoneEdits[p.nome] || p.telefone).trim(),
     );
 
   return (
@@ -455,11 +582,11 @@ export default function WhatsAppPage() {
                         type="checkbox"
                         checked={linhasColumns.includes(col)}
                         onChange={(e) => {
-                          setLinhasColumns((prev) =>
-                            e.target.checked
-                              ? [...prev, col]
-                              : prev.filter((c) => c !== col),
-                          );
+                          const next = e.target.checked
+                            ? [...linhasColumns, col]
+                            : linhasColumns.filter((c) => c !== col);
+                          setLinhasColumns(next);
+                          saveLinhasColumns(next);
                         }}
                         style={{
                           accentColor: "var(--blue)",
@@ -591,7 +718,7 @@ export default function WhatsAppPage() {
                 </div>
                 <div
                   style={{
-                    maxHeight: 300,
+                    maxHeight: 500,
                     overflowY: "auto",
                     display: "flex",
                     flexDirection: "column",
@@ -639,7 +766,7 @@ export default function WhatsAppPage() {
             )}
           </div>
 
-          {/* ===== SEÇÃO 3: Patologistas ===== */}
+          {/* ===== SEÇÃO 3: Patologistas / Clínicas ===== */}
           <div
             style={{
               background: "var(--bg-1)",
@@ -650,8 +777,27 @@ export default function WhatsAppPage() {
               flexDirection: "column",
             }}
           >
-            <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 14 }}>
-              3. Patologistas
+            {/* Tab header */}
+            <div style={{ display: "flex", gap: 0, marginBottom: 12 }}>
+              {(["patologistas", "clinicas"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    padding: "6px 14px",
+                    background: activeTab === tab ? "var(--blue)" : "var(--bg-2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: tab === "patologistas" ? "4px 0 0 4px" : "0 4px 4px 0",
+                    color: activeTab === tab ? "#fff" : "var(--text-2)",
+                    fontSize: 12,
+                    fontWeight: activeTab === tab ? 600 : 400,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {tab === "patologistas" ? "3. Patologistas" : "Clínicas"}
+                </button>
+              ))}
             </div>
 
             <div
@@ -680,7 +826,7 @@ export default function WhatsAppPage() {
 
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <button
-                onClick={selectAllWithPhone}
+                onClick={activeTab === "clinicas" ? selectAllClinicsWithPhone : selectAllWithPhone}
                 style={{
                   padding: "5px 10px",
                   background: "var(--bg-2)",
@@ -694,7 +840,7 @@ export default function WhatsAppPage() {
                 Selecionar todos com telefone
               </button>
               <button
-                onClick={deselectAll}
+                onClick={activeTab === "clinicas" ? deselectAllClinics : deselectAll}
                 style={{
                   padding: "5px 10px",
                   background: "var(--bg-2)",
@@ -709,136 +855,274 @@ export default function WhatsAppPage() {
               </button>
             </div>
 
-            {loadingPats ? (
-              <div
-                style={{
-                  color: "var(--text-3)",
-                  fontSize: 12,
-                  textAlign: "center",
-                  padding: 20,
-                }}
-              >
-                Carregando patologistas...
-              </div>
-            ) : pathologists.length === 0 ? (
-              <div
-                style={{
-                  color: "var(--text-3)",
-                  fontSize: 12,
-                  textAlign: "center",
-                  padding: 20,
-                }}
-              >
-                Nenhum patologista encontrado no banco de dados.
-              </div>
-            ) : (
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  maxHeight: 500,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
-                }}
-              >
-                {pathologists.map((pat) => {
-                  const tel = phoneEdits[pat.nome] ?? pat.telefone;
-                  const hasPhone = tel.trim().length > 0;
-                  const isSelected = selectedPatIds.has(pat.nome);
-                  return (
-                    <div
-                      key={pat.nome}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "8px 10px",
-                        background: isSelected
-                          ? "rgba(99,102,241,0.08)"
-                          : "var(--bg-2)",
-                        border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
-                        borderRadius: 6,
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => togglePatSelect(pat.nome)}
-                        style={{
-                          cursor: "pointer",
-                          accentColor: "var(--blue)",
-                          flexShrink: 0,
-                        }}
-                      />
+            {/* Patologistas list */}
+            {activeTab === "patologistas" && (
+              loadingPats ? (
+                <div
+                  style={{
+                    color: "var(--text-3)",
+                    fontSize: 12,
+                    textAlign: "center",
+                    padding: 20,
+                  }}
+                >
+                  Carregando patologistas...
+                </div>
+              ) : pathologists.length === 0 ? (
+                <div
+                  style={{
+                    color: "var(--text-3)",
+                    fontSize: 12,
+                    textAlign: "center",
+                    padding: 20,
+                  }}
+                >
+                  Nenhum patologista encontrado no banco de dados.
+                </div>
+              ) : (
+                <div
+                  style={{
+                    flex: 1,
+                    overflowY: "auto",
+                    maxHeight: 500,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                  }}
+                >
+                  {pathologists.map((pat) => {
+                    const tel = phoneEdits[pat.nome] ?? pat.telefone;
+                    const hasPhone = tel.trim().length > 0;
+                    const isSelected = selectedPatIds.has(pat.nome);
+                    return (
                       <div
+                        key={pat.nome}
                         style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          background: hasPhone ? "var(--green)" : "var(--red)",
-                          flexShrink: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "8px 10px",
+                          background: isSelected
+                            ? "rgba(99,102,241,0.08)"
+                            : "var(--bg-2)",
+                          border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
+                          borderRadius: 6,
                         }}
-                      />
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => togglePatSelect(pat.nome)}
+                          style={{
+                            cursor: "pointer",
+                            accentColor: "var(--blue)",
+                            flexShrink: 0,
+                          }}
+                        />
                         <div
                           style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            color: "var(--text-0)",
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: hasPhone ? "var(--green)" : "var(--red)",
+                            flexShrink: 0,
                           }}
-                        >
-                          {pat.nome}
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            marginTop: 3,
-                          }}
-                        >
-                          <input
-                            type="text"
-                            placeholder="5511999999999"
-                            value={phoneEdits[pat.nome] ?? pat.telefone}
-                            onChange={(e) =>
-                              setPhoneEdits((prev) => ({
-                                ...prev,
-                                [pat.nome]: e.target.value,
-                              }))
-                            }
-                            onBlur={() => savePhone(pat.nome)}
-                            onKeyDown={(e) =>
-                              e.key === "Enter" && savePhone(pat.nome)
-                            }
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
                             style={{
-                              flex: 1,
-                              background: "var(--bg-0)",
-                              border: "1px solid var(--border)",
-                              borderRadius: 4,
-                              color: "var(--text-1)",
-                              padding: "2px 6px",
                               fontSize: 11,
-                              fontFamily: "monospace",
+                              fontWeight: 600,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              color: "var(--text-0)",
                             }}
-                          />
-                          {savingPhone === pat.nome && (
-                            <span
-                              style={{ fontSize: 10, color: "var(--text-3)" }}
-                            >
-                              💾
-                            </span>
-                          )}
+                          >
+                            {pat.nome}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                              marginTop: 3,
+                            }}
+                          >
+                            <input
+                              type="text"
+                              placeholder="5511999999999"
+                              value={phoneEdits[pat.nome] ?? pat.telefone}
+                              onChange={(e) =>
+                                setPhoneEdits((prev) => ({
+                                  ...prev,
+                                  [pat.nome]: e.target.value,
+                                }))
+                              }
+                              onBlur={() => savePhone(pat.nome)}
+                              onKeyDown={(e) =>
+                                e.key === "Enter" && savePhone(pat.nome)
+                              }
+                              style={{
+                                flex: 1,
+                                background: "var(--bg-0)",
+                                border: "1px solid var(--border)",
+                                borderRadius: 4,
+                                color: "var(--text-1)",
+                                padding: "2px 6px",
+                                fontSize: 11,
+                                fontFamily: "monospace",
+                              }}
+                            />
+                            {savingPhone === pat.nome && (
+                              <span
+                                style={{ fontSize: 10, color: "var(--text-3)" }}
+                              >
+                                💾
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+
+            {/* Clínicas list */}
+            {activeTab === "clinicas" && (
+              loadingClinics ? (
+                <div
+                  style={{
+                    color: "var(--text-3)",
+                    fontSize: 12,
+                    textAlign: "center",
+                    padding: 20,
+                  }}
+                >
+                  Carregando clínicas...
+                </div>
+              ) : clinics.length === 0 ? (
+                <div
+                  style={{
+                    color: "var(--text-3)",
+                    fontSize: 12,
+                    textAlign: "center",
+                    padding: 20,
+                  }}
+                >
+                  Nenhuma clínica encontrada no banco de dados.
+                </div>
+              ) : (
+                <div
+                  style={{
+                    flex: 1,
+                    overflowY: "auto",
+                    maxHeight: 500,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                  }}
+                >
+                  {clinics.map((clinic) => {
+                    const tel = clinicPhoneEdits[clinic.nome] ?? clinic.telefone;
+                    const hasPhone = tel.trim().length > 0;
+                    const isSelected = selectedClinicIds.has(clinic.nome);
+                    return (
+                      <div
+                        key={clinic.nome}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "8px 10px",
+                          background: isSelected
+                            ? "rgba(99,102,241,0.08)"
+                            : "var(--bg-2)",
+                          border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
+                          borderRadius: 6,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleClinicSelect(clinic.nome)}
+                          style={{
+                            cursor: "pointer",
+                            accentColor: "var(--blue)",
+                            flexShrink: 0,
+                          }}
+                        />
+                        <div
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: hasPhone ? "var(--green)" : "var(--red)",
+                            flexShrink: 0,
+                          }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              color: "var(--text-0)",
+                            }}
+                          >
+                            {clinic.nome}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                              marginTop: 3,
+                            }}
+                          >
+                            <input
+                              type="text"
+                              placeholder="5511999999999"
+                              value={clinicPhoneEdits[clinic.nome] ?? clinic.telefone}
+                              onChange={(e) =>
+                                setClinicPhoneEdits((prev) => ({
+                                  ...prev,
+                                  [clinic.nome]: e.target.value,
+                                }))
+                              }
+                              onBlur={() => saveClinicPhone(clinic.nome)}
+                              onKeyDown={(e) =>
+                                e.key === "Enter" && saveClinicPhone(clinic.nome)
+                              }
+                              style={{
+                                flex: 1,
+                                background: "var(--bg-0)",
+                                border: "1px solid var(--border)",
+                                borderRadius: 4,
+                                color: "var(--text-1)",
+                                padding: "2px 6px",
+                                fontSize: 11,
+                                fontFamily: "monospace",
+                              }}
+                            />
+                            {savingClinicPhone === clinic.nome && (
+                              <span
+                                style={{ fontSize: 10, color: "var(--text-3)" }}
+                              >
+                                💾
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             )}
           </div>
         </div>
@@ -891,22 +1175,20 @@ export default function WhatsAppPage() {
             )}
             {selectedFilter && template.trim() && selectedCount === 0 && (
               <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-                ← Selecione patologistas
+                ← Selecione {activeTab === "clinicas" ? "clínicas" : "patologistas"}
               </span>
             )}
             {selectedFilter && template.trim() && selectedCount > 0 && (
               <span style={{ fontSize: 12, color: "var(--text-2)" }}>
                 Pronto para enviar para{" "}
                 <strong>
-                  {
-                    pathologists.filter(
-                      (p) =>
-                        selectedPatIds.has(p.nome) &&
-                        (phoneEdits[p.nome] || p.telefone).trim(),
-                    ).length
-                  }
+                  {activeList.filter(
+                    (p) =>
+                      activeSelectedIds.has(p.nome) &&
+                      (activePhoneEdits[p.nome] || p.telefone).trim(),
+                  ).length}
                 </strong>{" "}
-                patologista(s)
+                {activeTab === "clinicas" ? "clínica(s)" : "patologista(s)"}
               </span>
             )}
           </div>
