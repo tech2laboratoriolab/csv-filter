@@ -470,12 +470,13 @@ export default function WhatsAppPage() {
       {/* Header */}
       <div
         style={{
-          background: "var(--bg-1)",
+          background: "linear-gradient(to right, #eff6ff, #eef2ff, #f5f3ff)",
           borderBottom: "1px solid var(--border)",
           padding: "12px 24px",
           display: "flex",
           alignItems: "center",
           gap: 16,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
         }}
       >
         <Link
@@ -509,8 +510,9 @@ export default function WhatsAppPage() {
             style={{
               background: "var(--bg-1)",
               border: "1px solid var(--border)",
-              borderRadius: 8,
+              borderRadius: 16,
               padding: 20,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
             }}
           >
             <div style={{ fontWeight: 600, marginBottom: 16, fontSize: 14 }}>
@@ -537,13 +539,14 @@ export default function WhatsAppPage() {
                     style={{
                       padding: "10px 12px",
                       border: `1px solid ${selectedFilter?.id === f.id ? "var(--blue)" : "var(--border)"}`,
-                      borderRadius: 6,
+                      borderRadius: 12,
                       cursor: "pointer",
                       background:
                         selectedFilter?.id === f.id
-                          ? "rgba(99,102,241,0.1)"
+                          ? "rgba(59,130,246,0.08)"
                           : "var(--bg-2)",
-                      transition: "all 0.15s",
+                      transition: "all 0.2s",
+                      boxShadow: selectedFilter?.id === f.id ? "0 0 0 3px rgba(59,130,246,0.1)" : "none",
                     }}
                   >
                     <div style={{ fontWeight: 600, fontSize: 13 }}>
@@ -571,8 +574,9 @@ export default function WhatsAppPage() {
                   marginTop: 16,
                   padding: 12,
                   background: "var(--bg-2)",
-                  borderRadius: 6,
+                  borderRadius: 12,
                   fontSize: 12,
+                  border: "1px solid var(--border)",
                 }}
               >
                 <div
@@ -604,8 +608,9 @@ export default function WhatsAppPage() {
                   marginTop: 12,
                   padding: 12,
                   background: "var(--bg-2)",
-                  borderRadius: 6,
+                  borderRadius: 12,
                   fontSize: 12,
+                  border: "1px solid var(--border)",
                 }}
               >
                 <div
@@ -665,8 +670,9 @@ export default function WhatsAppPage() {
             style={{
               background: "var(--bg-1)",
               border: "1px solid var(--border)",
-              borderRadius: 8,
+              borderRadius: 16,
               padding: 20,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
             }}
           >
             <div style={{ fontWeight: 600, marginBottom: 16, fontSize: 14 }}>
@@ -691,13 +697,14 @@ export default function WhatsAppPage() {
                     title={v.desc}
                     style={{
                       padding: "3px 8px",
-                      background: "rgba(99,102,241,0.15)",
-                      border: "1px solid var(--blue)",
-                      borderRadius: 4,
+                      background: "rgba(59,130,246,0.08)",
+                      border: "1px solid rgba(59,130,246,0.3)",
+                      borderRadius: 20,
                       color: "var(--blue)",
                       fontSize: 11,
                       cursor: "pointer",
                       fontFamily: "monospace",
+                      transition: "all 0.15s",
                     }}
                   >
                     {v.key}
@@ -712,9 +719,9 @@ export default function WhatsAppPage() {
               rows={12}
               style={{
                 width: "100%",
-                background: "var(--bg-2)",
+                background: "var(--bg-3)",
                 border: "1px solid var(--border)",
-                borderRadius: 6,
+                borderRadius: 12,
                 color: "var(--text-0)",
                 padding: 10,
                 fontSize: 13,
@@ -737,10 +744,10 @@ export default function WhatsAppPage() {
                 marginTop: 12,
                 width: "100%",
                 padding: "9px 16px",
-                background: "var(--bg-2)",
+                background: "var(--bg-3)",
                 border: "1px solid var(--border)",
-                borderRadius: 6,
-                color: "var(--text-0)",
+                borderRadius: 12,
+                color: "var(--text-1)",
                 cursor:
                   !selectedFilter || !template.trim() || selectedCount === 0
                     ? "not-allowed"
@@ -783,7 +790,7 @@ export default function WhatsAppPage() {
                       style={{
                         background: "var(--bg-2)",
                         border: "1px solid var(--border)",
-                        borderRadius: 6,
+                        borderRadius: 12,
                         padding: 10,
                       }}
                     >
@@ -823,10 +830,11 @@ export default function WhatsAppPage() {
             style={{
               background: "var(--bg-1)",
               border: "1px solid var(--border)",
-              borderRadius: 8,
+              borderRadius: 16,
               padding: 20,
               display: "flex",
               flexDirection: "column",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
             }}
           >
             {/* Tab header */}
@@ -838,15 +846,18 @@ export default function WhatsAppPage() {
                   style={{
                     padding: "6px 14px",
                     background:
-                      activeTab === tab ? "var(--blue)" : "var(--bg-2)",
+                      activeTab === tab
+                        ? "linear-gradient(to right, #3b82f6, #1d4ed8)"
+                        : "var(--bg-2)",
                     border: "1px solid var(--border)",
                     borderRadius:
-                      tab === "patologistas" ? "4px 0 0 4px" : "0 4px 4px 0",
+                      tab === "patologistas" ? "8px 0 0 8px" : "0 8px 8px 0",
                     color: activeTab === tab ? "#fff" : "var(--text-2)",
                     fontSize: 12,
                     fontWeight: activeTab === tab ? 600 : 400,
                     cursor: "pointer",
-                    transition: "all 0.15s",
+                    transition: "all 0.2s",
+                    boxShadow: activeTab === tab ? "0 2px 8px rgba(59,130,246,0.25)" : "none",
                   }}
                 >
                   {tab === "patologistas" ? "3. Patologistas" : "Clínicas"}
@@ -889,10 +900,11 @@ export default function WhatsAppPage() {
                   padding: "5px 10px",
                   background: "var(--bg-2)",
                   border: "1px solid var(--border)",
-                  borderRadius: 4,
+                  borderRadius: 8,
                   color: "var(--text-1)",
                   fontSize: 11,
                   cursor: "pointer",
+                  transition: "all 0.15s",
                 }}
               >
                 Selecionar todos com telefone
@@ -905,10 +917,11 @@ export default function WhatsAppPage() {
                   padding: "5px 10px",
                   background: "var(--bg-2)",
                   border: "1px solid var(--border)",
-                  borderRadius: 4,
+                  borderRadius: 8,
                   color: "var(--text-3)",
                   fontSize: 11,
                   cursor: "pointer",
+                  transition: "all 0.15s",
                 }}
               >
                 Desmarcar todos
@@ -963,10 +976,12 @@ export default function WhatsAppPage() {
                           gap: 8,
                           padding: "8px 10px",
                           background: isSelected
-                            ? "rgba(99,102,241,0.08)"
+                            ? "rgba(59,130,246,0.06)"
                             : "var(--bg-2)",
                           border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
-                          borderRadius: 6,
+                          borderRadius: 12,
+                          transition: "all 0.2s",
+                          boxShadow: isSelected ? "0 0 0 2px rgba(59,130,246,0.1)" : "none",
                         }}
                       >
                         <input
@@ -1029,7 +1044,7 @@ export default function WhatsAppPage() {
                                 flex: 1,
                                 background: "var(--bg-0)",
                                 border: "1px solid var(--border)",
-                                borderRadius: 4,
+                                borderRadius: 8,
                                 color: "var(--text-1)",
                                 padding: "2px 6px",
                                 fontSize: 11,
@@ -1100,10 +1115,12 @@ export default function WhatsAppPage() {
                           gap: 8,
                           padding: "8px 10px",
                           background: isSelected
-                            ? "rgba(99,102,241,0.08)"
+                            ? "rgba(59,130,246,0.06)"
                             : "var(--bg-2)",
                           border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
-                          borderRadius: 6,
+                          borderRadius: 12,
+                          transition: "all 0.2s",
+                          boxShadow: isSelected ? "0 0 0 2px rgba(59,130,246,0.1)" : "none",
                         }}
                       >
                         <input
@@ -1169,7 +1186,7 @@ export default function WhatsAppPage() {
                                 flex: 1,
                                 background: "var(--bg-0)",
                                 border: "1px solid var(--border)",
-                                borderRadius: 4,
+                                borderRadius: 8,
                                 color: "var(--text-1)",
                                 padding: "2px 6px",
                                 fontSize: 11,
@@ -1199,8 +1216,9 @@ export default function WhatsAppPage() {
             marginTop: 24,
             background: "var(--bg-1)",
             border: "1px solid var(--border)",
-            borderRadius: 8,
+            borderRadius: 16,
             padding: 20,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
           }}
         >
           <div
@@ -1216,14 +1234,19 @@ export default function WhatsAppPage() {
               disabled={!canSend || sending}
               style={{
                 padding: "10px 28px",
-                background: canSend && !sending ? "var(--blue)" : "var(--bg-2)",
+                background: canSend && !sending
+                  ? "linear-gradient(to right, #3b82f6, #1d4ed8)"
+                  : "var(--bg-3)",
                 border: "none",
-                borderRadius: 6,
+                borderRadius: 12,
                 color: canSend && !sending ? "#fff" : "var(--text-3)",
                 fontWeight: 600,
                 fontSize: 14,
                 cursor: canSend && !sending ? "pointer" : "not-allowed",
-                transition: "all 0.15s",
+                transition: "all 0.2s",
+                boxShadow: canSend && !sending
+                  ? "0 4px 14px rgba(59,130,246,0.3)"
+                  : "none",
               }}
             >
               {sending ? "⏳ Enviando..." : "📤 Enviar Mensagens"}
@@ -1267,15 +1290,15 @@ export default function WhatsAppPage() {
               <div
                 style={{
                   height: 6,
-                  background: "var(--bg-2)",
-                  borderRadius: 3,
+                  background: "var(--bg-3)",
+                  borderRadius: 6,
                   overflow: "hidden",
                 }}
               >
                 <div
                   style={{
                     height: "100%",
-                    background: "var(--blue)",
+                    background: "linear-gradient(to right, #3b82f6, #1d4ed8)",
                     width: `${sendProgress}%`,
                     transition: "width 0.3s",
                   }}
@@ -1308,8 +1331,8 @@ export default function WhatsAppPage() {
                       background: r.success
                         ? "rgba(34,197,94,0.08)"
                         : "rgba(239,68,68,0.08)",
-                      border: `1px solid ${r.success ? "var(--green)" : "var(--red)"}`,
-                      borderRadius: 6,
+                      border: `1px solid ${r.success ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)"}`,
+                      borderRadius: 10,
                       fontSize: 12,
                     }}
                   >
