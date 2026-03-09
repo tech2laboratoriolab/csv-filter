@@ -562,6 +562,46 @@ export async function setAnnotation(rowId: number, colId: string, value: string)
   }
 }
 
+// --- IndexedDB: Pathologists seed ---
+const SEED_PATHOLOGISTS_KEY = 'csv-filter-pathologists-seeded';
+
+async function seedDefaultPathologists(idb: IDBPDatabase): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (localStorage.getItem(SEED_PATHOLOGISTS_KEY)) return;
+  try {
+    const res = await fetch('/default-pathologists.json');
+    if (!res.ok) return;
+    const defaults: Pathologist[] = await res.json();
+    if (!defaults.length) { localStorage.setItem(SEED_PATHOLOGISTS_KEY, '1'); return; }
+    const tx = idb.transaction('pathologists', 'readwrite');
+    await Promise.all(defaults.map(p => tx.store.put(p)));
+    await tx.done;
+    localStorage.setItem(SEED_PATHOLOGISTS_KEY, '1');
+  } catch {
+    // silently ignore
+  }
+}
+
+// --- IndexedDB: Clinics seed ---
+const SEED_CLINICS_KEY = 'csv-filter-clinics-seeded';
+
+async function seedDefaultClinics(idb: IDBPDatabase): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (localStorage.getItem(SEED_CLINICS_KEY)) return;
+  try {
+    const res = await fetch('/default-clinics.json');
+    if (!res.ok) return;
+    const defaults: Clinic[] = await res.json();
+    if (!defaults.length) { localStorage.setItem(SEED_CLINICS_KEY, '1'); return; }
+    const tx = idb.transaction('clinics', 'readwrite');
+    await Promise.all(defaults.map(c => tx.store.put(c)));
+    await tx.done;
+    localStorage.setItem(SEED_CLINICS_KEY, '1');
+  } catch {
+    // silently ignore
+  }
+}
+
 // --- Pathologists ---
 export async function getDistinctPatologists(): Promise<string[]> {
   const db = await getDb();
@@ -584,8 +624,8 @@ export interface Pathologist {
 export async function getSavedPathologists(): Promise<Pathologist[]> {
   const idb = await getIdb();
   if (!idb) return [];
-  const pats = await idb.getAll('pathologists');
-  return pats;
+  await seedDefaultPathologists(idb);
+  return idb.getAll('pathologists');
 }
 
 export async function savePathologist(nome: string, telefone: string): Promise<void> {
@@ -678,6 +718,7 @@ export async function getDistinctClinics(): Promise<string[]> {
 export async function getSavedClinics(): Promise<Clinic[]> {
   const idb = await getIdb();
   if (!idb) return [];
+  await seedDefaultClinics(idb);
   return idb.getAll('clinics');
 }
 
