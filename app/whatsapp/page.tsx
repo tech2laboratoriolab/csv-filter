@@ -35,11 +35,25 @@ interface Preview {
   message: string;
 }
 
-const DEFAULT_TEMPLATE =
+const DEFAULT_PAT_TEMPLATE =
   "Olá Dr(a) {nome}.\n\nSegue abaixo os casos do dia e de amanhã. Caso tenha necessidade de novas lâminas/reclivagem/cortes, por favor, avise-me. Ótimo dia!\n\nExame(s) pendente(s) em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
 
-const VARIABLES = [
+const DEFAULT_CLINIC_TEMPLATE =
+  "Prezado Parceiro {nome}.\n\nViemos informar que os Laudos do(a)s Pacientes estão disponíveis abaixo:\n\nLaudos disponíveis em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
+
+const VARIABLES_PAT = [
   { key: "{nome}", desc: "Nome do patologista" },
+  { key: "{total}", desc: "Total de registros no filtro" },
+  { key: "{data_hoje}", desc: "Data atual (DD/MM/YYYY)" },
+  { key: "{resumo}", desc: "Lista de eventos e contagens" },
+  {
+    key: "{linhas}",
+    desc: "Lista detalhada das linhas com colunas selecionadas",
+  },
+];
+
+const VARIABLES_CLINIC = [
+  { key: "{nome}", desc: "Nome da clínica" },
   { key: "{total}", desc: "Total de registros no filtro" },
   { key: "{data_hoje}", desc: "Data atual (DD/MM/YYYY)" },
   { key: "{resumo}", desc: "Lista de eventos e contagens" },
@@ -101,7 +115,8 @@ export default function WhatsAppPage() {
   const [selectedFilter, setSelectedFilter] = useState<SavedFilter | null>(
     null,
   );
-  const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
+  const [templatePat, setTemplatePat] = useState(DEFAULT_PAT_TEMPLATE);
+  const [templateClinic, setTemplateClinic] = useState(DEFAULT_CLINIC_TEMPLATE);
   const [pathologists, setPathologists] = useState<Pathologist[]>([]);
   const [selectedPatIds, setSelectedPatIds] = useState<Set<string>>(new Set());
   const [phoneEdits, setPhoneEdits] = useState<Record<string, string>>({});
@@ -113,13 +128,24 @@ export default function WhatsAppPage() {
   const [sendResults, setSendResults] = useState<SendResult[]>([]);
   const [loadingPats, setLoadingPats] = useState(false);
   const [linhasColumns, setLinhasColumns] = useState<string[]>([]);
-  type ActiveTab = 'patologistas' | 'clinicas';
-  const [activeTab, setActiveTab] = useState<ActiveTab>('patologistas');
+  type ActiveTab = "patologistas" | "clinicas";
+  const [activeTab, setActiveTab] = useState<ActiveTab>("patologistas");
   const [clinics, setClinics] = useState<Clinic[]>([]);
-  const [selectedClinicIds, setSelectedClinicIds] = useState<Set<string>>(new Set());
-  const [clinicPhoneEdits, setClinicPhoneEdits] = useState<Record<string, string>>({});
-  const [savingClinicPhone, setSavingClinicPhone] = useState<string | null>(null);
+  const [selectedClinicIds, setSelectedClinicIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [clinicPhoneEdits, setClinicPhoneEdits] = useState<
+    Record<string, string>
+  >({});
+  const [savingClinicPhone, setSavingClinicPhone] = useState<string | null>(
+    null,
+  );
   const [loadingClinics, setLoadingClinics] = useState(false);
+
+  const isClinicActive = activeTab === "clinicas";
+  const template = isClinicActive ? templateClinic : templatePat;
+  const setTemplate = isClinicActive ? setTemplateClinic : setTemplatePat;
+  const VARIABLES = isClinicActive ? VARIABLES_CLINIC : VARIABLES_PAT;
 
   // Load filters and pathologists on mount
   useEffect(() => {
@@ -175,16 +201,23 @@ export default function WhatsAppPage() {
 
   useEffect(() => {
     setLinhasColumns(
-      selectedFilter?.whatsappLinhasColumns ?? selectedFilter?.selectedColumns ?? []
+      selectedFilter?.whatsappLinhasColumns ??
+        selectedFilter?.selectedColumns ??
+        [],
     );
   }, [selectedFilter?.id]);
 
   const saveLinhasColumns = useCallback(
     async (cols: string[]) => {
       if (!selectedFilter) return;
-      const updated: SavedFilter = { ...selectedFilter, whatsappLinhasColumns: cols };
+      const updated: SavedFilter = {
+        ...selectedFilter,
+        whatsappLinhasColumns: cols,
+      };
       await saveFilterToFile(updated);
-      setFilters((prev) => prev.map((f) => (f.id === updated.id ? updated : f)));
+      setFilters((prev) =>
+        prev.map((f) => (f.id === updated.id ? updated : f)),
+      );
       setSelectedFilter(updated);
     },
     [selectedFilter],
@@ -273,14 +306,20 @@ export default function WhatsAppPage() {
     setPreviews([]);
     const dataHoje = formatDateBR(new Date());
 
-    const isClinicTab = activeTab === 'clinicas';
+    const isClinicTab = isClinicActive;
     const lista = isClinicTab
       ? clinics
           .filter((c) => selectedClinicIds.has(c.nome))
-          .map((c) => ({ nome: c.nome, telefone: clinicPhoneEdits[c.nome] ?? c.telefone }))
+          .map((c) => ({
+            nome: c.nome,
+            telefone: clinicPhoneEdits[c.nome] ?? c.telefone,
+          }))
       : pathologists
           .filter((p) => selectedPatIds.has(p.nome))
-          .map((p) => ({ nome: p.nome, telefone: phoneEdits[p.nome] ?? p.telefone }));
+          .map((p) => ({
+            nome: p.nome,
+            telefone: phoneEdits[p.nome] ?? p.telefone,
+          }));
     const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
     const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
 
@@ -291,7 +330,11 @@ export default function WhatsAppPage() {
           ? linhasColumns
           : selectedFilter.selectedColumns;
         const summary = await getSummary(selectedFilter.conditions, item.nome);
-        const rowData = await getRows(selectedFilter.conditions, cols, item.nome);
+        const rowData = await getRows(
+          selectedFilter.conditions,
+          cols,
+          item.nome,
+        );
 
         const resumo = buildResumoPreview(summary.eventos ?? []);
         const linhas = buildLinhasPreview(
@@ -324,7 +367,7 @@ export default function WhatsAppPage() {
   };
 
   const handleSend = async () => {
-    const isClinicTab = activeTab === 'clinicas';
+    const isClinicTab = isClinicActive;
     const activeSelectedIds = isClinicTab ? selectedClinicIds : selectedPatIds;
     if (!selectedFilter || !template.trim() || activeSelectedIds.size === 0)
       return;
@@ -335,10 +378,16 @@ export default function WhatsAppPage() {
     const itemsToSend = isClinicTab
       ? clinics
           .filter((c) => selectedClinicIds.has(c.nome))
-          .map((c) => ({ nome: c.nome, telefone: clinicPhoneEdits[c.nome] ?? c.telefone }))
+          .map((c) => ({
+            nome: c.nome,
+            telefone: clinicPhoneEdits[c.nome] ?? c.telefone,
+          }))
       : pathologists
           .filter((p) => selectedPatIds.has(p.nome))
-          .map((p) => ({ nome: p.nome, telefone: phoneEdits[p.nome] ?? p.telefone }));
+          .map((p) => ({
+            nome: p.nome,
+            telefone: phoneEdits[p.nome] ?? p.telefone,
+          }));
     const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
     const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
 
@@ -388,9 +437,11 @@ export default function WhatsAppPage() {
     setSending(false);
   };
 
-  const activeList = activeTab === 'clinicas' ? clinics : pathologists;
-  const activeSelectedIds = activeTab === 'clinicas' ? selectedClinicIds : selectedPatIds;
-  const activePhoneEdits = activeTab === 'clinicas' ? clinicPhoneEdits : phoneEdits;
+  const activeList = activeTab === "clinicas" ? clinics : pathologists;
+  const activeSelectedIds =
+    activeTab === "clinicas" ? selectedClinicIds : selectedPatIds;
+  const activePhoneEdits =
+    activeTab === "clinicas" ? clinicPhoneEdits : phoneEdits;
 
   const withPhone = activeList.filter((p) =>
     (activePhoneEdits[p.nome] || p.telefone).trim(),
@@ -403,7 +454,8 @@ export default function WhatsAppPage() {
     selectedCount > 0 &&
     activeList.some(
       (p) =>
-        activeSelectedIds.has(p.nome) && (activePhoneEdits[p.nome] || p.telefone).trim(),
+        activeSelectedIds.has(p.nome) &&
+        (activePhoneEdits[p.nome] || p.telefone).trim(),
     );
 
   return (
@@ -440,7 +492,7 @@ export default function WhatsAppPage() {
           📱 WhatsApp Automação
         </span>
         <span style={{ color: "var(--text-3)", fontSize: 12 }}>
-          Envie mensagens personalizadas para patologistas
+          Envie mensagens personalizadas para patologistas e clínicas
         </span>
       </div>
 
@@ -618,7 +670,7 @@ export default function WhatsAppPage() {
             }}
           >
             <div style={{ fontWeight: 600, marginBottom: 16, fontSize: 14 }}>
-              2. Mensagem
+              2. Mensagem — {isClinicActive ? "Clínicas" : "Patologistas"}
             </div>
 
             <div style={{ marginBottom: 10 }}>
@@ -785,9 +837,11 @@ export default function WhatsAppPage() {
                   onClick={() => setActiveTab(tab)}
                   style={{
                     padding: "6px 14px",
-                    background: activeTab === tab ? "var(--blue)" : "var(--bg-2)",
+                    background:
+                      activeTab === tab ? "var(--blue)" : "var(--bg-2)",
                     border: "1px solid var(--border)",
-                    borderRadius: tab === "patologistas" ? "4px 0 0 4px" : "0 4px 4px 0",
+                    borderRadius:
+                      tab === "patologistas" ? "4px 0 0 4px" : "0 4px 4px 0",
                     color: activeTab === tab ? "#fff" : "var(--text-2)",
                     fontSize: 12,
                     fontWeight: activeTab === tab ? 600 : 400,
@@ -826,7 +880,11 @@ export default function WhatsAppPage() {
 
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <button
-                onClick={activeTab === "clinicas" ? selectAllClinicsWithPhone : selectAllWithPhone}
+                onClick={
+                  activeTab === "clinicas"
+                    ? selectAllClinicsWithPhone
+                    : selectAllWithPhone
+                }
                 style={{
                   padding: "5px 10px",
                   background: "var(--bg-2)",
@@ -840,7 +898,9 @@ export default function WhatsAppPage() {
                 Selecionar todos com telefone
               </button>
               <button
-                onClick={activeTab === "clinicas" ? deselectAllClinics : deselectAll}
+                onClick={
+                  activeTab === "clinicas" ? deselectAllClinics : deselectAll
+                }
                 style={{
                   padding: "5px 10px",
                   background: "var(--bg-2)",
@@ -856,8 +916,8 @@ export default function WhatsAppPage() {
             </div>
 
             {/* Patologistas list */}
-            {activeTab === "patologistas" && (
-              loadingPats ? (
+            {activeTab === "patologistas" &&
+              (loadingPats ? (
                 <div
                   style={{
                     color: "var(--text-3)",
@@ -924,7 +984,9 @@ export default function WhatsAppPage() {
                             width: 8,
                             height: 8,
                             borderRadius: "50%",
-                            background: hasPhone ? "var(--green)" : "var(--red)",
+                            background: hasPhone
+                              ? "var(--green)"
+                              : "var(--red)",
                             flexShrink: 0,
                           }}
                         />
@@ -987,12 +1049,11 @@ export default function WhatsAppPage() {
                     );
                   })}
                 </div>
-              )
-            )}
+              ))}
 
             {/* Clínicas list */}
-            {activeTab === "clinicas" && (
-              loadingClinics ? (
+            {activeTab === "clinicas" &&
+              (loadingClinics ? (
                 <div
                   style={{
                     color: "var(--text-3)",
@@ -1026,7 +1087,8 @@ export default function WhatsAppPage() {
                   }}
                 >
                   {clinics.map((clinic) => {
-                    const tel = clinicPhoneEdits[clinic.nome] ?? clinic.telefone;
+                    const tel =
+                      clinicPhoneEdits[clinic.nome] ?? clinic.telefone;
                     const hasPhone = tel.trim().length > 0;
                     const isSelected = selectedClinicIds.has(clinic.nome);
                     return (
@@ -1059,7 +1121,9 @@ export default function WhatsAppPage() {
                             width: 8,
                             height: 8,
                             borderRadius: "50%",
-                            background: hasPhone ? "var(--green)" : "var(--red)",
+                            background: hasPhone
+                              ? "var(--green)"
+                              : "var(--red)",
                             flexShrink: 0,
                           }}
                         />
@@ -1087,7 +1151,9 @@ export default function WhatsAppPage() {
                             <input
                               type="text"
                               placeholder="5511999999999"
-                              value={clinicPhoneEdits[clinic.nome] ?? clinic.telefone}
+                              value={
+                                clinicPhoneEdits[clinic.nome] ?? clinic.telefone
+                              }
                               onChange={(e) =>
                                 setClinicPhoneEdits((prev) => ({
                                   ...prev,
@@ -1096,7 +1162,8 @@ export default function WhatsAppPage() {
                               }
                               onBlur={() => saveClinicPhone(clinic.nome)}
                               onKeyDown={(e) =>
-                                e.key === "Enter" && saveClinicPhone(clinic.nome)
+                                e.key === "Enter" &&
+                                saveClinicPhone(clinic.nome)
                               }
                               style={{
                                 flex: 1,
@@ -1122,8 +1189,7 @@ export default function WhatsAppPage() {
                     );
                   })}
                 </div>
-              )
-            )}
+              ))}
           </div>
         </div>
 
@@ -1175,18 +1241,21 @@ export default function WhatsAppPage() {
             )}
             {selectedFilter && template.trim() && selectedCount === 0 && (
               <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-                ← Selecione {activeTab === "clinicas" ? "clínicas" : "patologistas"}
+                ← Selecione{" "}
+                {activeTab === "clinicas" ? "clínicas" : "patologistas"}
               </span>
             )}
             {selectedFilter && template.trim() && selectedCount > 0 && (
               <span style={{ fontSize: 12, color: "var(--text-2)" }}>
                 Pronto para enviar para{" "}
                 <strong>
-                  {activeList.filter(
-                    (p) =>
-                      activeSelectedIds.has(p.nome) &&
-                      (activePhoneEdits[p.nome] || p.telefone).trim(),
-                  ).length}
+                  {
+                    activeList.filter(
+                      (p) =>
+                        activeSelectedIds.has(p.nome) &&
+                        (activePhoneEdits[p.nome] || p.telefone).trim(),
+                    ).length
+                  }
                 </strong>{" "}
                 {activeTab === "clinicas" ? "clínica(s)" : "patologista(s)"}
               </span>
