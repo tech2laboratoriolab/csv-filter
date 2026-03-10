@@ -244,7 +244,7 @@ export default function Home() {
               setMinDate(stats.minDate ? String(stats.minDate) : "");
               setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
 
-              const colsToShow = [...allowedCols];
+              const colsToShow = Array.from(allowedCols);
               setSelectedCols(colsToShow);
               setConditions([]);
               setPage(1);
