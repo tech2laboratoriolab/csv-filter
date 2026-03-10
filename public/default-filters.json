@@ -1,5 +1,139 @@
 [
   {
+    "id": "1773168196310",
+    "name": "ANÁLISES CLÍNICAS",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "nom_evento",
+      "nom_local_origem",
+      "nom_patologista",
+      "dta_solicitacao",
+      "dta_prevista"
+    ],
+    "conditions": [
+      {
+        "column": "nom_exame",
+        "operator": "equals",
+        "value": "MEDICINA LABORATORIAL"
+      },
+      {
+        "column": "dta_finalizacao",
+        "operator": "is_null",
+        "value": ""
+      },
+      {
+        "column": "cod_medico",
+        "operator": "not_equals",
+        "value": "1015"
+      },
+      {
+        "column": "dta_prevista",
+        "operator": "is_today_or_tomorrow",
+        "value": ""
+      }
+    ],
+    "createdAt": "2026-03-10T18:43:16.310Z",
+    "updatedAt": "2026-03-10T18:46:33.508Z",
+    "colorRules": [],
+    "formulaColumns": [],
+    "annotationColumns": []
+  },
+  {
+    "id": "1773162979107",
+    "name": "CAP (Biologia Molecular)",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "nom_evento",
+      "nom_local_origem",
+      "nom_patologista",
+      "dta_solicitacao",
+      "dta_prevista"
+    ],
+    "conditions": [
+      {
+        "column": "cod_exame",
+        "operator": "not_in",
+        "value": "1,2,4,13,14,20,23,24,32,34,37,38,39,40,49,50"
+      },
+      {
+        "column": "dta_finalizacao",
+        "operator": "is_null",
+        "value": ""
+      },
+      {
+        "column": "cod_medico",
+        "operator": "not_equals",
+        "value": "1015"
+      },
+      {
+        "column": "dta_prevista",
+        "operator": "is_today_or_tomorrow",
+        "value": ""
+      },
+      {
+        "column": "nom_evento",
+        "operator": "equals",
+        "value": "Pat. Molecular"
+      }
+    ],
+    "createdAt": "2026-03-10T17:16:19.107Z",
+    "updatedAt": "2026-03-10T18:23:27.994Z",
+    "colorRules": [
+      {
+        "id": "17731630034800.5860937796585116",
+        "name": "Regra 1",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Pat. Molecular",
+        "backgroundColor": "#3fb950",
+        "priority": 0,
+        "textColor": "#000000",
+        "targetColumn": "nom_evento"
+      },
+      {
+        "id": "17731630627770.0847714681539341",
+        "name": "Regra 2",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Amostra Pendente de Envio ao Destino",
+        "backgroundColor": "#ff301a",
+        "priority": 1,
+        "targetColumn": "nom_evento",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17731631251610.2433662703919688",
+        "name": "Regra 3",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Aguarda autorização do convênio",
+        "backgroundColor": "#ff8800",
+        "priority": 2,
+        "targetColumn": "nom_evento",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17731631848810.6899498141852572",
+        "name": "Regra 4",
+        "targetType": "cell",
+        "conditionColumn": "nom_convenio",
+        "operator": "equals",
+        "value": "CASSI",
+        "backgroundColor": "#ff2929",
+        "priority": 3,
+        "targetColumn": "nom_convenio",
+        "textColor": "#000000"
+      }
+    ],
+    "formulaColumns": [],
+    "annotationColumns": []
+  },
+  {
     "id": "imported_1773066497859_0",
     "name": "CRITICO",
     "selectedColumns": [
