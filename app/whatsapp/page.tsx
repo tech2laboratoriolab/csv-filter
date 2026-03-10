@@ -18,6 +18,10 @@ import {
   saveClinic,
   getClinicaSummary,
   getClinicaRows,
+  getSavedBioMolecularPhone,
+  saveBioMolecularPhone,
+  getBioMolecularSummary,
+  getBioMolecularRows,
 } from "@/lib/clientDb";
 
 interface SendResult {
@@ -41,6 +45,9 @@ const DEFAULT_PAT_TEMPLATE =
 const DEFAULT_CLINIC_TEMPLATE =
   "Prezado Parceiro {nome}.\n\nViemos informar que os Laudos do(a)s Pacientes estão disponíveis abaixo:\n\nLaudos disponíveis em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
 
+const DEFAULT_BIOMOL_TEMPLATE =
+  "Olá!\n\nSegue abaixo os casos de Biologia Molecular do dia. Ótimo dia!\n\nRegistros em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
+
 const VARIABLES_PAT = [
   { key: "{nome}", desc: "Nome do patologista" },
   { key: "{total}", desc: "Total de registros no filtro" },
@@ -54,6 +61,16 @@ const VARIABLES_PAT = [
 
 const VARIABLES_CLINIC = [
   { key: "{nome}", desc: "Nome da clínica" },
+  { key: "{total}", desc: "Total de registros no filtro" },
+  { key: "{data_hoje}", desc: "Data atual (DD/MM/YYYY)" },
+  { key: "{resumo}", desc: "Lista de eventos e contagens" },
+  {
+    key: "{linhas}",
+    desc: "Lista detalhada das linhas com colunas selecionadas",
+  },
+];
+
+const VARIABLES_BIOMOL = [
   { key: "{total}", desc: "Total de registros no filtro" },
   { key: "{data_hoje}", desc: "Data atual (DD/MM/YYYY)" },
   { key: "{resumo}", desc: "Lista de eventos e contagens" },
@@ -117,6 +134,7 @@ export default function WhatsAppPage() {
   );
   const [templatePat, setTemplatePat] = useState(DEFAULT_PAT_TEMPLATE);
   const [templateClinic, setTemplateClinic] = useState(DEFAULT_CLINIC_TEMPLATE);
+  const [templateBioMol, setTemplateBioMol] = useState(DEFAULT_BIOMOL_TEMPLATE);
   const [pathologists, setPathologists] = useState<Pathologist[]>([]);
   const [selectedPatIds, setSelectedPatIds] = useState<Set<string>>(new Set());
   const [phoneEdits, setPhoneEdits] = useState<Record<string, string>>({});
@@ -128,7 +146,7 @@ export default function WhatsAppPage() {
   const [sendResults, setSendResults] = useState<SendResult[]>([]);
   const [loadingPats, setLoadingPats] = useState(false);
   const [linhasColumns, setLinhasColumns] = useState<string[]>([]);
-  type ActiveTab = "patologistas" | "clinicas";
+  type ActiveTab = "patologistas" | "clinicas" | "bio-molecular";
   const [activeTab, setActiveTab] = useState<ActiveTab>("patologistas");
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [selectedClinicIds, setSelectedClinicIds] = useState<Set<string>>(
@@ -141,11 +159,27 @@ export default function WhatsAppPage() {
     null,
   );
   const [loadingClinics, setLoadingClinics] = useState(false);
+  const [bioMolPhoneEdit, setBioMolPhoneEdit] = useState("");
+  const [savingBioMolPhone, setSavingBioMolPhone] = useState(false);
+  const [bioMolSelected, setBioMolSelected] = useState(false);
 
   const isClinicActive = activeTab === "clinicas";
-  const template = isClinicActive ? templateClinic : templatePat;
-  const setTemplate = isClinicActive ? setTemplateClinic : setTemplatePat;
-  const VARIABLES = isClinicActive ? VARIABLES_CLINIC : VARIABLES_PAT;
+  const isBioMolActive = activeTab === "bio-molecular";
+  const template = isBioMolActive
+    ? templateBioMol
+    : isClinicActive
+      ? templateClinic
+      : templatePat;
+  const setTemplate = isBioMolActive
+    ? setTemplateBioMol
+    : isClinicActive
+      ? setTemplateClinic
+      : setTemplatePat;
+  const VARIABLES = isBioMolActive
+    ? VARIABLES_BIOMOL
+    : isClinicActive
+      ? VARIABLES_CLINIC
+      : VARIABLES_PAT;
 
   // Load filters and pathologists on mount
   useEffect(() => {
@@ -197,6 +231,10 @@ export default function WhatsAppPage() {
       })
       .catch(() => {})
       .finally(() => setLoadingClinics(false));
+
+    getSavedBioMolecularPhone()
+      .then((tel) => setBioMolPhoneEdit(tel))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -282,6 +320,14 @@ export default function WhatsAppPage() {
     [clinics, clinicPhoneEdits],
   );
 
+  const saveBioMolPhone = useCallback(async () => {
+    setSavingBioMolPhone(true);
+    try {
+      await saveBioMolecularPhone(bioMolPhoneEdit);
+    } catch {}
+    setSavingBioMolPhone(false);
+  }, [bioMolPhoneEdit]);
+
   const toggleClinicSelect = (nome: string) => {
     setSelectedClinicIds((prev) => {
       const next = new Set(prev);
@@ -306,118 +352,185 @@ export default function WhatsAppPage() {
     setPreviews([]);
     const dataHoje = formatDateBR(new Date());
 
-    const isClinicTab = isClinicActive;
-    const lista = isClinicTab
-      ? clinics
-          .filter((c) => selectedClinicIds.has(c.nome))
-          .map((c) => ({
-            nome: c.nome,
-            telefone: clinicPhoneEdits[c.nome] ?? c.telefone,
-          }))
-      : pathologists
-          .filter((p) => selectedPatIds.has(p.nome))
-          .map((p) => ({
-            nome: p.nome,
-            telefone: phoneEdits[p.nome] ?? p.telefone,
-          }));
-    const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
-    const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
-
     const newPreviews: Preview[] = [];
-    for (const item of lista) {
+
+    if (isBioMolActive) {
+      if (!bioMolSelected) {
+        setLoadingPreview(false);
+        return;
+      }
       try {
         const cols = linhasColumns.length
           ? linhasColumns
           : selectedFilter.selectedColumns;
+        const summary = await getBioMolecularSummary(selectedFilter.conditions);
+        const rowData = await getBioMolecularRows(selectedFilter.conditions, cols);
+        const resumo = buildResumoPreview(summary.eventos ?? []);
+        const linhas = buildLinhasPreview(rowData.columns ?? [], rowData.rows ?? []);
+        const msg = template
+          .replace(/\{total\}/g, String(summary.total ?? 0))
+          .replace(/\{data_hoje\}/g, dataHoje)
+          .replace(/\{resumo\}/g, resumo)
+          .replace(/\{linhas\}/g, linhas);
+        newPreviews.push({
+          nome: "Biologia Molecular",
+          telefone: bioMolPhoneEdit,
+          total: summary.total ?? 0,
+          message: msg,
+        });
+      } catch {
+        newPreviews.push({
+          nome: "Biologia Molecular",
+          telefone: bioMolPhoneEdit,
+          total: 0,
+          message: "(Erro ao carregar dados)",
+        });
+      }
+    } else {
+      const isClinicTab = isClinicActive;
+      const lista = isClinicTab
+        ? clinics
+            .filter((c) => selectedClinicIds.has(c.nome))
+            .map((c) => ({
+              nome: c.nome,
+              telefone: clinicPhoneEdits[c.nome] ?? c.telefone,
+            }))
+        : pathologists
+            .filter((p) => selectedPatIds.has(p.nome))
+            .map((p) => ({
+              nome: p.nome,
+              telefone: phoneEdits[p.nome] ?? p.telefone,
+            }));
+      const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
+      const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
+
+      for (const item of lista) {
+        try {
+          const cols = linhasColumns.length
+            ? linhasColumns
+            : selectedFilter.selectedColumns;
+          const summary = await getSummary(selectedFilter.conditions, item.nome);
+          const rowData = await getRows(
+            selectedFilter.conditions,
+            cols,
+            item.nome,
+          );
+
+          if (!summary.total) continue;
+
+          const resumo = buildResumoPreview(summary.eventos ?? []);
+          const linhas = buildLinhasPreview(
+            rowData.columns ?? [],
+            rowData.rows ?? [],
+          );
+          const msg = template
+            .replace(/\{nome\}/g, formatNome(item.nome))
+            .replace(/\{total\}/g, String(summary.total ?? 0))
+            .replace(/\{data_hoje\}/g, dataHoje)
+            .replace(/\{resumo\}/g, resumo)
+            .replace(/\{linhas\}/g, linhas);
+          newPreviews.push({
+            nome: item.nome,
+            telefone: item.telefone,
+            total: summary.total ?? 0,
+            message: msg,
+          });
+        } catch {
+          newPreviews.push({
+            nome: item.nome,
+            telefone: item.telefone,
+            total: 0,
+            message: "(Erro ao carregar dados)",
+          });
+        }
+      }
+    }
+
+    setPreviews(newPreviews);
+    setLoadingPreview(false);
+  };
+
+  const handleSend = async () => {
+    if (!selectedFilter || !template.trim()) return;
+    setSending(true);
+    setSendProgress(0);
+    setSendResults([]);
+
+    const dataHoje = formatDateBR(new Date());
+    const messagesToSend = [];
+
+    if (isBioMolActive) {
+      if (!bioMolSelected || !bioMolPhoneEdit.trim()) {
+        setSending(false);
+        return;
+      }
+      const cols = linhasColumns.length
+        ? linhasColumns
+        : selectedFilter.selectedColumns;
+      const summary = await getBioMolecularSummary(selectedFilter.conditions);
+      const rowData = await getBioMolecularRows(selectedFilter.conditions, cols);
+      const resumo = buildResumoPreview(summary.eventos ?? []);
+      const linhas = buildLinhasPreview(rowData.columns ?? [], rowData.rows ?? []);
+      const finalMessage = template
+        .replace(/\{total\}/g, String(summary.total ?? 0))
+        .replace(/\{data_hoje\}/g, dataHoje)
+        .replace(/\{resumo\}/g, resumo)
+        .replace(/\{linhas\}/g, linhas);
+      messagesToSend.push({
+        nome: "Biologia Molecular",
+        telefone: bioMolPhoneEdit,
+        message: finalMessage,
+      });
+    } else {
+      const isClinicTab = isClinicActive;
+      const localActiveIds = isClinicTab ? selectedClinicIds : selectedPatIds;
+      if (localActiveIds.size === 0) {
+        setSending(false);
+        return;
+      }
+      const itemsToSend = isClinicTab
+        ? clinics
+            .filter((c) => selectedClinicIds.has(c.nome))
+            .map((c) => ({
+              nome: c.nome,
+              telefone: clinicPhoneEdits[c.nome] ?? c.telefone,
+            }))
+        : pathologists
+            .filter((p) => selectedPatIds.has(p.nome))
+            .map((p) => ({
+              nome: p.nome,
+              telefone: phoneEdits[p.nome] ?? p.telefone,
+            }));
+      const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
+      const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
+
+      for (const item of itemsToSend) {
+        const cols = linhasColumns.length
+          ? linhasColumns
+          : selectedFilter.selectedColumns;
         const summary = await getSummary(selectedFilter.conditions, item.nome);
-        const rowData = await getRows(
-          selectedFilter.conditions,
-          cols,
-          item.nome,
-        );
+        const rowData = await getRows(selectedFilter.conditions, cols, item.nome);
+
+        if (!summary.total) continue;
 
         const resumo = buildResumoPreview(summary.eventos ?? []);
         const linhas = buildLinhasPreview(
           rowData.columns ?? [],
           rowData.rows ?? [],
         );
-        const msg = template
+        const finalMessage = template
           .replace(/\{nome\}/g, formatNome(item.nome))
           .replace(/\{total\}/g, String(summary.total ?? 0))
           .replace(/\{data_hoje\}/g, dataHoje)
           .replace(/\{resumo\}/g, resumo)
           .replace(/\{linhas\}/g, linhas);
-        newPreviews.push({
+
+        messagesToSend.push({
           nome: item.nome,
           telefone: item.telefone,
-          total: summary.total ?? 0,
-          message: msg,
-        });
-      } catch {
-        newPreviews.push({
-          nome: item.nome,
-          telefone: item.telefone,
-          total: 0,
-          message: "(Erro ao carregar dados)",
+          message: finalMessage,
         });
       }
-    }
-    setPreviews(newPreviews);
-    setLoadingPreview(false);
-  };
-
-  const handleSend = async () => {
-    const isClinicTab = isClinicActive;
-    const activeSelectedIds = isClinicTab ? selectedClinicIds : selectedPatIds;
-    if (!selectedFilter || !template.trim() || activeSelectedIds.size === 0)
-      return;
-    setSending(true);
-    setSendProgress(0);
-    setSendResults([]);
-
-    const itemsToSend = isClinicTab
-      ? clinics
-          .filter((c) => selectedClinicIds.has(c.nome))
-          .map((c) => ({
-            nome: c.nome,
-            telefone: clinicPhoneEdits[c.nome] ?? c.telefone,
-          }))
-      : pathologists
-          .filter((p) => selectedPatIds.has(p.nome))
-          .map((p) => ({
-            nome: p.nome,
-            telefone: phoneEdits[p.nome] ?? p.telefone,
-          }));
-    const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
-    const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
-
-    // Create payloads with completed messages, so proxy just relays to WAHA
-    const dataHoje = formatDateBR(new Date());
-    const messagesToSend = [];
-    for (const item of itemsToSend) {
-      const cols = linhasColumns.length
-        ? linhasColumns
-        : selectedFilter.selectedColumns;
-      const summary = await getSummary(selectedFilter.conditions, item.nome);
-      const rowData = await getRows(selectedFilter.conditions, cols, item.nome);
-
-      const resumo = buildResumoPreview(summary.eventos ?? []);
-      const linhas = buildLinhasPreview(
-        rowData.columns ?? [],
-        rowData.rows ?? [],
-      );
-      const finalMessage = template
-        .replace(/\{nome\}/g, formatNome(item.nome))
-        .replace(/\{total\}/g, String(summary.total ?? 0))
-        .replace(/\{data_hoje\}/g, dataHoje)
-        .replace(/\{resumo\}/g, resumo)
-        .replace(/\{linhas\}/g, linhas);
-
-      messagesToSend.push({
-        nome: item.nome,
-        telefone: item.telefone,
-        message: finalMessage,
-      });
     }
 
     try {
@@ -437,26 +550,39 @@ export default function WhatsAppPage() {
     setSending(false);
   };
 
-  const activeList = activeTab === "clinicas" ? clinics : pathologists;
-  const activeSelectedIds =
-    activeTab === "clinicas" ? selectedClinicIds : selectedPatIds;
-  const activePhoneEdits =
-    activeTab === "clinicas" ? clinicPhoneEdits : phoneEdits;
+  const activeList = isBioMolActive
+    ? []
+    : activeTab === "clinicas"
+      ? clinics
+      : pathologists;
+  const activeSelectedIds = isBioMolActive
+    ? new Set<string>()
+    : activeTab === "clinicas"
+      ? selectedClinicIds
+      : selectedPatIds;
+  const activePhoneEdits = isBioMolActive
+    ? ({} as Record<string, string>)
+    : activeTab === "clinicas"
+      ? clinicPhoneEdits
+      : phoneEdits;
 
-  const withPhone = activeList.filter((p) =>
-    (activePhoneEdits[p.nome] || p.telefone).trim(),
-  ).length;
-  const withoutPhone = activeList.length - withPhone;
-  const selectedCount = activeSelectedIds.size;
-  const canSend =
-    !!selectedFilter &&
-    template.trim().length > 0 &&
-    selectedCount > 0 &&
-    activeList.some(
-      (p) =>
-        activeSelectedIds.has(p.nome) &&
+  const withPhone = isBioMolActive
+    ? (bioMolPhoneEdit.trim() ? 1 : 0)
+    : activeList.filter((p) =>
         (activePhoneEdits[p.nome] || p.telefone).trim(),
-    );
+      ).length;
+  const withoutPhone = isBioMolActive ? (bioMolPhoneEdit.trim() ? 0 : 1) : activeList.length - withPhone;
+  const selectedCount = isBioMolActive ? (bioMolSelected ? 1 : 0) : activeSelectedIds.size;
+  const canSend = isBioMolActive
+    ? !!selectedFilter && template.trim().length > 0 && bioMolSelected && bioMolPhoneEdit.trim().length > 0
+    : !!selectedFilter &&
+      template.trim().length > 0 &&
+      selectedCount > 0 &&
+      activeList.some(
+        (p) =>
+          activeSelectedIds.has(p.nome) &&
+          (activePhoneEdits[p.nome] || p.telefone).trim(),
+      );
 
   return (
     <div
@@ -516,7 +642,7 @@ export default function WhatsAppPage() {
             }}
           >
             <div style={{ fontWeight: 600, marginBottom: 16, fontSize: 14 }}>
-              1. Selecionar Filtro
+              Selecionar Filtro
             </div>
 
             {filters.length === 0 ? (
@@ -546,7 +672,10 @@ export default function WhatsAppPage() {
                           ? "rgba(59,130,246,0.08)"
                           : "var(--bg-2)",
                       transition: "all 0.2s",
-                      boxShadow: selectedFilter?.id === f.id ? "0 0 0 3px rgba(59,130,246,0.1)" : "none",
+                      boxShadow:
+                        selectedFilter?.id === f.id
+                          ? "0 0 0 3px rgba(59,130,246,0.1)"
+                          : "none",
                     }}
                   >
                     <div style={{ fontWeight: 600, fontSize: 13 }}>
@@ -676,7 +805,7 @@ export default function WhatsAppPage() {
             }}
           >
             <div style={{ fontWeight: 600, marginBottom: 16, fontSize: 14 }}>
-              2. Mensagem — {isClinicActive ? "Clínicas" : "Patologistas"}
+              Mensagem — {isBioMolActive ? "Bio. Molecular" : isClinicActive ? "Clínicas" : "Patologistas"}
             </div>
 
             <div style={{ marginBottom: 10 }}>
@@ -839,7 +968,7 @@ export default function WhatsAppPage() {
           >
             {/* Tab header */}
             <div style={{ display: "flex", gap: 0, marginBottom: 12 }}>
-              {(["patologistas", "clinicas"] as const).map((tab) => (
+              {(["patologistas", "clinicas", "bio-molecular"] as const).map((tab, idx) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -851,16 +980,19 @@ export default function WhatsAppPage() {
                         : "var(--bg-2)",
                     border: "1px solid var(--border)",
                     borderRadius:
-                      tab === "patologistas" ? "8px 0 0 8px" : "0 8px 8px 0",
+                      idx === 0 ? "8px 0 0 8px" : idx === 2 ? "0 8px 8px 0" : "0",
                     color: activeTab === tab ? "#fff" : "var(--text-2)",
                     fontSize: 12,
                     fontWeight: activeTab === tab ? 600 : 400,
                     cursor: "pointer",
                     transition: "all 0.2s",
-                    boxShadow: activeTab === tab ? "0 2px 8px rgba(59,130,246,0.25)" : "none",
+                    boxShadow:
+                      activeTab === tab
+                        ? "0 2px 8px rgba(59,130,246,0.25)"
+                        : "none",
                   }}
                 >
-                  {tab === "patologistas" ? "3. Patologistas" : "Clínicas"}
+                  {tab === "patologistas" ? "Patologistas" : tab === "clinicas" ? "Clínicas" : "Bio. Molecular"}
                 </button>
               ))}
             </div>
@@ -889,6 +1021,7 @@ export default function WhatsAppPage() {
               </span>
             </div>
 
+            {!isBioMolActive && (
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <button
                 onClick={
@@ -927,6 +1060,87 @@ export default function WhatsAppPage() {
                 Desmarcar todos
               </button>
             </div>
+            )}
+
+            {/* Biologia Molecular */}
+            {isBioMolActive && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 10px",
+                  background: bioMolSelected
+                    ? "rgba(59,130,246,0.06)"
+                    : "var(--bg-2)",
+                  border: `1px solid ${bioMolSelected ? "var(--blue)" : "var(--border)"}`,
+                  borderRadius: 12,
+                  transition: "all 0.2s",
+                  boxShadow: bioMolSelected
+                    ? "0 0 0 2px rgba(59,130,246,0.1)"
+                    : "none",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={bioMolSelected}
+                  onChange={() => setBioMolSelected((v) => !v)}
+                  style={{
+                    cursor: "pointer",
+                    accentColor: "var(--blue)",
+                    flexShrink: 0,
+                  }}
+                />
+                <div
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: bioMolPhoneEdit.trim()
+                      ? "var(--green)"
+                      : "var(--red)",
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "var(--text-0)",
+                      marginBottom: 3,
+                    }}
+                  >
+                    Biologia Molecular
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <input
+                      type="text"
+                      placeholder="5511999999999"
+                      value={bioMolPhoneEdit}
+                      onChange={(e) => setBioMolPhoneEdit(e.target.value)}
+                      onBlur={saveBioMolPhone}
+                      onKeyDown={(e) => e.key === "Enter" && saveBioMolPhone()}
+                      style={{
+                        flex: 1,
+                        background: "var(--bg-0)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 8,
+                        color: "var(--text-1)",
+                        padding: "2px 6px",
+                        fontSize: 11,
+                        fontFamily: "monospace",
+                      }}
+                    />
+                    {savingBioMolPhone && (
+                      <span style={{ fontSize: 10, color: "var(--text-3)" }}>
+                        💾
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Patologistas list */}
             {activeTab === "patologistas" &&
@@ -981,7 +1195,9 @@ export default function WhatsAppPage() {
                           border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
                           borderRadius: 12,
                           transition: "all 0.2s",
-                          boxShadow: isSelected ? "0 0 0 2px rgba(59,130,246,0.1)" : "none",
+                          boxShadow: isSelected
+                            ? "0 0 0 2px rgba(59,130,246,0.1)"
+                            : "none",
                         }}
                       >
                         <input
@@ -1120,7 +1336,9 @@ export default function WhatsAppPage() {
                           border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
                           borderRadius: 12,
                           transition: "all 0.2s",
-                          boxShadow: isSelected ? "0 0 0 2px rgba(59,130,246,0.1)" : "none",
+                          boxShadow: isSelected
+                            ? "0 0 0 2px rgba(59,130,246,0.1)"
+                            : "none",
                         }}
                       >
                         <input
@@ -1234,9 +1452,10 @@ export default function WhatsAppPage() {
               disabled={!canSend || sending}
               style={{
                 padding: "10px 28px",
-                background: canSend && !sending
-                  ? "linear-gradient(to right, #3b82f6, #1d4ed8)"
-                  : "var(--bg-3)",
+                background:
+                  canSend && !sending
+                    ? "linear-gradient(to right, #3b82f6, #1d4ed8)"
+                    : "var(--bg-3)",
                 border: "none",
                 borderRadius: 12,
                 color: canSend && !sending ? "#fff" : "var(--text-3)",
@@ -1244,9 +1463,10 @@ export default function WhatsAppPage() {
                 fontSize: 14,
                 cursor: canSend && !sending ? "pointer" : "not-allowed",
                 transition: "all 0.2s",
-                boxShadow: canSend && !sending
-                  ? "0 4px 14px rgba(59,130,246,0.3)"
-                  : "none",
+                boxShadow:
+                  canSend && !sending
+                    ? "0 4px 14px rgba(59,130,246,0.3)"
+                    : "none",
               }}
             >
               {sending ? "⏳ Enviando..." : "📤 Enviar Mensagens"}

@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import Papa from 'papaparse';
-import type { ColorRule, FormulaColumn, AnnotationColumn } from "@/lib/clientDb";
+import Papa from "papaparse";
+import type {
+  ColorRule,
+  FormulaColumn,
+  AnnotationColumn,
+} from "@/lib/clientDb";
 import DataTable from "@/app/components/DataTable";
 import {
   importCSV,
+  importVisualizacaoCSV,
   getTableStats,
   getSavedFilters,
   getDistinctValues,
@@ -15,10 +20,12 @@ import {
   deleteFilterFile,
   getAnnotations,
   setAnnotation,
+  deriveColumnsFromFilters,
   COLUMNS,
+  HEADER_MAP,
   ColumnDef,
   FilterCondition,
-  SavedFilter
+  SavedFilter,
 } from "@/lib/clientDb";
 
 const SELECT_COLUMNS = new Set(["nom_medico"]);
@@ -69,10 +76,16 @@ export default function Home() {
   const [colorRules, setColorRules] = useState<ColorRule[]>([]);
   const [formulaColumns, setFormulaColumns] = useState<FormulaColumn[]>([]);
   const [formulaValues, setFormulaValues] = useState<string[][]>([]);
-  const [annotationColumns, setAnnotationColumns] = useState<AnnotationColumn[]>([]);
-  const [annotationValues, setAnnotationValues] = useState<Record<string, string>>({});
+  const [annotationColumns, setAnnotationColumns] = useState<
+    AnnotationColumn[]
+  >([]);
+  const [annotationValues, setAnnotationValues] = useState<
+    Record<string, string>
+  >({});
   const [dragging, setDragging] = useState(false);
-  const [distinctValues, setDistinctValues] = useState<Record<string, string[]>>({});
+  const [distinctValues, setDistinctValues] = useState<
+    Record<string, string[]>
+  >({});
   const fetchedCols = useRef<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const filterFileRef = useRef<HTMLInputElement>(null);
@@ -91,7 +104,7 @@ export default function Home() {
           setSelectedCols(allCols);
           fetchData(allCols, [], 1);
         }
-        
+
         const filters = await getSavedFilters();
         setSavedFilters(filters);
       } catch (err) {
@@ -108,9 +121,11 @@ export default function Home() {
     );
     for (const col of needed) {
       fetchedCols.current.add(col);
-      getDistinctValues(col).then(values => {
-        if (values) setDistinctValues((prev) => ({ ...prev, [col]: values }));
-      }).catch(() => fetchedCols.current.delete(col));
+      getDistinctValues(col)
+        .then((values) => {
+          if (values) setDistinctValues((prev) => ({ ...prev, [col]: values }));
+        })
+        .catch(() => fetchedCols.current.delete(col));
     }
   }, [conditions]);
 
@@ -135,9 +150,11 @@ export default function Home() {
     }
     const rowIds = rows.map((r) => r._row_id as number);
     const colIds = annotationColumns.map((a) => a.id);
-    getAnnotations(rowIds, colIds).then(annotations => {
-      setAnnotationValues(annotations);
-    }).catch(() => {});
+    getAnnotations(rowIds, colIds)
+      .then((annotations) => {
+        setAnnotationValues(annotations);
+      })
+      .catch(() => {});
   }, [rows, annotationColumns]);
 
   const fetchData = useCallback(
@@ -156,7 +173,7 @@ export default function Home() {
           pg ?? page,
           PAGE_SIZE,
           sCol ?? sortCol,
-          sDir ?? sortDir
+          sDir ?? sortDir,
         );
         setRows(result.rows || []);
         setTotal(Number(result.total) || 0);
@@ -170,52 +187,84 @@ export default function Home() {
   );
 
   // Upload
-  const handleUpload = useCallback((file: File) => {
-    setUploading(true);
-    setProgress(0);
-    const iv = setInterval(() => setProgress((p) => Math.min(p + 3, 90)), 150);
-    
-    Papa.parse<string[]>(file, {
-      skipEmptyLines: true,
-      complete: async (results) => {
-        clearInterval(iv);
-        setProgress(95);
-        if (results.data.length < 2) {
-          setUploading(false);
-          alert('CSV precisa ter cabeçalho + dados');
-          return;
-        }
+  const handleUpload = useCallback(
+    (file: File) => {
+      setUploading(true);
+      setProgress(0);
+      const iv = setInterval(
+        () => setProgress((p) => Math.min(p + 3, 90)),
+        150,
+      );
 
-        try {
-          const headers = results.data[0];
-          const dataRows = results.data.slice(1);
-          const { rowCount, skipped } = await importCSV(headers, dataRows);
-          
-          setProgress(100);
-          
-          const stats = await getTableStats();
-          setRowCount(Number(stats.total) || 0);
-          setMinDate(stats.minDate ? String(stats.minDate) : "");
-          setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
-          
-          const allCols = COLUMNS.map(c => c.name);
-          setSelectedCols(allCols);
-          setConditions([]);
-          setPage(1);
-          fetchData(allCols, [], 1);
-        } catch (e: any) {
-          alert('Erro no upload: ' + e.message);
-        } finally {
+      Papa.parse<string[]>(file, {
+        skipEmptyLines: true,
+        complete: async (results) => {
+          clearInterval(iv);
+          setProgress(95);
+          if (results.data.length < 2) {
+            setUploading(false);
+            alert("CSV precisa ter cabeçalho + dados");
+            return;
+          }
+
+          try {
+            const headers = results.data[0];
+            const dataRows = results.data.slice(1);
+
+            const isVisualizacaoCSV = headers.some(
+              (h) => HEADER_MAP[h.trim().toLowerCase()] === "visualizacao",
+            );
+
+            if (isVisualizacaoCSV) {
+              const { updated, skipped } = await importVisualizacaoCSV(
+                headers,
+                dataRows,
+              );
+              setProgress(100);
+              alert(
+                `${updated} registro(s) atualizados com visualização${skipped > 0 ? ` (${skipped} não encontrados)` : ""}`,
+              );
+            } else {
+              const allFilters = await getSavedFilters();
+              const allowedCols =
+                allFilters.length > 0
+                  ? deriveColumnsFromFilters(allFilters)
+                  : new Set(COLUMNS.map((c) => c.name));
+
+              const { rowCount, skipped } = await importCSV(
+                headers,
+                dataRows,
+                allowedCols,
+              );
+
+              setProgress(100);
+
+              const stats = await getTableStats();
+              setRowCount(Number(stats.total) || 0);
+              setMinDate(stats.minDate ? String(stats.minDate) : "");
+              setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
+
+              const colsToShow = [...allowedCols];
+              setSelectedCols(colsToShow);
+              setConditions([]);
+              setPage(1);
+              fetchData(colsToShow, [], 1);
+            }
+          } catch (e: any) {
+            alert("Erro no upload: " + e.message);
+          } finally {
+            setUploading(false);
+          }
+        },
+        error: (err) => {
+          clearInterval(iv);
+          alert("Erro ao ler arquivo: " + err.message);
           setUploading(false);
-        }
-      },
-      error: (err) => {
-        clearInterval(iv);
-        alert("Erro ao ler arquivo: " + err.message);
-        setUploading(false);
-      }
-    });
-  }, [fetchData]);
+        },
+      });
+    },
+    [fetchData],
+  );
 
   // Column toggle
   const toggleCol = (name: string) => {
@@ -277,7 +326,7 @@ export default function Home() {
     if (!date) return "";
     const [y, m, d] = date.split("-");
     if (!y || !m || !d) return str;
-    return `${time ? time + ' - ' : ''}${d}/${m}/${y}`;
+    return `${time ? time + " - " : ""}${d}/${m}/${y}`;
   }
 
   // Pagination
@@ -307,11 +356,11 @@ export default function Home() {
       conditions,
       createdAt: new Date().toISOString(),
     };
-    
+
     await saveFilterToFile(f);
     const updatedFilters = await getSavedFilters();
     setSavedFilters(updatedFilters);
-    
+
     setShowSave(false);
     setFilterName("");
     setFilterDesc("");
@@ -328,7 +377,11 @@ export default function Home() {
     fetchData(f.selectedColumns, f.conditions, 1);
   };
 
-  const handleAnnotationChange = (rowId: number, colId: string, value: string) => {
+  const handleAnnotationChange = (
+    rowId: number,
+    colId: string,
+    value: string,
+  ) => {
     setAnnotationValues((prev) => ({ ...prev, [`${rowId}:${colId}`]: value }));
     setAnnotation(rowId, colId, value).catch(() => {});
   };
@@ -372,22 +425,24 @@ export default function Home() {
     reader.onload = async (e) => {
       try {
         const parsed = JSON.parse(e.target?.result as string);
-        const filtersToImport: SavedFilter[] = Array.isArray(parsed) ? parsed : [parsed];
+        const filtersToImport: SavedFilter[] = Array.isArray(parsed)
+          ? parsed
+          : [parsed];
         let imported = 0;
-        
+
         for (const f of filtersToImport) {
           if (f.selectedColumns && f.conditions) {
             const filter: SavedFilter = {
               ...f,
               id: `imported_${Date.now()}_${imported}`,
               name: f.name || `Filtro importado ${imported + 1}`,
-              createdAt: f.createdAt || new Date().toISOString()
+              createdAt: f.createdAt || new Date().toISOString(),
             };
             await saveFilterToFile(filter);
             imported++;
           }
         }
-        
+
         const updated = await getSavedFilters();
         setSavedFilters(updated);
         alert(`${imported} filtro(s) importado(s)!`);
@@ -430,14 +485,13 @@ export default function Home() {
       {/* ===== SIDEBAR ===== */}
       <div className="sidebar">
         <div className="sidebar-header">
-          <div className="logo">
-            CSV<span>Filter</span>Pro
-          </div>
+          <div className="logo">LAB SHEETS</div>
           <a
             href="/whatsapp"
             style={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               gap: 6,
               padding: "6px 10px",
               background: "rgba(34,197,94,0.12)",
@@ -447,7 +501,6 @@ export default function Home() {
               textDecoration: "none",
               fontSize: 12,
               fontWeight: 600,
-              marginTop: 10,
               whiteSpace: "nowrap",
             }}
           >
@@ -618,39 +671,41 @@ export default function Home() {
                           c.operator !== "is_not_null" &&
                           c.operator !== "is_today" &&
                           c.operator !== "is_future" &&
-                          c.operator !== "is_past" && (
-                            SELECT_COLUMNS.has(c.column) &&
-                            c.operator !== "in" &&
-                            c.operator !== "not_in" &&
-                            columns.find((x) => x.name === c.column)?.type !== "date" &&
-                            distinctValues[c.column] ? (
-                              <select
-                                value={c.value}
-                                onChange={(e) =>
-                                  updateCond(i, "value", e.target.value)
-                                }
-                              >
-                                <option value="">-- Selecione --</option>
-                                {distinctValues[c.column].map((v) => (
-                                  <option key={v} value={v}>{v}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <input
-                                type={
-                                  columns.find((x) => x.name === c.column)
-                                    ?.type === "date"
-                                    ? "date"
-                                    : "text"
-                                }
-                                placeholder="Valor"
-                                value={c.value}
-                                onChange={(e) =>
-                                  updateCond(i, "value", e.target.value)
-                                }
-                              />
-                            )
-                          )}
+                          c.operator !== "is_past" &&
+                          (SELECT_COLUMNS.has(c.column) &&
+                          c.operator !== "in" &&
+                          c.operator !== "not_in" &&
+                          columns.find((x) => x.name === c.column)?.type !==
+                            "date" &&
+                          distinctValues[c.column] ? (
+                            <select
+                              value={c.value}
+                              onChange={(e) =>
+                                updateCond(i, "value", e.target.value)
+                              }
+                            >
+                              <option value="">-- Selecione --</option>
+                              {distinctValues[c.column].map((v) => (
+                                <option key={v} value={v}>
+                                  {v}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type={
+                                columns.find((x) => x.name === c.column)
+                                  ?.type === "date"
+                                  ? "date"
+                                  : "text"
+                              }
+                              placeholder="Valor"
+                              value={c.value}
+                              onChange={(e) =>
+                                updateCond(i, "value", e.target.value)
+                              }
+                            />
+                          ))}
                         {(c.operator === "between" ||
                           c.operator === "date_between") && (
                           <input
