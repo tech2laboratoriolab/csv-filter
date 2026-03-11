@@ -26,15 +26,10 @@
         "column": "cod_medico",
         "operator": "not_equals",
         "value": "1015"
-      },
-      {
-        "column": "dta_prevista",
-        "operator": "is_today_or_tomorrow",
-        "value": ""
       }
     ],
     "createdAt": "2026-03-10T18:43:16.310Z",
-    "updatedAt": "2026-03-10T18:46:33.508Z",
+    "updatedAt": "2026-03-11T12:39:32.491Z",
     "colorRules": [],
     "formulaColumns": [],
     "annotationColumns": []
@@ -303,15 +298,10 @@
         "column": "cod_medico",
         "operator": "not_equals",
         "value": "1015"
-      },
-      {
-        "column": "dta_prevista",
-        "operator": "is_future",
-        "value": ""
       }
     ],
     "createdAt": "2026-03-05T12:37:57.920Z",
-    "updatedAt": "2026-03-09T14:28:17.860Z",
+    "updatedAt": "2026-03-11T12:37:01.587Z",
     "colorRules": [
       {
         "id": "17727443239420.20981534229568677",
@@ -374,7 +364,8 @@
         "textColor": "#000000"
       }
     ],
-    "formulaColumns": []
+    "formulaColumns": [],
+    "annotationColumns": []
   },
   {
     "id": "imported_1773066497861_4",
@@ -403,15 +394,10 @@
         "column": "cod_exame",
         "operator": "in",
         "value": "1,2,12,14,17,23,38,40,43"
-      },
-      {
-        "column": "dta_prevista",
-        "operator": "is_future_or_today",
-        "value": ""
       }
     ],
     "createdAt": "2026-03-04T18:40:10.696Z",
-    "updatedAt": "2026-03-09T14:28:17.861Z",
+    "updatedAt": "2026-03-11T12:36:51.796Z",
     "colorRules": [
       {
         "id": "17726510216650.5318766987414241",
@@ -479,7 +465,8 @@
       "cod_requisicao",
       "nom_paciente",
       "dta_prevista"
-    ]
+    ],
+    "annotationColumns": []
   },
   {
     "id": "imported_1773066497861_5",
@@ -510,18 +497,13 @@
         "value": "32,46,1004,1015"
       },
       {
-        "column": "dta_prevista",
-        "operator": "is_today_or_tomorrow",
-        "value": ""
-      },
-      {
         "column": "cod_evento",
         "operator": "not_equals",
         "value": "11"
       }
     ],
     "createdAt": "2026-03-02T13:46:47.886Z",
-    "updatedAt": "2026-03-09T14:28:17.861Z",
+    "updatedAt": "2026-03-11T12:36:41.883Z",
     "colorRules": [
       {
         "id": "17724614190940.36787949209356696",
