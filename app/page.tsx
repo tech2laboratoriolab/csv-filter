@@ -21,6 +21,7 @@ import {
   getAnnotations,
   setAnnotation,
   deriveColumnsFromFilters,
+  resetAllData,
   COLUMNS,
   HEADER_MAP,
   ColumnDef,
@@ -392,6 +393,38 @@ export default function Home() {
     setSavedFilters((p) => p.filter((f) => f.id !== id));
   };
 
+  const handleReset = async () => {
+    if (
+      !confirm(
+        "Tem certeza? Isso apagará todos os dados CSV e voltará os filtros para o padrão.",
+      )
+    )
+      return;
+
+    await resetAllData();
+
+    // Reset all UI state
+    setRows([]);
+    setTotal(0);
+    setRowCount(0);
+    setMinDate("");
+    setMaxDate("");
+    setSelectedCols([]);
+    setConditions([]);
+    setColorRules([]);
+    setFormulaColumns([]);
+    setFormulaValues([]);
+    setAnnotationColumns([]);
+    setAnnotationValues({});
+    setPage(1);
+    setSortCol(undefined);
+    setSortDir("asc");
+
+    // Reload default filters
+    const filters = await getSavedFilters();
+    setSavedFilters(filters);
+  };
+
   // Export single filter JSON
   const exportFilter = (f: SavedFilter, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -552,6 +585,13 @@ export default function Home() {
                 if (f) handleUpload(f);
               }}
             />
+            <button
+              className="btn btn-sm btn-red"
+              style={{ width: "100%", marginTop: 6 }}
+              onClick={handleReset}
+            >
+              🔄 Resetar Dados
+            </button>
           </div>
 
           {hasData && (

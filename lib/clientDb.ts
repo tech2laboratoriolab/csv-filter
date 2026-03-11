@@ -683,6 +683,35 @@ export async function exportFilteredCSV(
   return lines.join("\n");
 }
 
+// --- Reset All Data ---
+export async function resetAllData(): Promise<void> {
+  if (typeof window === "undefined") return;
+
+  // Clear in-memory SQL db
+  try {
+    const db = await getDb();
+    db.run("DELETE FROM csv_data");
+  } catch {
+    // ignore if db not initialized
+  }
+
+  // Reset db promise so next getDb() creates a fresh empty db
+  _dbPromise = null;
+
+  const idb = await getIdb();
+  if (idb) {
+    // Clear CSV snapshot
+    await idb.delete("csv_database", "snapshot");
+    // Clear all filters
+    await idb.clear("filters");
+    // Clear all annotations
+    await idb.clear("annotations");
+  }
+
+  // Remove seed keys so defaults get re-seeded
+  localStorage.removeItem("csv-filter-defaults-seeded");
+}
+
 // --- IndexedDB: Filters ---
 const SEED_KEY = "csv-filter-defaults-seeded";
 
