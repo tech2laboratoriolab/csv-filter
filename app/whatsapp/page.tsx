@@ -11,6 +11,7 @@ import {
   getPatologistaSummary,
   getPatologistaRows,
   SavedFilter,
+  FilterCondition,
   Pathologist,
   Clinic,
   getDistinctClinics,
@@ -22,6 +23,7 @@ import {
   saveBioMolecularPhone,
   getBioMolecularSummary,
   getBioMolecularRows,
+  COLUMNS,
 } from "@/lib/clientDb";
 
 interface SendResult {
@@ -46,7 +48,7 @@ const DEFAULT_CLINIC_TEMPLATE =
   "Prezado Parceiro {nome}.\n\nViemos informar que os Laudos do(a)s Pacientes estão disponíveis abaixo:\n\nLaudos disponíveis em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
 
 const DEFAULT_BIOMOL_TEMPLATE =
-  "Olá!\n\nSegue abaixo os casos de Biologia Molecular do dia. Ótimo dia!\n\nRegistros em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
+  "Prezado Parceiro.\n\nSegue abaixo os casos de Biologia Molecular do dia. Ótimo dia!\n\nRegistros em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
 
 const VARIABLES_PAT = [
   { key: "{nome}", desc: "Nome do patologista" },
@@ -127,10 +129,111 @@ function formatDateBR(date: Date): string {
   return `${d}/${m}/${y}`;
 }
 
+const DATE_COLUMN_NAMES = new Set(
+  COLUMNS.filter((c) => c.type === "date").map((c) => c.name),
+);
+
+const DATE_OPERATORS: FilterCondition["operator"][] = [
+  "date_after",
+  "date_before",
+  "date_between",
+  "is_today",
+  "is_future",
+  "is_past",
+  "is_today_or_tomorrow",
+  "is_future_or_today",
+  "is_past_or_today",
+];
+
+function applyWhatsAppDateFilter(filter: SavedFilter): FilterCondition[] {
+  const hasDatCond = filter.conditions.some((c) =>
+    DATE_COLUMN_NAMES.has(c.column),
+  );
+
+  if (hasDatCond) {
+    // Replace every date-column condition with is_today_or_tomorrow
+    return filter.conditions.map((c) =>
+      DATE_COLUMN_NAMES.has(c.column)
+        ? { column: c.column, operator: "is_today_or_tomorrow" as const, value: "" }
+        : c,
+    );
+  }
+
+  // No date condition in filter — inject one
+  const defaultDateCol =
+    filter.selectedColumns.find((c) => DATE_COLUMN_NAMES.has(c)) ??
+    filter.conditions.find((c) => DATE_COLUMN_NAMES.has(c.column))?.column ??
+    "dta_vencimento";
+
+  return [
+    ...filter.conditions,
+    { column: defaultDateCol, operator: "is_today_or_tomorrow" as const, value: "" },
+  ];
+}
+
+function sortRowsDescByDate(
+  rows: Record<string, string>[],
+  columns: { name: string; type: string }[],
+): Record<string, string>[] {
+  const dateCol = columns.find((c) => c.type === "date");
+  if (!dateCol) return rows;
+  return [...rows].sort((a, b) => {
+    const va = a[dateCol.name] ?? "";
+    const vb = b[dateCol.name] ?? "";
+    return va.localeCompare(vb);
+  });
+}
+
+async function combineFilterData(
+  selectedFilters: SavedFilter[],
+  linhasColumns: string[],
+  getSummary: (conditions: any, name: string) => Promise<any>,
+  getRows: (conditions: any, cols: string[], name: string) => Promise<any>,
+  entityName: string,
+) {
+  const results = await Promise.all(
+    selectedFilters.map(async (f) => {
+      const cols = linhasColumns.length ? linhasColumns : f.selectedColumns;
+      const conditions = applyWhatsAppDateFilter(f);
+      return {
+        summary: await getSummary(conditions, entityName),
+        rowData: await getRows(conditions, cols, entityName),
+      };
+    }),
+  );
+
+  const totalCombined = results.reduce(
+    (acc, r) => acc + (r.summary.total ?? 0),
+    0,
+  );
+
+  const eventoMap = new Map<string, number>();
+  for (const { summary } of results) {
+    for (const ev of summary.eventos ?? []) {
+      eventoMap.set(
+        ev.nome_evento,
+        (eventoMap.get(ev.nome_evento) ?? 0) + ev.count,
+      );
+    }
+  }
+  const eventosCombined = Array.from(eventoMap.entries())
+    .map(([nome_evento, count]) => ({ nome_evento, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const columnsCombined =
+    results.find((r) => r.rowData.columns?.length)?.rowData.columns ?? [];
+  const rowsCombined = sortRowsDescByDate(
+    results.flatMap((r) => r.rowData.rows ?? []),
+    columnsCombined,
+  );
+
+  return { totalCombined, eventosCombined, columnsCombined, rowsCombined };
+}
+
 export default function WhatsAppPage() {
   const [filters, setFilters] = useState<SavedFilter[]>([]);
-  const [selectedFilter, setSelectedFilter] = useState<SavedFilter | null>(
-    null,
+  const [selectedFilterIds, setSelectedFilterIds] = useState<Set<string>>(
+    new Set(),
   );
   const [templatePat, setTemplatePat] = useState(DEFAULT_PAT_TEMPLATE);
   const [templateClinic, setTemplateClinic] = useState(DEFAULT_CLINIC_TEMPLATE);
@@ -162,6 +265,16 @@ export default function WhatsAppPage() {
   const [bioMolPhoneEdit, setBioMolPhoneEdit] = useState("");
   const [savingBioMolPhone, setSavingBioMolPhone] = useState(false);
   const [bioMolSelected, setBioMolSelected] = useState(false);
+
+  const selectedFilters = filters.filter((f) => selectedFilterIds.has(f.id));
+
+  const toggleFilterSelect = (filterId: string) => {
+    setSelectedFilterIds((prev) => {
+      const next = new Set(prev);
+      next.has(filterId) ? next.delete(filterId) : next.add(filterId);
+      return next;
+    });
+  };
 
   const isClinicActive = activeTab === "clinicas";
   const isBioMolActive = activeTab === "bio-molecular";
@@ -238,27 +351,33 @@ export default function WhatsAppPage() {
   }, []);
 
   useEffect(() => {
-    setLinhasColumns(
-      selectedFilter?.whatsappLinhasColumns ??
-        selectedFilter?.selectedColumns ??
-        [],
-    );
-  }, [selectedFilter?.id]);
+    const seen = new Set<string>();
+    const union: string[] = [];
+    for (const f of selectedFilters) {
+      for (const col of f.whatsappLinhasColumns ?? f.selectedColumns ?? []) {
+        if (!seen.has(col)) {
+          seen.add(col);
+          union.push(col);
+        }
+      }
+    }
+    setLinhasColumns(union);
+  }, [selectedFilterIds]);
 
   const saveLinhasColumns = useCallback(
     async (cols: string[]) => {
-      if (!selectedFilter) return;
-      const updated: SavedFilter = {
-        ...selectedFilter,
-        whatsappLinhasColumns: cols,
-      };
-      await saveFilterToFile(updated);
-      setFilters((prev) =>
-        prev.map((f) => (f.id === updated.id ? updated : f)),
+      if (!selectedFilters.length) return;
+      await Promise.all(
+        selectedFilters.map(async (f) => {
+          const updated = { ...f, whatsappLinhasColumns: cols };
+          await saveFilterToFile(updated);
+          setFilters((prev) =>
+            prev.map((pf) => (pf.id === updated.id ? updated : pf)),
+          );
+        }),
       );
-      setSelectedFilter(updated);
     },
-    [selectedFilter],
+    [selectedFilters],
   );
 
   const insertVariable = (v: string) => {
@@ -347,7 +466,7 @@ export default function WhatsAppPage() {
   const deselectAllClinics = () => setSelectedClinicIds(new Set());
 
   const handlePreview = async () => {
-    if (!selectedFilter || !template.trim()) return;
+    if (selectedFilters.length === 0 || !template.trim()) return;
     setLoadingPreview(true);
     setPreviews([]);
     const dataHoje = formatDateBR(new Date());
@@ -360,22 +479,51 @@ export default function WhatsAppPage() {
         return;
       }
       try {
-        const cols = linhasColumns.length
-          ? linhasColumns
-          : selectedFilter.selectedColumns;
-        const summary = await getBioMolecularSummary(selectedFilter.conditions);
-        const rowData = await getBioMolecularRows(selectedFilter.conditions, cols);
-        const resumo = buildResumoPreview(summary.eventos ?? []);
-        const linhas = buildLinhasPreview(rowData.columns ?? [], rowData.rows ?? []);
+        const bioResults = await Promise.all(
+          selectedFilters.map(async (f) => {
+            const cols = linhasColumns.length ? linhasColumns : f.selectedColumns;
+            const conditions = applyWhatsAppDateFilter(f);
+            const summary = await getBioMolecularSummary(conditions);
+            const rowData = await getBioMolecularRows(conditions, cols);
+            return { summary, rowData };
+          }),
+        );
+
+        const totalCombined = bioResults.reduce(
+          (acc, r) => acc + (r.summary.total ?? 0),
+          0,
+        );
+        const eventoMap = new Map<string, number>();
+        for (const { summary } of bioResults) {
+          for (const ev of summary.eventos ?? []) {
+            eventoMap.set(
+              ev.nome_evento,
+              (eventoMap.get(ev.nome_evento) ?? 0) + ev.count,
+            );
+          }
+        }
+        const eventosCombined = Array.from(eventoMap.entries())
+          .map(([nome_evento, count]) => ({ nome_evento, count }))
+          .sort((a, b) => b.count - a.count);
+        const columnsCombined =
+          bioResults.find((r) => r.rowData.columns?.length)?.rowData.columns ??
+          [];
+        const rowsCombined = sortRowsDescByDate(
+          bioResults.flatMap((r) => r.rowData.rows ?? []),
+          columnsCombined,
+        );
+
+        const resumo = buildResumoPreview(eventosCombined);
+        const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
         const msg = template
-          .replace(/\{total\}/g, String(summary.total ?? 0))
+          .replace(/\{total\}/g, String(totalCombined))
           .replace(/\{data_hoje\}/g, dataHoje)
           .replace(/\{resumo\}/g, resumo)
           .replace(/\{linhas\}/g, linhas);
         newPreviews.push({
           nome: "Biologia Molecular",
           telefone: bioMolPhoneEdit,
-          total: summary.total ?? 0,
+          total: totalCombined,
           message: msg,
         });
       } catch {
@@ -401,38 +549,36 @@ export default function WhatsAppPage() {
               nome: p.nome,
               telefone: phoneEdits[p.nome] ?? p.telefone,
             }));
-      const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
+      const getSummary = isClinicTab
+        ? getClinicaSummary
+        : getPatologistaSummary;
       const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
 
       for (const item of lista) {
         try {
-          const cols = linhasColumns.length
-            ? linhasColumns
-            : selectedFilter.selectedColumns;
-          const summary = await getSummary(selectedFilter.conditions, item.nome);
-          const rowData = await getRows(
-            selectedFilter.conditions,
-            cols,
-            item.nome,
-          );
+          const { totalCombined, eventosCombined, columnsCombined, rowsCombined } =
+            await combineFilterData(
+              selectedFilters,
+              linhasColumns,
+              getSummary,
+              getRows,
+              item.nome,
+            );
 
-          if (!summary.total) continue;
+          if (!totalCombined) continue;
 
-          const resumo = buildResumoPreview(summary.eventos ?? []);
-          const linhas = buildLinhasPreview(
-            rowData.columns ?? [],
-            rowData.rows ?? [],
-          );
+          const resumo = buildResumoPreview(eventosCombined);
+          const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
           const msg = template
             .replace(/\{nome\}/g, formatNome(item.nome))
-            .replace(/\{total\}/g, String(summary.total ?? 0))
+            .replace(/\{total\}/g, String(totalCombined))
             .replace(/\{data_hoje\}/g, dataHoje)
             .replace(/\{resumo\}/g, resumo)
             .replace(/\{linhas\}/g, linhas);
           newPreviews.push({
             nome: item.nome,
             telefone: item.telefone,
-            total: summary.total ?? 0,
+            total: totalCombined,
             message: msg,
           });
         } catch {
@@ -451,7 +597,7 @@ export default function WhatsAppPage() {
   };
 
   const handleSend = async () => {
-    if (!selectedFilter || !template.trim()) return;
+    if (selectedFilters.length === 0 || !template.trim()) return;
     setSending(true);
     setSendProgress(0);
     setSendResults([]);
@@ -464,15 +610,43 @@ export default function WhatsAppPage() {
         setSending(false);
         return;
       }
-      const cols = linhasColumns.length
-        ? linhasColumns
-        : selectedFilter.selectedColumns;
-      const summary = await getBioMolecularSummary(selectedFilter.conditions);
-      const rowData = await getBioMolecularRows(selectedFilter.conditions, cols);
-      const resumo = buildResumoPreview(summary.eventos ?? []);
-      const linhas = buildLinhasPreview(rowData.columns ?? [], rowData.rows ?? []);
+      const bioResults = await Promise.all(
+        selectedFilters.map(async (f) => {
+          const cols = linhasColumns.length ? linhasColumns : f.selectedColumns;
+          const conditions = applyWhatsAppDateFilter(f);
+          const summary = await getBioMolecularSummary(conditions);
+          const rowData = await getBioMolecularRows(conditions, cols);
+          return { summary, rowData };
+        }),
+      );
+      const totalCombined = bioResults.reduce(
+        (acc, r) => acc + (r.summary.total ?? 0),
+        0,
+      );
+      const eventoMap = new Map<string, number>();
+      for (const { summary } of bioResults) {
+        for (const ev of summary.eventos ?? []) {
+          eventoMap.set(
+            ev.nome_evento,
+            (eventoMap.get(ev.nome_evento) ?? 0) + ev.count,
+          );
+        }
+      }
+      const eventosCombined = Array.from(eventoMap.entries())
+        .map(([nome_evento, count]) => ({ nome_evento, count }))
+        .sort((a, b) => b.count - a.count);
+      const columnsCombined =
+        bioResults.find((r) => r.rowData.columns?.length)?.rowData.columns ??
+        [];
+      const rowsCombined = sortRowsDescByDate(
+          bioResults.flatMap((r) => r.rowData.rows ?? []),
+          columnsCombined,
+        );
+
+      const resumo = buildResumoPreview(eventosCombined);
+      const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
       const finalMessage = template
-        .replace(/\{total\}/g, String(summary.total ?? 0))
+        .replace(/\{total\}/g, String(totalCombined))
         .replace(/\{data_hoje\}/g, dataHoje)
         .replace(/\{resumo\}/g, resumo)
         .replace(/\{linhas\}/g, linhas);
@@ -501,26 +675,28 @@ export default function WhatsAppPage() {
               nome: p.nome,
               telefone: phoneEdits[p.nome] ?? p.telefone,
             }));
-      const getSummary = isClinicTab ? getClinicaSummary : getPatologistaSummary;
+      const getSummary = isClinicTab
+        ? getClinicaSummary
+        : getPatologistaSummary;
       const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
 
       for (const item of itemsToSend) {
-        const cols = linhasColumns.length
-          ? linhasColumns
-          : selectedFilter.selectedColumns;
-        const summary = await getSummary(selectedFilter.conditions, item.nome);
-        const rowData = await getRows(selectedFilter.conditions, cols, item.nome);
+        const { totalCombined, eventosCombined, columnsCombined, rowsCombined } =
+          await combineFilterData(
+            selectedFilters,
+            linhasColumns,
+            getSummary,
+            getRows,
+            item.nome,
+          );
 
-        if (!summary.total) continue;
+        if (!totalCombined) continue;
 
-        const resumo = buildResumoPreview(summary.eventos ?? []);
-        const linhas = buildLinhasPreview(
-          rowData.columns ?? [],
-          rowData.rows ?? [],
-        );
+        const resumo = buildResumoPreview(eventosCombined);
+        const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
         const finalMessage = template
           .replace(/\{nome\}/g, formatNome(item.nome))
-          .replace(/\{total\}/g, String(summary.total ?? 0))
+          .replace(/\{total\}/g, String(totalCombined))
           .replace(/\{data_hoje\}/g, dataHoje)
           .replace(/\{resumo\}/g, resumo)
           .replace(/\{linhas\}/g, linhas);
@@ -567,15 +743,27 @@ export default function WhatsAppPage() {
       : phoneEdits;
 
   const withPhone = isBioMolActive
-    ? (bioMolPhoneEdit.trim() ? 1 : 0)
-    : activeList.filter((p) =>
-        (activePhoneEdits[p.nome] || p.telefone).trim(),
-      ).length;
-  const withoutPhone = isBioMolActive ? (bioMolPhoneEdit.trim() ? 0 : 1) : activeList.length - withPhone;
-  const selectedCount = isBioMolActive ? (bioMolSelected ? 1 : 0) : activeSelectedIds.size;
+    ? bioMolPhoneEdit.trim()
+      ? 1
+      : 0
+    : activeList.filter((p) => (activePhoneEdits[p.nome] || p.telefone).trim())
+        .length;
+  const withoutPhone = isBioMolActive
+    ? bioMolPhoneEdit.trim()
+      ? 0
+      : 1
+    : activeList.length - withPhone;
+  const selectedCount = isBioMolActive
+    ? bioMolSelected
+      ? 1
+      : 0
+    : activeSelectedIds.size;
   const canSend = isBioMolActive
-    ? !!selectedFilter && template.trim().length > 0 && bioMolSelected && bioMolPhoneEdit.trim().length > 0
-    : !!selectedFilter &&
+    ? selectedFilters.length > 0 &&
+      template.trim().length > 0 &&
+      bioMolSelected &&
+      bioMolPhoneEdit.trim().length > 0
+    : selectedFilters.length > 0 &&
       template.trim().length > 0 &&
       selectedCount > 0 &&
       activeList.some(
@@ -642,7 +830,7 @@ export default function WhatsAppPage() {
             }}
           >
             <div style={{ fontWeight: 600, marginBottom: 16, fontSize: 14 }}>
-              Selecionar Filtro
+              Selecionar Filtros
             </div>
 
             {filters.length === 0 ? (
@@ -661,43 +849,60 @@ export default function WhatsAppPage() {
                 {filters.map((f) => (
                   <div
                     key={f.id}
-                    onClick={() => setSelectedFilter(f)}
+                    onClick={() => toggleFilterSelect(f.id)}
                     style={{
                       padding: "10px 12px",
-                      border: `1px solid ${selectedFilter?.id === f.id ? "var(--blue)" : "var(--border)"}`,
+                      border: `1px solid ${selectedFilterIds.has(f.id) ? "var(--blue)" : "var(--border)"}`,
                       borderRadius: 12,
                       cursor: "pointer",
                       background:
-                        selectedFilter?.id === f.id
+                        selectedFilterIds.has(f.id)
                           ? "rgba(59,130,246,0.08)"
                           : "var(--bg-2)",
                       transition: "all 0.2s",
                       boxShadow:
-                        selectedFilter?.id === f.id
+                        selectedFilterIds.has(f.id)
                           ? "0 0 0 3px rgba(59,130,246,0.1)"
                           : "none",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 8,
                     }}
                   >
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>
-                      {f.name}
-                    </div>
-                    <div
+                    <input
+                      type="checkbox"
+                      checked={selectedFilterIds.has(f.id)}
+                      onChange={() => toggleFilterSelect(f.id)}
+                      onClick={(e) => e.stopPropagation()}
                       style={{
-                        color: "var(--text-3)",
-                        fontSize: 11,
                         marginTop: 2,
+                        accentColor: "var(--blue)",
+                        cursor: "pointer",
+                        flexShrink: 0,
                       }}
-                    >
-                      {f.conditions.length} filtro(s) •{" "}
-                      {f.selectedColumns.length} col(s)
-                      {f.description && ` • ${f.description}`}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>
+                        {f.name}
+                      </div>
+                      <div
+                        style={{
+                          color: "var(--text-3)",
+                          fontSize: 11,
+                          marginTop: 2,
+                        }}
+                      >
+                        {f.conditions.length} filtro(s) •{" "}
+                        {f.selectedColumns.length} col(s)
+                        {f.description && ` • ${f.description}`}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {selectedFilter && (
+            {selectedFilters.length > 0 && (
               <div
                 style={{
                   marginTop: 16,
@@ -715,83 +920,110 @@ export default function WhatsAppPage() {
                     color: "var(--text-0)",
                   }}
                 >
-                  Condições do filtro:
+                  Condições dos filtros:
                 </div>
-                {selectedFilter.conditions.map((c: any, i: number) => (
-                  <div
-                    key={i}
-                    style={{ color: "var(--text-2)", marginBottom: 2 }}
-                  >
-                    • <span style={{ color: "var(--blue)" }}>{c.column}</span>{" "}
-                    {c.operator}{" "}
-                    <span style={{ color: "var(--green)" }}>{c.value}</span>
-                    {c.value2 && ` — ${c.value2}`}
+                {selectedFilters.map((sf) => (
+                  <div key={sf.id} style={{ marginBottom: 8 }}>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color: "var(--blue)",
+                        marginBottom: 4,
+                        fontSize: 11,
+                      }}
+                    >
+                      {sf.name}
+                    </div>
+                    {sf.conditions.map((c: any, i: number) => (
+                      <div
+                        key={i}
+                        style={{ color: "var(--text-2)", marginBottom: 2 }}
+                      >
+                        • <span style={{ color: "var(--blue)" }}>{c.column}</span>{" "}
+                        {c.operator}{" "}
+                        <span style={{ color: "var(--green)" }}>{c.value}</span>
+                        {c.value2 && ` — ${c.value2}`}
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
             )}
 
-            {selectedFilter && selectedFilter.selectedColumns.length > 0 && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  background: "var(--bg-2)",
-                  borderRadius: 12,
-                  fontSize: 12,
-                  border: "1px solid var(--border)",
-                }}
-              >
+            {selectedFilters.length > 0 &&
+              selectedFilters.some((f) => f.selectedColumns.length > 0) && (
                 <div
                   style={{
-                    fontWeight: 600,
-                    marginBottom: 8,
-                    color: "var(--text-0)",
+                    marginTop: 12,
+                    padding: 12,
+                    background: "var(--bg-2)",
+                    borderRadius: 12,
+                    fontSize: 12,
+                    border: "1px solid var(--border)",
                   }}
                 >
-                  Colunas para {"{linhas}"}:
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginBottom: 8,
+                      color: "var(--text-0)",
+                    }}
+                  >
+                    Colunas para {"{linhas}"}:
+                  </div>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                  >
+                    {(() => {
+                      const seen = new Set<string>();
+                      const allCols: string[] = [];
+                      for (const f of selectedFilters) {
+                        for (const col of f.selectedColumns) {
+                          if (!seen.has(col)) {
+                            seen.add(col);
+                            allCols.push(col);
+                          }
+                        }
+                      }
+                      return allCols.map((col) => (
+                        <label
+                          key={col}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={linhasColumns.includes(col)}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...linhasColumns, col]
+                                : linhasColumns.filter((c) => c !== col);
+                              setLinhasColumns(next);
+                              saveLinhasColumns(next);
+                            }}
+                            style={{
+                              accentColor: "var(--blue)",
+                              cursor: "pointer",
+                            }}
+                          />
+                          <span
+                            style={{
+                              color: "var(--text-1)",
+                              fontFamily: "monospace",
+                            }}
+                          >
+                            {col}
+                          </span>
+                        </label>
+                      ));
+                    })()}
+                  </div>
                 </div>
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
-                >
-                  {selectedFilter.selectedColumns.map((col) => (
-                    <label
-                      key={col}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={linhasColumns.includes(col)}
-                        onChange={(e) => {
-                          const next = e.target.checked
-                            ? [...linhasColumns, col]
-                            : linhasColumns.filter((c) => c !== col);
-                          setLinhasColumns(next);
-                          saveLinhasColumns(next);
-                        }}
-                        style={{
-                          accentColor: "var(--blue)",
-                          cursor: "pointer",
-                        }}
-                      />
-                      <span
-                        style={{
-                          color: "var(--text-1)",
-                          fontFamily: "monospace",
-                        }}
-                      >
-                        {col}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
           </div>
 
           {/* ===== SEÇÃO 2: Mensagem ===== */}
@@ -805,7 +1037,12 @@ export default function WhatsAppPage() {
             }}
           >
             <div style={{ fontWeight: 600, marginBottom: 16, fontSize: 14 }}>
-              Mensagem — {isBioMolActive ? "Bio. Molecular" : isClinicActive ? "Clínicas" : "Patologistas"}
+              Mensagem —{" "}
+              {isBioMolActive
+                ? "Bio. Molecular"
+                : isClinicActive
+                  ? "Clínicas"
+                  : "Patologistas"}
             </div>
 
             <div style={{ marginBottom: 10 }}>
@@ -864,7 +1101,7 @@ export default function WhatsAppPage() {
             <button
               onClick={handlePreview}
               disabled={
-                !selectedFilter ||
+                selectedFilters.length === 0 ||
                 !template.trim() ||
                 selectedCount === 0 ||
                 loadingPreview
@@ -878,11 +1115,15 @@ export default function WhatsAppPage() {
                 borderRadius: 12,
                 color: "var(--text-1)",
                 cursor:
-                  !selectedFilter || !template.trim() || selectedCount === 0
+                  selectedFilters.length === 0 ||
+                  !template.trim() ||
+                  selectedCount === 0
                     ? "not-allowed"
                     : "pointer",
                 opacity:
-                  !selectedFilter || !template.trim() || selectedCount === 0
+                  selectedFilters.length === 0 ||
+                  !template.trim() ||
+                  selectedCount === 0
                     ? 0.5
                     : 1,
                 fontSize: 13,
@@ -968,33 +1209,43 @@ export default function WhatsAppPage() {
           >
             {/* Tab header */}
             <div style={{ display: "flex", gap: 0, marginBottom: 12 }}>
-              {(["patologistas", "clinicas", "bio-molecular"] as const).map((tab, idx) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  style={{
-                    padding: "6px 14px",
-                    background:
-                      activeTab === tab
-                        ? "linear-gradient(to right, #3b82f6, #1d4ed8)"
-                        : "var(--bg-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius:
-                      idx === 0 ? "8px 0 0 8px" : idx === 2 ? "0 8px 8px 0" : "0",
-                    color: activeTab === tab ? "#fff" : "var(--text-2)",
-                    fontSize: 12,
-                    fontWeight: activeTab === tab ? 600 : 400,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    boxShadow:
-                      activeTab === tab
-                        ? "0 2px 8px rgba(59,130,246,0.25)"
-                        : "none",
-                  }}
-                >
-                  {tab === "patologistas" ? "Patologistas" : tab === "clinicas" ? "Clínicas" : "Bio. Molecular"}
-                </button>
-              ))}
+              {(["patologistas", "clinicas", "bio-molecular"] as const).map(
+                (tab, idx) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      padding: "6px 14px",
+                      background:
+                        activeTab === tab
+                          ? "linear-gradient(to right, #3b82f6, #1d4ed8)"
+                          : "var(--bg-2)",
+                      border: "1px solid var(--border)",
+                      borderRadius:
+                        idx === 0
+                          ? "8px 0 0 8px"
+                          : idx === 2
+                            ? "0 8px 8px 0"
+                            : "0",
+                      color: activeTab === tab ? "#fff" : "var(--text-2)",
+                      fontSize: 12,
+                      fontWeight: activeTab === tab ? 600 : 400,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      boxShadow:
+                        activeTab === tab
+                          ? "0 2px 8px rgba(59,130,246,0.25)"
+                          : "none",
+                    }}
+                  >
+                    {tab === "patologistas"
+                      ? "Patologistas"
+                      : tab === "clinicas"
+                        ? "Clínicas"
+                        : "Bio. Molecular"}
+                  </button>
+                ),
+              )}
             </div>
 
             <div
@@ -1022,44 +1273,44 @@ export default function WhatsAppPage() {
             </div>
 
             {!isBioMolActive && (
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              <button
-                onClick={
-                  activeTab === "clinicas"
-                    ? selectAllClinicsWithPhone
-                    : selectAllWithPhone
-                }
-                style={{
-                  padding: "5px 10px",
-                  background: "var(--bg-2)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  color: "var(--text-1)",
-                  fontSize: 11,
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
-              >
-                Selecionar todos com telefone
-              </button>
-              <button
-                onClick={
-                  activeTab === "clinicas" ? deselectAllClinics : deselectAll
-                }
-                style={{
-                  padding: "5px 10px",
-                  background: "var(--bg-2)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  color: "var(--text-3)",
-                  fontSize: 11,
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
-              >
-                Desmarcar todos
-              </button>
-            </div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <button
+                  onClick={
+                    activeTab === "clinicas"
+                      ? selectAllClinicsWithPhone
+                      : selectAllWithPhone
+                  }
+                  style={{
+                    padding: "5px 10px",
+                    background: "var(--bg-2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    color: "var(--text-1)",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  Selecionar todos com telefone
+                </button>
+                <button
+                  onClick={
+                    activeTab === "clinicas" ? deselectAllClinics : deselectAll
+                  }
+                  style={{
+                    padding: "5px 10px",
+                    background: "var(--bg-2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    color: "var(--text-3)",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  Desmarcar todos
+                </button>
+              </div>
             )}
 
             {/* Biologia Molecular */}
@@ -1113,7 +1364,9 @@ export default function WhatsAppPage() {
                   >
                     Biologia Molecular
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 4 }}
+                  >
                     <input
                       type="text"
                       placeholder="5511999999999"
@@ -1472,23 +1725,23 @@ export default function WhatsAppPage() {
               {sending ? "⏳ Enviando..." : "📤 Enviar Mensagens"}
             </button>
 
-            {!selectedFilter && (
+            {selectedFilters.length === 0 && (
               <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-                ← Selecione um filtro
+                ← Selecione um ou mais filtros
               </span>
             )}
-            {selectedFilter && !template.trim() && (
+            {selectedFilters.length > 0 && !template.trim() && (
               <span style={{ fontSize: 12, color: "var(--text-3)" }}>
                 ← Escreva a mensagem
               </span>
             )}
-            {selectedFilter && template.trim() && selectedCount === 0 && (
+            {selectedFilters.length > 0 && template.trim() && selectedCount === 0 && (
               <span style={{ fontSize: 12, color: "var(--text-3)" }}>
                 ← Selecione{" "}
                 {activeTab === "clinicas" ? "clínicas" : "patologistas"}
               </span>
             )}
-            {selectedFilter && template.trim() && selectedCount > 0 && (
+            {selectedFilters.length > 0 && template.trim() && selectedCount > 0 && (
               <span style={{ fontSize: 12, color: "var(--text-2)" }}>
                 Pronto para enviar para{" "}
                 <strong>
