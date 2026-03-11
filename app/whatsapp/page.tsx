@@ -565,8 +565,6 @@ export default function WhatsAppPage() {
               item.nome,
             );
 
-          if (!totalCombined) continue;
-
           const resumo = buildResumoPreview(eventosCombined);
           const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
           const msg = template
