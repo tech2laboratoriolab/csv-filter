@@ -146,28 +146,27 @@ const DATE_OPERATORS: FilterCondition["operator"][] = [
 ];
 
 function applyWhatsAppDateFilter(filter: SavedFilter): FilterCondition[] {
-  const hasDatCond = filter.conditions.some((c) =>
-    DATE_COLUMN_NAMES.has(c.column),
+  const hasPrevistaCond = filter.conditions.some(
+    (c) => c.column === "dta_prevista" && DATE_OPERATORS.includes(c.operator),
   );
 
-  if (hasDatCond) {
-    // Replace every date-column condition with is_today_or_tomorrow
+  if (hasPrevistaCond) {
+    // Replace only the dta_prevista date-range condition; leave everything else intact
     return filter.conditions.map((c) =>
-      DATE_COLUMN_NAMES.has(c.column)
-        ? { column: c.column, operator: "is_today_or_tomorrow" as const, value: "" }
+      c.column === "dta_prevista" && DATE_OPERATORS.includes(c.operator)
+        ? { column: "dta_prevista", operator: "is_today_or_tomorrow" as const, value: "" }
         : c,
     );
   }
 
-  // No date condition in filter — inject one
-  const defaultDateCol =
-    filter.selectedColumns.find((c) => DATE_COLUMN_NAMES.has(c)) ??
-    filter.conditions.find((c) => DATE_COLUMN_NAMES.has(c.column))?.column ??
-    "dta_vencimento";
+  // Só injeta se dta_prevista estiver nas colunas selecionadas
+  if (!filter.selectedColumns.includes("dta_prevista")) {
+    return filter.conditions;
+  }
 
   return [
     ...filter.conditions,
-    { column: defaultDateCol, operator: "is_today_or_tomorrow" as const, value: "" },
+    { column: "dta_prevista", operator: "is_today_or_tomorrow" as const, value: "" },
   ];
 }
 
