@@ -63,6 +63,30 @@ function matchesRule(row: Record<string, unknown>, rule: ColorRule): boolean {
       const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       return value !== '' && value.split(' ')[0] < today;
     }
+    case 'is_tomorrow': {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      const tomorrow = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return value !== '' && value.split(' ')[0] === tomorrow;
+    }
+    case 'is_today_or_tomorrow': {
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const dt = new Date(); dt.setDate(dt.getDate() + 1);
+      const tomorrow = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+      const day = value.split(' ')[0];
+      return day === today || day === tomorrow;
+    }
+    case 'is_future_or_today': {
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return value !== '' && value.split(' ')[0] >= today;
+    }
+    case 'is_past_or_today': {
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return value !== '' && value.split(' ')[0] <= today;
+    }
     default:
       return false;
   }
