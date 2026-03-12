@@ -713,7 +713,7 @@ export async function resetAllData(): Promise<void> {
 }
 
 // --- IndexedDB: Filters ---
-const SEED_KEY = "csv-filter-defaults-seeded";
+const SEED_KEY = "csv-filter-defaults-seeded-v2";
 
 async function seedDefaultFilters(idb: IDBPDatabase): Promise<void> {
   if (typeof window === "undefined") return;

@@ -34,8 +34,21 @@
       }
     ],
     "createdAt": "2026-03-10T18:43:16.310Z",
-    "updatedAt": "2026-03-11T14:06:38.570Z",
-    "colorRules": [],
+    "updatedAt": "2026-03-12T11:52:14.771Z",
+    "colorRules": [
+      {
+        "id": "17733162881470.13836697637247597",
+        "name": "Regra 1",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_past",
+        "value": "",
+        "backgroundColor": "#d50707",
+        "priority": 0,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
+      }
+    ],
     "formulaColumns": [],
     "annotationColumns": []
   },
@@ -84,7 +97,7 @@
       }
     ],
     "createdAt": "2026-03-10T17:16:19.107Z",
-    "updatedAt": "2026-03-11T14:07:23.580Z",
+    "updatedAt": "2026-03-12T11:53:58.971Z",
     "colorRules": [
       {
         "id": "17731630034800.5860937796585116",
@@ -133,6 +146,18 @@
         "priority": 3,
         "targetColumn": "nom_convenio",
         "textColor": "#000000"
+      },
+      {
+        "id": "17733163833390.3194435763672404",
+        "name": "Regra 5",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_past",
+        "value": "",
+        "backgroundColor": "#d50707",
+        "priority": 4,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
       }
     ],
     "formulaColumns": [],
@@ -189,9 +214,9 @@
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
-      "nom_evento_fatur",
       "nom_fonte_pagadora",
       "nom_local_origem",
+      "nom_evento",
       "dta_coleta",
       "dta_prevista"
     ],
@@ -213,7 +238,7 @@
       }
     ],
     "createdAt": "2026-03-06T14:41:39.928Z",
-    "updatedAt": "2026-03-11T14:08:28.887Z",
+    "updatedAt": "2026-03-12T11:55:43.747Z",
     "colorRules": [
       {
         "id": "17728186841520.5572375032278349",
@@ -225,6 +250,18 @@
         "backgroundColor": "#8a6c00",
         "priority": 0,
         "targetColumn": "17728186589600.5580783753230334"
+      },
+      {
+        "id": "17733165216350.5520487987428974",
+        "name": "Regra 2",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_past",
+        "value": "",
+        "backgroundColor": "#d50707",
+        "priority": 1,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
       }
     ],
     "formulaColumns": [],
@@ -332,7 +369,7 @@
       }
     ],
     "createdAt": "2026-03-05T12:37:57.920Z",
-    "updatedAt": "2026-03-11T14:09:29.245Z",
+    "updatedAt": "2026-03-12T11:56:55.115Z",
     "colorRules": [
       {
         "id": "17727443239420.20981534229568677",
@@ -393,6 +430,18 @@
         "priority": 4,
         "targetColumn": "nom_convenio",
         "textColor": "#000000"
+      },
+      {
+        "id": "17733165633950.3021651730442467",
+        "name": "Regra 6",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_past",
+        "value": "",
+        "backgroundColor": "#d50707",
+        "priority": 5,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
       }
     ],
     "formulaColumns": [],
@@ -428,7 +477,7 @@
       }
     ],
     "createdAt": "2026-03-04T18:40:10.696Z",
-    "updatedAt": "2026-03-11T14:09:58.675Z",
+    "updatedAt": "2026-03-12T11:59:16.923Z",
     "colorRules": [
       {
         "id": "17726510216650.5318766987414241",
@@ -437,10 +486,10 @@
         "conditionColumn": "dta_prevista",
         "operator": "is_today",
         "value": "",
-        "backgroundColor": "#eacb53",
+        "backgroundColor": "#c2a11e",
         "priority": 0,
         "targetColumn": "dta_prevista",
-        "textColor": "#000000"
+        "textColor": "#ffffff"
       },
       {
         "id": "17726525839140.2616239091910396",
@@ -449,10 +498,10 @@
         "conditionColumn": "dta_prevista",
         "operator": "is_past",
         "value": "",
-        "backgroundColor": "#ef4444",
+        "backgroundColor": "#d50707",
         "priority": 1,
         "targetColumn": "dta_prevista",
-        "textColor": "#000000"
+        "textColor": "#ffffff"
       },
       {
         "id": "17727451774940.4982746826536646",
@@ -534,7 +583,7 @@
       }
     ],
     "createdAt": "2026-03-02T13:46:47.886Z",
-    "updatedAt": "2026-03-11T14:10:45.236Z",
+    "updatedAt": "2026-03-12T12:00:24.563Z",
     "colorRules": [
       {
         "id": "17724614190940.36787949209356696",
@@ -579,10 +628,10 @@
         "conditionColumn": "dta_prevista",
         "operator": "is_today",
         "value": "",
-        "backgroundColor": "#eacb53",
+        "backgroundColor": "#c0a330",
         "priority": 3,
         "targetColumn": "dta_prevista",
-        "textColor": "#000000"
+        "textColor": "#ffffff"
       },
       {
         "id": "17724651743010.05473914560459414",
@@ -591,10 +640,10 @@
         "conditionColumn": "dta_prevista",
         "operator": "is_past",
         "value": "",
-        "backgroundColor": "#ef4444",
+        "backgroundColor": "#d50707",
         "priority": 5,
         "targetColumn": "dta_prevista",
-        "textColor": "#000000"
+        "textColor": "#ffffff"
       }
     ],
     "formulaColumns": [],
