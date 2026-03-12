@@ -372,6 +372,7 @@ export interface FilterCondition {
     | "date_before"
     | "date_between"
     | "is_today"
+    | "is_tomorrow"
     | "is_future"
     | "is_past"
     | "is_today_or_tomorrow"
@@ -539,6 +540,11 @@ function buildWhereClause(conditions: FilterCondition[]): {
       case "is_today":
         clauses.push(
           `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime'))`,
+        );
+        break;
+      case "is_tomorrow":
+        clauses.push(
+          `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime', '+1 day'))`,
         );
         break;
       case "is_today_or_tomorrow":

@@ -27,6 +27,7 @@ export const OPS_DATE = [
   { v: 'date_before', l: 'Antes' },
   { v: 'date_between', l: 'Entre' },
   { v: 'is_today', l: 'É hoje' },
+  { v: 'is_tomorrow', l: 'É amanhã' },
   { v: 'is_today_or_tomorrow', l: 'É hoje ou amanhã' },
   { v: 'is_future', l: 'É futuro (após hoje)' },
   { v: 'is_future_or_today', l: 'É futuro ou hoje (≥ hoje)' },

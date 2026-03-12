@@ -73,7 +73,7 @@ export default function ConditionEditor({
 
   const noValue = (op: string) =>
     op === 'is_null' || op === 'is_not_null' ||
-    op === 'is_today' || op === 'is_today_or_tomorrow' || op === 'is_future' || op === 'is_future_or_today' ||
+    op === 'is_today' || op === 'is_tomorrow' || op === 'is_today_or_tomorrow' || op === 'is_future' || op === 'is_future_or_today' ||
     op === 'is_past' || op === 'is_past_or_today';
   const isList = (op: string) => op === 'in' || op === 'not_in';
 
