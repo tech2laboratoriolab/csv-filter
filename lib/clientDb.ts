@@ -683,6 +683,9 @@ export async function exportFilteredCSV(
   return lines.join("\n");
 }
 
+// --- IndexedDB: Filters ---
+const SEED_KEY = "csv-filter-defaults-seeded-v2";
+
 // --- Reset All Data ---
 export async function resetAllData(): Promise<void> {
   if (typeof window === "undefined") return;
@@ -709,11 +712,8 @@ export async function resetAllData(): Promise<void> {
   }
 
   // Remove seed keys so defaults get re-seeded
-  localStorage.removeItem("csv-filter-defaults-seeded");
+  localStorage.removeItem(SEED_KEY);
 }
-
-// --- IndexedDB: Filters ---
-const SEED_KEY = "csv-filter-defaults-seeded-v2";
 
 async function seedDefaultFilters(idb: IDBPDatabase): Promise<void> {
   if (typeof window === "undefined") return;
