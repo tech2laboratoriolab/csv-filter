@@ -759,6 +759,21 @@ export async function deleteFilterFile(id: string): Promise<void> {
   await idb.delete("filters", id);
 }
 
+export async function deleteDefaultFilters(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const res = await fetch("/default-filters.json");
+    if (!res.ok) return;
+    const defaults: SavedFilter[] = await res.json();
+    const idb = await getIdb();
+    if (!idb) return;
+    await Promise.all(defaults.map((f) => idb.delete("filters", f.id)));
+    localStorage.setItem(SEED_KEY, "1");
+  } catch {
+    // silently ignore
+  }
+}
+
 export async function getFilterById(id: string): Promise<SavedFilter | null> {
   const idb = await getIdb();
   if (!idb) return null;

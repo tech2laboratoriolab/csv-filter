@@ -18,6 +18,7 @@ import {
   exportFilteredCSV,
   saveFilterToFile,
   deleteFilterFile,
+  deleteDefaultFilters,
   getAnnotations,
   setAnnotation,
   deriveColumnsFromFilters,
@@ -238,6 +239,7 @@ export default function Home() {
                 allowedCols,
               );
 
+              setSavedFilters(allFilters);
               setProgress(100);
 
               const stats = await getTableStats();
@@ -349,9 +351,17 @@ export default function Home() {
   // Save filter
   const handleSave = async () => {
     if (!filterName.trim()) return;
+    const trimmedName = filterName.trim();
+    const currentFilters = await getSavedFilters();
+    const sameNameFilters = currentFilters.filter(
+      (sf) => sf.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    for (const dup of sameNameFilters) {
+      await deleteFilterFile(dup.id);
+    }
     const f: SavedFilter = {
       id: Date.now().toString(),
-      name: filterName.trim(),
+      name: trimmedName,
       description: filterDesc.trim() || undefined,
       selectedColumns: selectedCols,
       conditions,
@@ -462,6 +472,8 @@ export default function Home() {
           ? parsed
           : [parsed];
         let imported = 0;
+
+        await deleteDefaultFilters();
 
         for (const f of filtersToImport) {
           if (f.selectedColumns && f.conditions) {
