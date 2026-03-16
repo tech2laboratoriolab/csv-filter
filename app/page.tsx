@@ -354,7 +354,7 @@ export default function Home() {
     const trimmedName = filterName.trim();
     const currentFilters = await getSavedFilters();
     const sameNameFilters = currentFilters.filter(
-      (sf) => sf.name.toLowerCase() === trimmedName.toLowerCase()
+      (sf) => sf.name.toLowerCase() === trimmedName.toLowerCase(),
     );
     for (const dup of sameNameFilters) {
       await deleteFilterFile(dup.id);

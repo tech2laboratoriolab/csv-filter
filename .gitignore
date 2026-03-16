@@ -6,3 +6,4 @@ data/
 scraper/downloads/
 scraper/__pycache__/
 scraper/*.log
+public/numeros.json

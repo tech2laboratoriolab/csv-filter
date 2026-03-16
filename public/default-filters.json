@@ -574,7 +574,7 @@
       {
         "column": "id_convenio",
         "operator": "not_in",
-        "value": "32,46,1004,1015"
+        "value": "32,46,1015"
       },
       {
         "column": "cod_evento",

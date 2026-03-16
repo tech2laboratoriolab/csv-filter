@@ -814,6 +814,28 @@ export async function setAnnotation(
   }
 }
 
+// --- IndexedDB: Numbers seed (numeros.json — gitignored, not committed) ---
+interface NumerosSeed {
+  pathologists?: Pathologist[];
+  clinics?: Clinic[];
+  biomolecular?: string;
+}
+
+let _numerosSeedCache: NumerosSeed | null | undefined = undefined;
+
+async function fetchNumerosSeed(): Promise<NumerosSeed> {
+  if (_numerosSeedCache !== undefined) return _numerosSeedCache ?? {};
+  try {
+    const res = await fetch("/api/numeros");
+    if (!res.ok) { _numerosSeedCache = null; return {}; }
+    _numerosSeedCache = await res.json();
+    return _numerosSeedCache ?? {};
+  } catch {
+    _numerosSeedCache = null;
+    return {};
+  }
+}
+
 // --- IndexedDB: Pathologists seed ---
 const SEED_PATHOLOGISTS_KEY = "csv-filter-pathologists-seeded";
 
@@ -821,13 +843,9 @@ async function seedDefaultPathologists(idb: IDBPDatabase): Promise<void> {
   if (typeof window === "undefined") return;
   if (localStorage.getItem(SEED_PATHOLOGISTS_KEY)) return;
   try {
-    const res = await fetch("/default-pathologists.json");
-    if (!res.ok) return;
-    const defaults: Pathologist[] = await res.json();
-    if (!defaults.length) {
-      localStorage.setItem(SEED_PATHOLOGISTS_KEY, "1");
-      return;
-    }
+    const seed = await fetchNumerosSeed();
+    const defaults = seed.pathologists ?? [];
+    if (!defaults.length) return;
     const tx = idb.transaction("pathologists", "readwrite");
     await Promise.all(defaults.map((p) => tx.store.put(p)));
     await tx.done;
@@ -844,13 +862,9 @@ async function seedDefaultClinics(idb: IDBPDatabase): Promise<void> {
   if (typeof window === "undefined") return;
   if (localStorage.getItem(SEED_CLINICS_KEY)) return;
   try {
-    const res = await fetch("/default-clinics.json");
-    if (!res.ok) return;
-    const defaults: Clinic[] = await res.json();
-    if (!defaults.length) {
-      localStorage.setItem(SEED_CLINICS_KEY, "1");
-      return;
-    }
+    const seed = await fetchNumerosSeed();
+    const defaults = seed.clinics ?? [];
+    if (!defaults.length) return;
     const tx = idb.transaction("clinics", "readwrite");
     await Promise.all(defaults.map((c) => tx.store.put(c)));
     await tx.done;
