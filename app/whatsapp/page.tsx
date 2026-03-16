@@ -1299,7 +1299,7 @@ export default function WhatsAppPage() {
                     background: "var(--bg-2)",
                     border: "1px solid var(--border)",
                     borderRadius: 8,
-                    color: "var(--text-3)",
+                    color: "var(--text-1)",
                     fontSize: 11,
                     cursor: "pointer",
                     transition: "all 0.15s",
@@ -1448,14 +1448,17 @@ export default function WhatsAppPage() {
                           boxShadow: isSelected
                             ? "0 0 0 2px rgba(59,130,246,0.1)"
                             : "none",
+                          opacity: hasPhone ? 1 : 0.5,
+                          cursor: hasPhone ? "default" : "not-allowed",
                         }}
                       >
                         <input
                           type="checkbox"
                           checked={isSelected}
+                          disabled={!hasPhone}
                           onChange={() => togglePatSelect(pat.nome)}
                           style={{
-                            cursor: "pointer",
+                            cursor: hasPhone ? "pointer" : "not-allowed",
                             accentColor: "var(--blue)",
                             flexShrink: 0,
                           }}
@@ -1589,14 +1592,17 @@ export default function WhatsAppPage() {
                           boxShadow: isSelected
                             ? "0 0 0 2px rgba(59,130,246,0.1)"
                             : "none",
+                          opacity: hasPhone ? 1 : 0.5,
+                          cursor: hasPhone ? "default" : "not-allowed",
                         }}
                       >
                         <input
                           type="checkbox"
                           checked={isSelected}
+                          disabled={!hasPhone}
                           onChange={() => toggleClinicSelect(clinic.nome)}
                           style={{
-                            cursor: "pointer",
+                            cursor: hasPhone ? "pointer" : "not-allowed",
                             accentColor: "var(--blue)",
                             flexShrink: 0,
                           }}
