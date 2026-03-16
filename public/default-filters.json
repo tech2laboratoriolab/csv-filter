@@ -64,6 +64,11 @@
       "dta_solicitacao",
       "dta_prevista"
     ],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
     "conditions": [
       {
         "column": "cod_exame",
