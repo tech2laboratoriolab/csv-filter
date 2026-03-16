@@ -724,6 +724,7 @@ export async function resetAllData(): Promise<void> {
   localStorage.removeItem(SEED_KEY);
   localStorage.removeItem(SEED_PATHOLOGISTS_KEY);
   localStorage.removeItem(SEED_CLINICS_KEY);
+  localStorage.removeItem(SEED_BIOMOLECULAR_KEY);
 
   // Invalidate numeros.json cache so seed runs again
   _numerosSeedCache = undefined;
@@ -1116,9 +1117,26 @@ export async function getClinicaRows(
 
 
 // --- Biologia Molecular ---
+const SEED_BIOMOLECULAR_KEY = "csv-filter-biomolecular-seeded";
+
+async function seedDefaultBioMolecular(idb: IDBPDatabase): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(SEED_BIOMOLECULAR_KEY)) return;
+  try {
+    const seed = await fetchNumerosSeed();
+    const telefone = seed.biomolecular ?? "";
+    if (!telefone) return;
+    await idb.put("bio_molecular_settings", telefone, "telefone");
+    localStorage.setItem(SEED_BIOMOLECULAR_KEY, "1");
+  } catch {
+    // silently ignore
+  }
+}
+
 export async function getSavedBioMolecularPhone(): Promise<string> {
   const idb = await getIdb();
   if (!idb) return "";
+  await seedDefaultBioMolecular(idb);
   const val = await idb.get("bio_molecular_settings", "telefone");
   return (val as string) ?? "";
 }
