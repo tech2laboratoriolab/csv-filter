@@ -715,10 +715,18 @@ export async function resetAllData(): Promise<void> {
     await idb.clear("filters");
     // Clear all annotations
     await idb.clear("annotations");
+    // Clear phone numbers
+    await idb.clear("pathologists");
+    await idb.clear("clinics");
   }
 
   // Remove seed keys so defaults get re-seeded
   localStorage.removeItem(SEED_KEY);
+  localStorage.removeItem(SEED_PATHOLOGISTS_KEY);
+  localStorage.removeItem(SEED_CLINICS_KEY);
+
+  // Invalidate numeros.json cache so seed runs again
+  _numerosSeedCache = undefined;
 }
 
 async function seedDefaultFilters(idb: IDBPDatabase): Promise<void> {
