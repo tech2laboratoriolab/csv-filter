@@ -1448,8 +1448,6 @@ export default function WhatsAppPage() {
                           boxShadow: isSelected
                             ? "0 0 0 2px rgba(59,130,246,0.1)"
                             : "none",
-                          opacity: hasPhone ? 1 : 0.5,
-                          cursor: hasPhone ? "default" : "not-allowed",
                         }}
                       >
                         <input
@@ -1592,8 +1590,6 @@ export default function WhatsAppPage() {
                           boxShadow: isSelected
                             ? "0 0 0 2px rgba(59,130,246,0.1)"
                             : "none",
-                          opacity: hasPhone ? 1 : 0.5,
-                          cursor: hasPhone ? "default" : "not-allowed",
                         }}
                       >
                         <input
