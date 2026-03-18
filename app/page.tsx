@@ -233,7 +233,7 @@ export default function Home() {
                   ? deriveColumnsFromFilters(allFilters)
                   : new Set(COLUMNS.map((c) => c.name));
 
-              const { rowCount, skipped } = await importCSV(
+              const { rowCount, merged, skipped } = await importCSV(
                 headers,
                 dataRows,
                 allowedCols,
@@ -252,6 +252,12 @@ export default function Home() {
               setConditions([]);
               setPage(1);
               fetchData(colsToShow, [], 1);
+
+              let msg = "";
+              if (rowCount > 0) msg += `${rowCount} linha(s) inserida(s). `;
+              if (merged > 0) msg += `${merged} linha(s) mesclada(s). `;
+              if (skipped > 0) msg += `${skipped} ignorada(s). `;
+              if (msg) alert(msg.trim());
             }
           } catch (e: any) {
             alert("Erro no upload: " + e.message);

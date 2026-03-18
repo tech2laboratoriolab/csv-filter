@@ -79,6 +79,74 @@ export const COLUMNS: ColumnDef[] = [
   { name: "campo4", label: "Campo4", type: "text" },
   { name: "campo6", label: "Campo6", type: "text" },
   { name: "campo8", label: "Campo8", type: "text" },
+  // --- analise_faturamento.csv extra columns ---
+  { name: "nom_tabela", label: "NomTabela", type: "text" },
+  { name: "cod_cobranca", label: "CodCobranca", type: "text" },
+  { name: "nom_cobranca", label: "NomCobranca", type: "text" },
+  { name: "apl_cobranca", label: "AplCobranca", type: "text" },
+  { name: "qtd_cobranca", label: "QtdCobranca", type: "number" },
+  { name: "vlr_bruto", label: "VlrBruto", type: "number" },
+  { name: "vlr_liquido", label: "VlrLiquido", type: "number" },
+  { name: "vlr_recebido", label: "VlrRecebido", type: "number" },
+  { name: "dta_recebido", label: "DtaRecebido", type: "date" },
+  { name: "id_motivo_glosa", label: "IdMotivoGlosa", type: "text" },
+  { name: "des_motivo_glosa", label: "DesMotivoGlosa", type: "text" },
+  { name: "id_exame_tipo", label: "IdExameTipo", type: "text" },
+  { name: "fat_exame_tipo", label: "FatExameTipo", type: "text" },
+  { name: "senha_autorizacao_proc", label: "SenhaAutorizacaoProc", type: "text" },
+  { name: "dta_autorizacao_proc", label: "DtaAutorizacaoProc", type: "date" },
+  { name: "num_guia_proc", label: "NumGuiaProc", type: "text" },
+  { name: "senha_autorizacao_req", label: "SenhaAutorizacaoReq", type: "text" },
+  { name: "dta_autorizacao_req", label: "DtaAutorizacaoReq", type: "date" },
+  // --- csvlaudo.csv columns ---
+  { name: "dta_1a_liberacao", label: "Dta1aLiberacao", type: "date" },
+  { name: "des_evento", label: "DesEvento", type: "text" },
+  { name: "dta_nascimento", label: "DtaNascimento", type: "date" },
+  { name: "idade", label: "Idade", type: "number" },
+  { name: "cpf", label: "CPF", type: "text" },
+  { name: "rg_numero", label: "RGNumero", type: "text" },
+  { name: "sexo", label: "Sexo", type: "text" },
+  { name: "consentimento", label: "Consentimento", type: "text" },
+  { name: "crm_uf", label: "CRMUF", type: "text" },
+  { name: "cbo", label: "CBO", type: "text" },
+  { name: "laboratorio", label: "Laboratorio", type: "text" },
+  { name: "unidade", label: "Unidade", type: "text" },
+  { name: "local_origem", label: "LocalOrigem", type: "text" },
+  { name: "convenio", label: "Convenio", type: "text" },
+  { name: "fonte_pagadora", label: "FontePagadora", type: "text" },
+  { name: "patologista_resp", label: "PatologistaResp", type: "text" },
+  { name: "dados_clinicos", label: "DadosClinicos", type: "text" },
+  { name: "macroscopista", label: "Macroscopista", type: "text" },
+  { name: "especialidade", label: "Especialidade", type: "text" },
+  { name: "patologista", label: "Patologista", type: "text" },
+  { name: "patologista_aux", label: "PatologistaAux", type: "text" },
+  { name: "citotecnico", label: "Citotecnico", type: "text" },
+  { name: "dta_diagnostico_cit", label: "DtaDiagnosticoCit", type: "date" },
+  { name: "dta_diagnostico_pat", label: "DtaDiagnosticoPat", type: "date" },
+  { name: "num_procedimento", label: "NumProcedimento", type: "text" },
+  { name: "des_procedimento", label: "DesProcedimento", type: "text" },
+  { name: "num_peca", label: "NumPeca", type: "text" },
+  { name: "des_topografia", label: "DesTopografia", type: "text" },
+  { name: "laudo_macro", label: "LaudoMacro", type: "text" },
+  { name: "des_diagnostico", label: "DesDiagnostico", type: "text" },
+  { name: "dgn_critico", label: "DgnCritico", type: "text" },
+  { name: "obs_critico", label: "ObsCritico", type: "text" },
+  { name: "dgn_critico_des", label: "DgnCriticoDes", type: "text" },
+  { name: "avaliacao_cito", label: "AvaliacaoCito", type: "text" },
+  { name: "critico", label: "Critico", type: "text" },
+  { name: "destaque", label: "Destaque", type: "text" },
+  { name: "usuario_dgn", label: "UsuarioDgn", type: "text" },
+  { name: "laudo_micro", label: "LaudoMicro", type: "text" },
+  { name: "laudo_diagnostico", label: "LaudoDiagnostico", type: "text" },
+  { name: "blocos", label: "Blocos", type: "text" },
+  { name: "laminas", label: "Laminas", type: "text" },
+  { name: "imuno", label: "Imuno", type: "text" },
+  { name: "qtd_bloco", label: "QtdBloco", type: "number" },
+  { name: "qtd_lamina", label: "QtdLamina", type: "number" },
+  { name: "ext_topografia", label: "ExtTopografia", type: "text" },
+  { name: "ext_morfologia", label: "ExtMorfologia", type: "text" },
+  { name: "ext_cid", label: "ExtCID", type: "text" },
+  { name: "ext_quantidade", label: "ExtQuantidade", type: "text" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};
@@ -128,8 +196,10 @@ function createEmptyDb(SQL: any): Database {
 function migrateDb(db: Database): void {
   const info = db.exec("PRAGMA table_info(csv_data)");
   const colNames = (info[0]?.values ?? []).map((r: any[]) => r[1] as string);
-  if (!colNames.includes("visualizacao")) {
-    db.run('ALTER TABLE csv_data ADD COLUMN "visualizacao" TEXT');
+  const newCols = COLUMNS.filter((c) => !colNames.includes(c.name));
+  for (const c of newCols) {
+    const sqlType = c.type === "number" ? "REAL" : "TEXT";
+    db.run(`ALTER TABLE csv_data ADD COLUMN "${c.name}" ${sqlType}`);
   }
 }
 
@@ -221,7 +291,7 @@ export async function importCSV(
   headers: string[],
   rows: string[][],
   allowedColumns?: Set<string>,
-): Promise<{ rowCount: number; skipped: number }> {
+): Promise<{ rowCount: number; merged: number; skipped: number }> {
   const db = await getDb();
 
   const hasSetorLocal = headers.some(
@@ -251,22 +321,53 @@ export async function importCSV(
     throw new Error("Nenhuma coluna do CSV corresponde ao schema esperado");
   }
 
-  db.run("DELETE FROM csv_data");
-
   const dbCols = colMapping.map((m) => `"${m.dbCol}"`).join(", ");
   const placeholders = colMapping.map(() => "?").join(", ");
 
+  // Check if cod_requisicao is in the mapped columns
+  const codReqMapping = colMapping.find((m) => m.dbCol === "cod_requisicao");
+
+  // Pre-load existing ids indexed by cod_requisicao (1-to-many: one codReq → many row ids)
+  const existingMap = new Map<string, number[]>();
+  if (codReqMapping) {
+    const existingRes = db.exec(
+      `SELECT id, "cod_requisicao" FROM csv_data WHERE "cod_requisicao" IS NOT NULL AND "cod_requisicao" != ''`
+    );
+    if (existingRes.length > 0) {
+      const { values } = existingRes[0];
+      for (const row of values) {
+        const id = row[0] as number;
+        const codReq = row[1];
+        if (codReq != null && codReq !== "") {
+          const key = String(codReq);
+          const ids = existingMap.get(key);
+          if (ids) ids.push(id);
+          else existingMap.set(key, [id]);
+        }
+      }
+    }
+  }
+
   let imported = 0;
+  let merged = 0;
   let skipped = 0;
 
   db.run("BEGIN TRANSACTION;");
-  const stmt = db.prepare(
+  const insertStmt = db.prepare(
     `INSERT INTO csv_data (${dbCols}) VALUES (${placeholders})`,
   );
 
+  // Pre-compute codReqIdx once
+  const codReqIdx = codReqMapping ? colMapping.indexOf(codReqMapping) : -1;
+
+  // Build SET clause for UPDATE (all columns except cod_requisicao)
+  const updateCols = colMapping.filter((m) => m.dbCol !== "cod_requisicao");
+  const updateSetClause = updateCols.map((m) => `"${m.dbCol}" = ?`).join(", ");
+
   for (const row of rows) {
     try {
-      const values = colMapping.map((m) => {
+      // Parse all values for this row
+      const parsedValues = colMapping.map((m) => {
         const raw = (row[m.csvIndex] || "").trim();
         if (!raw) return null;
         if (m.colDef.type === "number") {
@@ -275,14 +376,32 @@ export async function importCSV(
         }
         return raw;
       });
-      stmt.run(values);
-      imported++;
+
+      const codReqVal = codReqIdx >= 0 ? parsedValues[codReqIdx] : null;
+
+      if (codReqVal != null && codReqVal !== "" && existingMap.has(String(codReqVal))) {
+        // Merge: SET all columns (direct overwrite) for every matching row
+        const ids = existingMap.get(String(codReqVal))!;
+        const setValues = updateCols.map((m) => parsedValues[colMapping.indexOf(m)]);
+
+        for (const id of ids) {
+          db.run(
+            `UPDATE csv_data SET ${updateSetClause} WHERE id = ?`,
+            [...setValues, id] as (string | number | null)[],
+          );
+          merged++;
+        }
+      } else {
+        // Insert new row
+        insertStmt.run(parsedValues as (string | number | null)[]);
+        imported++;
+      }
     } catch (e) {
       skipped++;
     }
   }
 
-  stmt.free();
+  insertStmt.free();
   db.run("COMMIT;");
 
   // Persist snapshot to IndexedDB so data survives page navigation
@@ -292,7 +411,7 @@ export async function importCSV(
     await idb.put("csv_database", snapshot, "snapshot");
   }
 
-  return { rowCount: imported, skipped };
+  return { rowCount: imported, merged, skipped };
 }
 
 // --- Visualizacao CSV Import (secondary CSV enrichment) ---
