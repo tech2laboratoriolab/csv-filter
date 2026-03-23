@@ -573,10 +573,10 @@ function buildWhereClause(conditions: FilterCondition[]): {
     groupClauses.get(g)!.push(r.clause);
     groupParams.get(g)!.push(...r.params);
   }
-  for (const [g, clauses] of groupClauses) {
+  groupClauses.forEach((clauses, g) => {
     andClauses.push(`(${clauses.join(" OR ")})`);
     params.push(...groupParams.get(g)!);
-  }
+  });
 
   return { sql: `WHERE ${andClauses.join(" AND ")}`, params };
 }
