@@ -693,7 +693,7 @@ export async function exportFilteredCSV(
 }
 
 // --- IndexedDB: Filters ---
-const SEED_KEY = "csv-filter-defaults-seeded-v2";
+const SEED_KEY = "csv-filter-defaults-seeded-v3";
 
 // --- Reset All Data ---
 export async function resetAllData(): Promise<void> {
