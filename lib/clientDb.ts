@@ -9,144 +9,32 @@ export interface ColumnDef {
 }
 
 export const COLUMNS: ColumnDef[] = [
-  { name: "ano", label: "Ano", type: "number" },
-  { name: "mes", label: "Mes", type: "text" },
-  { name: "id_laboratorio", label: "IdLaboratorio", type: "number" },
-  { name: "nom_laboratorio", label: "NomLaboratorio", type: "text" },
-  { name: "id_unidade", label: "IdUnidade", type: "number" },
-  { name: "nom_unidade", label: "NomUnidade", type: "text" },
-  { name: "id_fonte_pagadora", label: "IdFontePagadora", type: "number" },
-  { name: "nom_fonte_pagadora", label: "NomFontePagadora", type: "text" },
-  { name: "id_segmento", label: "IdSegmento", type: "number" },
-  { name: "nom_segmento", label: "NomSegmento", type: "text" },
-  { name: "id_local_origem", label: "IdLocalOrigem", type: "number" },
-  { name: "nom_local_origem", label: "NomLocalOrigem", type: "text" },
-  { name: "id_segmento_local", label: "IdSegmentoLocal", type: "number" },
-  { name: "nom_segmento_local", label: "NomSegmentoLocal", type: "text" },
-  { name: "setor_local", label: "SetorLocal", type: "text" },
-  { name: "id_convenio", label: "IdConvenio", type: "number" },
-  { name: "nom_convenio", label: "NomConvenio", type: "text" },
-  { name: "lote", label: "Lote", type: "text" },
-  { name: "id_pre_fatura", label: "IdPreFatura", type: "text" },
-  { name: "dta_vencimento", label: "DtaVencimento", type: "date" },
-  { name: "id_requisicao", label: "IdRequisicao", type: "number" },
   { name: "cod_requisicao", label: "CodRequisicao", type: "text" },
+  { name: "nom_paciente", label: "NomPaciente", type: "text" },
   { name: "dta_solicitacao", label: "DtaSolicitacao", type: "date" },
-  { name: "dta_emissao_pedido", label: "DtaEmissaoPedido", type: "date" },
   { name: "dta_finalizacao", label: "DtaFinalizacao", type: "date" },
   { name: "dta_prevista", label: "DtaPrevista", type: "date" },
   { name: "dta_coleta", label: "DtaColeta", type: "date" },
-  { name: "dta_inclusao_lote", label: "DtaInclusaoLote", type: "date" },
-  { name: "num_guia_convenio", label: "NumGuiaConvenio", type: "text" },
-  { name: "mat_convenio", label: "MatConvenio", type: "text" },
-  { name: "num_externo", label: "NumExterno", type: "text" },
-  { name: "cod_medico", label: "CodMedico", type: "text" },
-  { name: "nom_medico", label: "NomMedico", type: "text" },
-  { name: "crm", label: "CRM", type: "text" },
-  { name: "cod_paciente", label: "CodPaciente", type: "text" },
-  { name: "nom_paciente", label: "NomPaciente", type: "text" },
-  { name: "cns_paciente", label: "CnsPaciente", type: "text" },
   { name: "cod_exame", label: "CodExame", type: "text" },
   { name: "nom_exame", label: "NomExame", type: "text" },
   { name: "cod_evento", label: "CodEvento", type: "text" },
   { name: "nom_evento", label: "NomEvento", type: "text" },
-  { name: "cod_evento_fatur", label: "CodEventoFatur", type: "text" },
   { name: "nom_evento_fatur", label: "NomEventoFatur", type: "text" },
-  { name: "paciente_internado", label: "PacienteInternado", type: "text" },
-  { name: "cod_exame_tipo", label: "CodExameTipo", type: "text" },
-  { name: "nom_exame_tipo", label: "NomExameTipo", type: "text" },
-  { name: "id_executivo_conta", label: "IdExecutivoConta", type: "text" },
-  { name: "nom_executivo_conta", label: "NomExecutivoConta", type: "text" },
-  { name: "nfe_numero", label: "NFeNumero", type: "text" },
-  { name: "rps_lote", label: "RPSLote", type: "text" },
-  { name: "rps_req", label: "RPSReq", type: "text" },
-  { name: "nfe_req", label: "NFeReq", type: "text" },
-  { name: "id_patologista", label: "IdPatologista", type: "text" },
+  { name: "cod_medico", label: "CodMedico", type: "text" },
+  { name: "id_convenio", label: "IdConvenio", type: "number" },
+  { name: "nom_convenio", label: "NomConvenio", type: "text" },
+  { name: "nom_fonte_pagadora", label: "NomFontePagadora", type: "text" },
+  { name: "nom_local_origem", label: "NomLocalOrigem", type: "text" },
   { name: "nom_patologista", label: "NomPatologista", type: "text" },
-  { name: "sus_patologista", label: "SusPatologista", type: "text" },
-  { name: "qtd_top", label: "QtdTop", type: "number" },
-  { name: "qtd_blo", label: "QtdBlo", type: "number" },
-  { name: "qtd_lam", label: "QtdLam", type: "number" },
-  { name: "qtd_anticorpo", label: "QtdAnticorpo", type: "number" },
-  { name: "qtd_frasco", label: "QtdFrasco", type: "number" },
-  { name: "qtd_saco", label: "QtdSaco", type: "number" },
-  { name: "adm_qtd_saco", label: "AdmQtdSaco", type: "number" },
-  { name: "adm_qtd_frasco", label: "AdmQtdFrasco", type: "number" },
-  { name: "adm_qtd_bloco", label: "AdmQtdBloco", type: "number" },
-  { name: "adm_qtd_lamina", label: "AdmQtdLamina", type: "number" },
-  { name: "visualizacao", label: "Visualizado", type: "number" },
-  { name: "campo3", label: "Campo3", type: "text" },
-  { name: "campo4", label: "Campo4", type: "text" },
-  { name: "campo6", label: "Campo6", type: "text" },
-  { name: "campo8", label: "Campo8", type: "text" },
-  // --- analise_faturamento.csv extra columns ---
-  { name: "nom_tabela", label: "NomTabela", type: "text" },
-  { name: "cod_cobranca", label: "CodCobranca", type: "text" },
-  { name: "nom_cobranca", label: "NomCobranca", type: "text" },
-  { name: "apl_cobranca", label: "AplCobranca", type: "text" },
-  { name: "qtd_cobranca", label: "QtdCobranca", type: "number" },
-  { name: "vlr_bruto", label: "VlrBruto", type: "number" },
-  { name: "vlr_liquido", label: "VlrLiquido", type: "number" },
-  { name: "vlr_recebido", label: "VlrRecebido", type: "number" },
-  { name: "dta_recebido", label: "DtaRecebido", type: "date" },
-  { name: "id_motivo_glosa", label: "IdMotivoGlosa", type: "text" },
-  { name: "des_motivo_glosa", label: "DesMotivoGlosa", type: "text" },
-  { name: "id_exame_tipo", label: "IdExameTipo", type: "text" },
-  { name: "fat_exame_tipo", label: "FatExameTipo", type: "text" },
-  { name: "senha_autorizacao_proc", label: "SenhaAutorizacaoProc", type: "text" },
-  { name: "dta_autorizacao_proc", label: "DtaAutorizacaoProc", type: "date" },
-  { name: "num_guia_proc", label: "NumGuiaProc", type: "text" },
-  { name: "senha_autorizacao_req", label: "SenhaAutorizacaoReq", type: "text" },
-  { name: "dta_autorizacao_req", label: "DtaAutorizacaoReq", type: "date" },
-  // --- csvlaudo.csv columns ---
-  { name: "dta_1a_liberacao", label: "Dta1aLiberacao", type: "date" },
-  { name: "des_evento", label: "DesEvento", type: "text" },
-  { name: "dta_nascimento", label: "DtaNascimento", type: "date" },
-  { name: "idade", label: "Idade", type: "number" },
-  { name: "cpf", label: "CPF", type: "text" },
-  { name: "rg_numero", label: "RGNumero", type: "text" },
-  { name: "sexo", label: "Sexo", type: "text" },
-  { name: "consentimento", label: "Consentimento", type: "text" },
-  { name: "crm_uf", label: "CRMUF", type: "text" },
-  { name: "cbo", label: "CBO", type: "text" },
-  { name: "laboratorio", label: "Laboratorio", type: "text" },
-  { name: "unidade", label: "Unidade", type: "text" },
   { name: "local_origem", label: "LocalOrigem", type: "text" },
   { name: "convenio", label: "Convenio", type: "text" },
-  { name: "fonte_pagadora", label: "FontePagadora", type: "text" },
-  { name: "patologista_resp", label: "PatologistaResp", type: "text" },
-  { name: "dados_clinicos", label: "DadosClinicos", type: "text" },
-  { name: "macroscopista", label: "Macroscopista", type: "text" },
-  { name: "especialidade", label: "Especialidade", type: "text" },
   { name: "patologista", label: "Patologista", type: "text" },
   { name: "patologista_aux", label: "PatologistaAux", type: "text" },
-  { name: "citotecnico", label: "Citotecnico", type: "text" },
-  { name: "dta_diagnostico_cit", label: "DtaDiagnosticoCit", type: "date" },
-  { name: "dta_diagnostico_pat", label: "DtaDiagnosticoPat", type: "date" },
-  { name: "num_procedimento", label: "NumProcedimento", type: "text" },
-  { name: "des_procedimento", label: "DesProcedimento", type: "text" },
-  { name: "num_peca", label: "NumPeca", type: "text" },
-  { name: "des_topografia", label: "DesTopografia", type: "text" },
-  { name: "laudo_macro", label: "LaudoMacro", type: "text" },
-  { name: "des_diagnostico", label: "DesDiagnostico", type: "text" },
-  { name: "dgn_critico", label: "DgnCritico", type: "text" },
-  { name: "obs_critico", label: "ObsCritico", type: "text" },
-  { name: "dgn_critico_des", label: "DgnCriticoDes", type: "text" },
-  { name: "avaliacao_cito", label: "AvaliacaoCito", type: "text" },
-  { name: "critico", label: "Critico", type: "text" },
+  { name: "des_evento", label: "DesEvento", type: "text" },
   { name: "destaque", label: "Destaque", type: "text" },
-  { name: "usuario_dgn", label: "UsuarioDgn", type: "text" },
   { name: "laudo_micro", label: "LaudoMicro", type: "text" },
-  { name: "laudo_diagnostico", label: "LaudoDiagnostico", type: "text" },
-  { name: "blocos", label: "Blocos", type: "text" },
-  { name: "laminas", label: "Laminas", type: "text" },
-  { name: "imuno", label: "Imuno", type: "text" },
-  { name: "qtd_bloco", label: "QtdBloco", type: "number" },
-  { name: "qtd_lamina", label: "QtdLamina", type: "number" },
-  { name: "ext_topografia", label: "ExtTopografia", type: "text" },
-  { name: "ext_morfologia", label: "ExtMorfologia", type: "text" },
-  { name: "ext_cid", label: "ExtCID", type: "text" },
-  { name: "ext_quantidade", label: "ExtQuantidade", type: "text" },
+  { name: "avaliacao_cito", label: "AvaliacaoCito", type: "text" },
+  { name: "visualizacao", label: "Visualizado", type: "number" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};
@@ -173,19 +61,14 @@ function createEmptyDb(SQL: any): Database {
     "nom_convenio",
     "nom_exame",
     "nom_paciente",
-    "nom_medico",
     "dta_solicitacao",
     "dta_coleta",
     "dta_finalizacao",
-    "dta_vencimento",
     "nom_fonte_pagadora",
-    "nom_segmento",
-    "nom_unidade",
-    "nom_laboratorio",
-    "ano",
-    "mes",
-    "nom_exame_tipo",
     "nom_evento",
+    "cod_exame",
+    "cod_evento",
+    "des_evento",
   ];
   for (const col of indexCols) {
     db.run(`CREATE INDEX idx_${col} ON csv_data("${col}")`);
@@ -293,18 +176,6 @@ export async function importCSV(
   allowedColumns?: Set<string>,
 ): Promise<{ rowCount: number; merged: number; skipped: number }> {
   const db = await getDb();
-
-  const hasSetorLocal = headers.some(
-    (h) => h.trim().toLowerCase() === "setorlocal",
-  );
-  if (!hasSetorLocal) {
-    const nomSegLocalIdx = headers.findIndex(
-      (h) => h.trim().toLowerCase() === "nomsegmentolocal",
-    );
-    if (nomSegLocalIdx >= 0) {
-      headers.splice(nomSegLocalIdx + 1, 0, "SetorLocal");
-    }
-  }
 
   const colMapping: { csvIndex: number; dbCol: string; colDef: ColumnDef }[] =
     [];
@@ -499,6 +370,7 @@ export interface FilterCondition {
     | "is_past_or_today";
   value: string | number;
   value2?: string | number;
+  orGroup?: string;
 }
 
 export interface ColorRule {
@@ -566,135 +438,147 @@ export function deriveColumnsFromFilters(filters: SavedFilter[]): Set<string> {
   return needed;
 }
 
+function conditionToSQL(c: FilterCondition): { clause: string; params: any[] } {
+  const col = `"${c.column}"`;
+  const params: any[] = [];
+  let clause = "";
+
+  switch (c.operator) {
+    case "equals":
+      if (c.value === "" || c.value == null) {
+        clause = `(${col} IS NULL OR ${col} = '')`;
+      } else {
+        clause = `${col} = ?`;
+        params.push(c.value);
+      }
+      break;
+    case "not_equals":
+      if (c.value === "" || c.value == null) {
+        clause = `(${col} IS NOT NULL AND ${col} != '')`;
+      } else {
+        clause = `${col} != ?`;
+        params.push(c.value);
+      }
+      break;
+    case "contains":
+      clause = `${col} LIKE ?`;
+      params.push(`%${c.value}%`);
+      break;
+    case "not_contains":
+      clause = `${col} NOT LIKE ?`;
+      params.push(`%${c.value}%`);
+      break;
+    case "gt":
+      clause = `CAST(${col} AS REAL) > ?`;
+      params.push(Number(c.value));
+      break;
+    case "gte":
+      clause = `CAST(${col} AS REAL) >= ?`;
+      params.push(Number(c.value));
+      break;
+    case "lt":
+      clause = `CAST(${col} AS REAL) < ?`;
+      params.push(Number(c.value));
+      break;
+    case "lte":
+      clause = `CAST(${col} AS REAL) <= ?`;
+      params.push(Number(c.value));
+      break;
+    case "between":
+      clause = `CAST(${col} AS REAL) BETWEEN ? AND ?`;
+      params.push(Number(c.value), Number(c.value2));
+      break;
+    case "in": {
+      const vals = String(c.value).split(",").map((v) => v.trim());
+      clause = `${col} IN (${vals.map(() => "?").join(",")})`;
+      params.push(...vals);
+      break;
+    }
+    case "not_in": {
+      const vals = String(c.value).split(",").map((v) => v.trim());
+      clause = `${col} NOT IN (${vals.map(() => "?").join(",")})`;
+      params.push(...vals);
+      break;
+    }
+    case "is_null":
+      clause = `(${col} IS NULL OR ${col} = '')`;
+      break;
+    case "is_not_null":
+      clause = `(${col} IS NOT NULL AND ${col} != '')`;
+      break;
+    case "date_after":
+      clause = `${col} >= ?`;
+      params.push(c.value);
+      break;
+    case "date_before":
+      clause = `${col} <= ?`;
+      params.push(c.value);
+      break;
+    case "date_between":
+      clause = `${col} BETWEEN ? AND ?`;
+      params.push(c.value, c.value2);
+      break;
+    case "is_today":
+      clause = `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime'))`;
+      break;
+    case "is_tomorrow":
+      clause = `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime', '+1 day'))`;
+      break;
+    case "is_today_or_tomorrow":
+      clause = `(${col} IS NOT NULL AND DATE(${col}) BETWEEN date('now', 'localtime') AND date('now', 'localtime', '+1 day'))`;
+      break;
+    case "is_future":
+      clause = `(${col} IS NOT NULL AND DATE(${col}) > date('now', 'localtime'))`;
+      break;
+    case "is_future_or_today":
+      clause = `(${col} IS NOT NULL AND DATE(${col}) >= date('now', 'localtime'))`;
+      break;
+    case "is_past":
+      clause = `(${col} IS NOT NULL AND DATE(${col}) < date('now', 'localtime'))`;
+      break;
+    case "is_past_or_today":
+      clause = `(${col} IS NOT NULL AND DATE(${col}) <= date('now', 'localtime'))`;
+      break;
+  }
+
+  return { clause, params };
+}
+
 function buildWhereClause(conditions: FilterCondition[]): {
   sql: string;
   params: any[];
 } {
   if (!conditions.length) return { sql: "", params: [] };
 
-  const clauses: string[] = [];
+  const andClauses: string[] = [];
   const params: any[] = [];
 
-  for (const c of conditions) {
-    const col = `"${c.column}"`;
-    switch (c.operator) {
-      case "equals":
-        if (c.value === "" || c.value == null) {
-          clauses.push(`(${col} IS NULL OR ${col} = '')`);
-        } else {
-          clauses.push(`${col} = ?`);
-          params.push(c.value);
-        }
-        break;
-      case "not_equals":
-        if (c.value === "" || c.value == null) {
-          clauses.push(`(${col} IS NOT NULL AND ${col} != '')`);
-        } else {
-          clauses.push(`${col} != ?`);
-          params.push(c.value);
-        }
-        break;
-      case "contains":
-        clauses.push(`${col} LIKE ?`);
-        params.push(`%${c.value}%`);
-        break;
-      case "not_contains":
-        clauses.push(`${col} NOT LIKE ?`);
-        params.push(`%${c.value}%`);
-        break;
-      case "gt":
-        clauses.push(`CAST(${col} AS REAL) > ?`);
-        params.push(Number(c.value));
-        break;
-      case "gte":
-        clauses.push(`CAST(${col} AS REAL) >= ?`);
-        params.push(Number(c.value));
-        break;
-      case "lt":
-        clauses.push(`CAST(${col} AS REAL) < ?`);
-        params.push(Number(c.value));
-        break;
-      case "lte":
-        clauses.push(`CAST(${col} AS REAL) <= ?`);
-        params.push(Number(c.value));
-        break;
-      case "between":
-        clauses.push(`CAST(${col} AS REAL) BETWEEN ? AND ?`);
-        params.push(Number(c.value), Number(c.value2));
-        break;
-      case "in": {
-        const vals = String(c.value)
-          .split(",")
-          .map((v) => v.trim());
-        clauses.push(`${col} IN (${vals.map(() => "?").join(",")})`);
-        params.push(...vals);
-        break;
-      }
-      case "not_in": {
-        const vals = String(c.value)
-          .split(",")
-          .map((v) => v.trim());
-        clauses.push(`${col} NOT IN (${vals.map(() => "?").join(",")})`);
-        params.push(...vals);
-        break;
-      }
-      case "is_null":
-        clauses.push(`(${col} IS NULL OR ${col} = '')`);
-        break;
-      case "is_not_null":
-        clauses.push(`(${col} IS NOT NULL AND ${col} != '')`);
-        break;
-      case "date_after":
-        clauses.push(`${col} >= ?`);
-        params.push(c.value);
-        break;
-      case "date_before":
-        clauses.push(`${col} <= ?`);
-        params.push(c.value);
-        break;
-      case "date_between":
-        clauses.push(`${col} BETWEEN ? AND ?`);
-        params.push(c.value, c.value2);
-        break;
-      case "is_today":
-        clauses.push(
-          `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime'))`,
-        );
-        break;
-      case "is_tomorrow":
-        clauses.push(
-          `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime', '+1 day'))`,
-        );
-        break;
-      case "is_today_or_tomorrow":
-        clauses.push(
-          `(${col} IS NOT NULL AND DATE(${col}) BETWEEN date('now', 'localtime') AND date('now', 'localtime', '+1 day'))`,
-        );
-        break;
-      case "is_future":
-        clauses.push(
-          `(${col} IS NOT NULL AND DATE(${col}) > date('now', 'localtime'))`,
-        );
-        break;
-      case "is_future_or_today":
-        clauses.push(
-          `(${col} IS NOT NULL AND DATE(${col}) >= date('now', 'localtime'))`,
-        );
-        break;
-      case "is_past":
-        clauses.push(
-          `(${col} IS NOT NULL AND DATE(${col}) < date('now', 'localtime'))`,
-        );
-        break;
-      case "is_past_or_today":
-        clauses.push(
-          `(${col} IS NOT NULL AND DATE(${col}) <= date('now', 'localtime'))`,
-        );
-        break;
-    }
+  // ungrouped conditions → straight AND
+  for (const c of conditions.filter((c) => !c.orGroup)) {
+    const r = conditionToSQL(c);
+    andClauses.push(r.clause);
+    params.push(...r.params);
   }
 
-  return { sql: `WHERE ${clauses.join(" AND ")}`, params };
+  // OR groups — each group becomes (c1 OR c2 ...) in AND chain
+  const groupClauses = new Map<string, string[]>();
+  const groupParams = new Map<string, any[]>();
+  for (const c of conditions.filter((c) => c.orGroup)) {
+    const r = conditionToSQL(c);
+    const g = c.orGroup!;
+    if (!groupClauses.has(g)) {
+      groupClauses.set(g, []);
+      groupParams.set(g, []);
+    }
+    groupClauses.get(g)!.push(r.clause);
+    groupParams.get(g)!.push(...r.params);
+  }
+  for (const [g, clauses] of groupClauses) {
+    andClauses.push(`(${clauses.join(" OR ")})`);
+    params.push(...groupParams.get(g)!);
+  }
+
+  return { sql: `WHERE ${andClauses.join(" AND ")}`, params };
 }
 
 export async function queryFiltered(
