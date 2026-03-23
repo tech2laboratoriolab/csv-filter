@@ -233,8 +233,8 @@
       },
       {
         "column": "nom_exame",
-        "operator": "equals",
-        "value": "IMUNOISTOQUÍMICA EXTERNA (BLOCO+LÂMINA)"
+        "operator": "contains",
+        "value": "IMUNO"
       },
       {
         "column": "cod_evento",
@@ -479,6 +479,11 @@
         "column": "cod_exame",
         "operator": "in",
         "value": "1,2,12,14,17,23,38,40,43"
+      },
+      {
+        "column": "dta_finalizacao",
+        "operator": "is_null",
+        "value": ""
       }
     ],
     "createdAt": "2026-03-04T18:40:10.696Z",
@@ -574,12 +579,17 @@
       {
         "column": "cod_exame",
         "operator": "in",
-        "value": "4,10,20,24,30,33"
+        "value": "4,10,20,24,30,33,35"
       },
       {
         "column": "id_convenio",
         "operator": "not_in",
         "value": "32,46,1015"
+      },
+      {
+        "column": "dta_finalizacao",
+        "operator": "is_null",
+        "value": ""
       },
       {
         "column": "cod_evento",
@@ -657,6 +667,54 @@
       "nom_paciente",
       "dta_prevista"
     ],
+    "annotationColumns": []
+  },
+  {
+    "id": "imported_1773066497862_6",
+    "name": "IHQ",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_finalizacao",
+      "local_origem",
+      "patologista",
+      "patologista_aux",
+      "convenio",
+      "avaliacao_cito"
+    ],
+    "conditions": [
+      {
+        "column": "dta_finalizacao",
+        "operator": "is_not_null",
+        "value": ""
+      },
+      {
+        "column": "des_evento",
+        "operator": "equals",
+        "value": "Laudo Concluído (Definitivo)"
+      },
+      {
+        "column": "laudo_micro",
+        "operator": "not_contains",
+        "value": "NEGATIVO PARA LESÃO INTRAEPITELIAL OU MALIGNIDADE NESTA AMOSTRA"
+      },
+      {
+        "column": "destaque",
+        "operator": "contains",
+        "value": "histoqu",
+        "orGroup": "ihq_histoqu"
+      },
+      {
+        "column": "laudo_micro",
+        "operator": "contains",
+        "value": "histoqu",
+        "orGroup": "ihq_histoqu"
+      }
+    ],
+    "createdAt": "2026-03-23T00:00:00.000Z",
+    "updatedAt": "2026-03-23T00:00:00.000Z",
+    "colorRules": [],
+    "formulaColumns": [],
     "annotationColumns": []
   }
 ]
