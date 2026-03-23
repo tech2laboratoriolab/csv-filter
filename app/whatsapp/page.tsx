@@ -23,6 +23,8 @@ import {
   saveBioMolecularPhone,
   getBioMolecularSummary,
   getBioMolecularRows,
+  getSavedAnalisesClinicasPhone,
+  saveAnalisesClinicasPhone,
   COLUMNS,
 } from "@/lib/clientDb";
 
@@ -73,6 +75,19 @@ const VARIABLES_CLINIC = [
 ];
 
 const VARIABLES_BIOMOL = [
+  { key: "{total}", desc: "Total de registros no filtro" },
+  { key: "{data_hoje}", desc: "Data atual (DD/MM/YYYY)" },
+  { key: "{resumo}", desc: "Lista de eventos e contagens" },
+  {
+    key: "{linhas}",
+    desc: "Lista detalhada das linhas com colunas selecionadas",
+  },
+];
+
+const DEFAULT_ANALISES_TEMPLATE =
+  "Prezado Parceiro.\n\nSegue abaixo os casos de Análises Clínicas do dia. Ótimo dia!\n\nRegistros em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
+
+const VARIABLES_ANALISES = [
   { key: "{total}", desc: "Total de registros no filtro" },
   { key: "{data_hoje}", desc: "Data atual (DD/MM/YYYY)" },
   { key: "{resumo}", desc: "Lista de eventos e contagens" },
@@ -248,7 +263,7 @@ export default function WhatsAppPage() {
   const [sendResults, setSendResults] = useState<SendResult[]>([]);
   const [loadingPats, setLoadingPats] = useState(false);
   const [linhasColumns, setLinhasColumns] = useState<string[]>([]);
-  type ActiveTab = "patologistas" | "clinicas" | "bio-molecular";
+  type ActiveTab = "patologistas" | "clinicas" | "bio-molecular" | "analises-clinicas";
   const [activeTab, setActiveTab] = useState<ActiveTab>("patologistas");
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [selectedClinicIds, setSelectedClinicIds] = useState<Set<string>>(
@@ -264,6 +279,10 @@ export default function WhatsAppPage() {
   const [bioMolPhoneEdit, setBioMolPhoneEdit] = useState("");
   const [savingBioMolPhone, setSavingBioMolPhone] = useState(false);
   const [bioMolSelected, setBioMolSelected] = useState(false);
+  const [templateAnalises, setTemplateAnalises] = useState(DEFAULT_ANALISES_TEMPLATE);
+  const [analisePhoneEdit, setAnalisePhoneEdit] = useState("");
+  const [savingAnalisePhone, setSavingAnalisePhone] = useState(false);
+  const [analiseSelected, setAnaliseSelected] = useState(false);
 
   const selectedFilters = filters.filter((f) => selectedFilterIds.has(f.id));
 
@@ -277,21 +296,28 @@ export default function WhatsAppPage() {
 
   const isClinicActive = activeTab === "clinicas";
   const isBioMolActive = activeTab === "bio-molecular";
-  const template = isBioMolActive
-    ? templateBioMol
-    : isClinicActive
-      ? templateClinic
-      : templatePat;
-  const setTemplate = isBioMolActive
-    ? setTemplateBioMol
-    : isClinicActive
-      ? setTemplateClinic
-      : setTemplatePat;
-  const VARIABLES = isBioMolActive
-    ? VARIABLES_BIOMOL
-    : isClinicActive
-      ? VARIABLES_CLINIC
-      : VARIABLES_PAT;
+  const isAnalisesActive = activeTab === "analises-clinicas";
+  const template = isAnalisesActive
+    ? templateAnalises
+    : isBioMolActive
+      ? templateBioMol
+      : isClinicActive
+        ? templateClinic
+        : templatePat;
+  const setTemplate = isAnalisesActive
+    ? setTemplateAnalises
+    : isBioMolActive
+      ? setTemplateBioMol
+      : isClinicActive
+        ? setTemplateClinic
+        : setTemplatePat;
+  const VARIABLES = isAnalisesActive
+    ? VARIABLES_ANALISES
+    : isBioMolActive
+      ? VARIABLES_BIOMOL
+      : isClinicActive
+        ? VARIABLES_CLINIC
+        : VARIABLES_PAT;
 
   // Load filters and pathologists on mount
   useEffect(() => {
@@ -346,6 +372,10 @@ export default function WhatsAppPage() {
 
     getSavedBioMolecularPhone()
       .then((tel) => setBioMolPhoneEdit(tel))
+      .catch(() => {});
+
+    getSavedAnalisesClinicasPhone()
+      .then((tel) => setAnalisePhoneEdit(tel))
       .catch(() => {});
   }, []);
 
@@ -446,6 +476,14 @@ export default function WhatsAppPage() {
     setSavingBioMolPhone(false);
   }, [bioMolPhoneEdit]);
 
+  const saveAnalisePhone = useCallback(async () => {
+    setSavingAnalisePhone(true);
+    try {
+      await saveAnalisesClinicasPhone(analisePhoneEdit);
+    } catch {}
+    setSavingAnalisePhone(false);
+  }, [analisePhoneEdit]);
+
   const toggleClinicSelect = (nome: string) => {
     setSelectedClinicIds((prev) => {
       const next = new Set(prev);
@@ -529,6 +567,67 @@ export default function WhatsAppPage() {
         newPreviews.push({
           nome: "Biologia Molecular",
           telefone: bioMolPhoneEdit,
+          total: 0,
+          message: "(Erro ao carregar dados)",
+        });
+      }
+    } else if (isAnalisesActive) {
+      if (!analiseSelected) {
+        setLoadingPreview(false);
+        return;
+      }
+      try {
+        const analisesResults = await Promise.all(
+          selectedFilters.map(async (f) => {
+            const cols = linhasColumns.length ? linhasColumns : f.selectedColumns;
+            const conditions = applyWhatsAppDateFilter(f);
+            const summary = await getBioMolecularSummary(conditions);
+            const rowData = await getBioMolecularRows(conditions, cols);
+            return { summary, rowData };
+          }),
+        );
+
+        const totalCombined = analisesResults.reduce(
+          (acc, r) => acc + (r.summary.total ?? 0),
+          0,
+        );
+        const eventoMap = new Map<string, number>();
+        for (const { summary } of analisesResults) {
+          for (const ev of summary.eventos ?? []) {
+            eventoMap.set(
+              ev.nome_evento,
+              (eventoMap.get(ev.nome_evento) ?? 0) + ev.count,
+            );
+          }
+        }
+        const eventosCombined = Array.from(eventoMap.entries())
+          .map(([nome_evento, count]) => ({ nome_evento, count }))
+          .sort((a, b) => b.count - a.count);
+        const columnsCombined =
+          analisesResults.find((r) => r.rowData.columns?.length)?.rowData.columns ??
+          [];
+        const rowsCombined = sortRowsDescByDate(
+          analisesResults.flatMap((r) => r.rowData.rows ?? []),
+          columnsCombined,
+        );
+
+        const resumo = buildResumoPreview(eventosCombined);
+        const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
+        const msg = template
+          .replace(/\{total\}/g, String(totalCombined))
+          .replace(/\{data_hoje\}/g, dataHoje)
+          .replace(/\{resumo\}/g, resumo)
+          .replace(/\{linhas\}/g, linhas);
+        newPreviews.push({
+          nome: "Análises Clínicas",
+          telefone: analisePhoneEdit,
+          total: totalCombined,
+          message: msg,
+        });
+      } catch {
+        newPreviews.push({
+          nome: "Análises Clínicas",
+          telefone: analisePhoneEdit,
           total: 0,
           message: "(Erro ao carregar dados)",
         });
@@ -652,6 +751,55 @@ export default function WhatsAppPage() {
         telefone: bioMolPhoneEdit,
         message: finalMessage,
       });
+    } else if (isAnalisesActive) {
+      if (!analiseSelected || !analisePhoneEdit.trim()) {
+        setSending(false);
+        return;
+      }
+      const analisesResults = await Promise.all(
+        selectedFilters.map(async (f) => {
+          const cols = linhasColumns.length ? linhasColumns : f.selectedColumns;
+          const conditions = applyWhatsAppDateFilter(f);
+          const summary = await getBioMolecularSummary(conditions);
+          const rowData = await getBioMolecularRows(conditions, cols);
+          return { summary, rowData };
+        }),
+      );
+      const totalCombined = analisesResults.reduce(
+        (acc, r) => acc + (r.summary.total ?? 0),
+        0,
+      );
+      const eventoMap = new Map<string, number>();
+      for (const { summary } of analisesResults) {
+        for (const ev of summary.eventos ?? []) {
+          eventoMap.set(
+            ev.nome_evento,
+            (eventoMap.get(ev.nome_evento) ?? 0) + ev.count,
+          );
+        }
+      }
+      const eventosCombined = Array.from(eventoMap.entries())
+        .map(([nome_evento, count]) => ({ nome_evento, count }))
+        .sort((a, b) => b.count - a.count);
+      const columnsCombined =
+        analisesResults.find((r) => r.rowData.columns?.length)?.rowData.columns ??
+        [];
+      const rowsCombined = sortRowsDescByDate(
+        analisesResults.flatMap((r) => r.rowData.rows ?? []),
+        columnsCombined,
+      );
+      const resumo = buildResumoPreview(eventosCombined);
+      const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
+      const finalMessage = template
+        .replace(/\{total\}/g, String(totalCombined))
+        .replace(/\{data_hoje\}/g, dataHoje)
+        .replace(/\{resumo\}/g, resumo)
+        .replace(/\{linhas\}/g, linhas);
+      messagesToSend.push({
+        nome: "Análises Clínicas",
+        telefone: analisePhoneEdit,
+        message: finalMessage,
+      });
     } else {
       const isClinicTab = isClinicActive;
       const localActiveIds = isClinicTab ? selectedClinicIds : selectedPatIds;
@@ -723,51 +871,56 @@ export default function WhatsAppPage() {
     setSending(false);
   };
 
-  const activeList = isBioMolActive
+  const activeList = (isBioMolActive || isAnalisesActive)
     ? []
     : activeTab === "clinicas"
       ? clinics
       : pathologists;
-  const activeSelectedIds = isBioMolActive
+  const activeSelectedIds = (isBioMolActive || isAnalisesActive)
     ? new Set<string>()
     : activeTab === "clinicas"
       ? selectedClinicIds
       : selectedPatIds;
-  const activePhoneEdits = isBioMolActive
+  const activePhoneEdits = (isBioMolActive || isAnalisesActive)
     ? ({} as Record<string, string>)
     : activeTab === "clinicas"
       ? clinicPhoneEdits
       : phoneEdits;
 
-  const withPhone = isBioMolActive
-    ? bioMolPhoneEdit.trim()
-      ? 1
-      : 0
-    : activeList.filter((p) => (activePhoneEdits[p.nome] || p.telefone).trim())
-        .length;
-  const withoutPhone = isBioMolActive
-    ? bioMolPhoneEdit.trim()
-      ? 0
-      : 1
-    : activeList.length - withPhone;
-  const selectedCount = isBioMolActive
-    ? bioMolSelected
-      ? 1
-      : 0
-    : activeSelectedIds.size;
-  const canSend = isBioMolActive
+  const withPhone = isAnalisesActive
+    ? analisePhoneEdit.trim() ? 1 : 0
+    : isBioMolActive
+      ? bioMolPhoneEdit.trim() ? 1 : 0
+      : activeList.filter((p) => (activePhoneEdits[p.nome] || p.telefone).trim())
+          .length;
+  const withoutPhone = isAnalisesActive
+    ? analisePhoneEdit.trim() ? 0 : 1
+    : isBioMolActive
+      ? bioMolPhoneEdit.trim() ? 0 : 1
+      : activeList.length - withPhone;
+  const selectedCount = isAnalisesActive
+    ? analiseSelected ? 1 : 0
+    : isBioMolActive
+      ? bioMolSelected ? 1 : 0
+      : activeSelectedIds.size;
+  const canSend = isAnalisesActive
     ? selectedFilters.length > 0 &&
       template.trim().length > 0 &&
-      bioMolSelected &&
-      bioMolPhoneEdit.trim().length > 0
-    : selectedFilters.length > 0 &&
-      template.trim().length > 0 &&
-      selectedCount > 0 &&
-      activeList.some(
-        (p) =>
-          activeSelectedIds.has(p.nome) &&
-          (activePhoneEdits[p.nome] || p.telefone).trim(),
-      );
+      analiseSelected &&
+      analisePhoneEdit.trim().length > 0
+    : isBioMolActive
+      ? selectedFilters.length > 0 &&
+        template.trim().length > 0 &&
+        bioMolSelected &&
+        bioMolPhoneEdit.trim().length > 0
+      : selectedFilters.length > 0 &&
+        template.trim().length > 0 &&
+        selectedCount > 0 &&
+        activeList.some(
+          (p) =>
+            activeSelectedIds.has(p.nome) &&
+            (activePhoneEdits[p.nome] || p.telefone).trim(),
+        );
 
   return (
     <div
@@ -1206,7 +1359,7 @@ export default function WhatsAppPage() {
           >
             {/* Tab header */}
             <div style={{ display: "flex", gap: 0, marginBottom: 12 }}>
-              {(["patologistas", "clinicas", "bio-molecular"] as const).map(
+              {(["patologistas", "clinicas", "bio-molecular", "analises-clinicas"] as const).map(
                 (tab, idx) => (
                   <button
                     key={tab}
@@ -1221,7 +1374,7 @@ export default function WhatsAppPage() {
                       borderRadius:
                         idx === 0
                           ? "8px 0 0 8px"
-                          : idx === 2
+                          : idx === 3
                             ? "0 8px 8px 0"
                             : "0",
                       color: activeTab === tab ? "#fff" : "var(--text-2)",
@@ -1239,7 +1392,9 @@ export default function WhatsAppPage() {
                       ? "Patologistas"
                       : tab === "clinicas"
                         ? "Clínicas"
-                        : "Bio. Molecular"}
+                        : tab === "bio-molecular"
+                          ? "Bio. Molecular"
+                          : "Análises Clínicas"}
                   </button>
                 ),
               )}
@@ -1269,7 +1424,7 @@ export default function WhatsAppPage() {
               </span>
             </div>
 
-            {!isBioMolActive && (
+            {!isBioMolActive && !isAnalisesActive && (
               <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                 <button
                   onClick={
@@ -1383,6 +1538,88 @@ export default function WhatsAppPage() {
                       }}
                     />
                     {savingBioMolPhone && (
+                      <span style={{ fontSize: 10, color: "var(--text-3)" }}>
+                        💾
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Análises Clínicas */}
+            {isAnalisesActive && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 10px",
+                  background: analiseSelected
+                    ? "rgba(59,130,246,0.06)"
+                    : "var(--bg-2)",
+                  border: `1px solid ${analiseSelected ? "var(--blue)" : "var(--border)"}`,
+                  borderRadius: 12,
+                  transition: "all 0.2s",
+                  boxShadow: analiseSelected
+                    ? "0 0 0 2px rgba(59,130,246,0.1)"
+                    : "none",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={analiseSelected}
+                  onChange={() => setAnaliseSelected((v) => !v)}
+                  style={{
+                    cursor: "pointer",
+                    accentColor: "var(--blue)",
+                    flexShrink: 0,
+                  }}
+                />
+                <div
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: analisePhoneEdit.trim()
+                      ? "var(--green)"
+                      : "var(--red)",
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "var(--text-0)",
+                      marginBottom: 3,
+                    }}
+                  >
+                    Análises Clínicas
+                  </div>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 4 }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="5511999999999"
+                      value={analisePhoneEdit}
+                      onChange={(e) => setAnalisePhoneEdit(e.target.value)}
+                      onBlur={saveAnalisePhone}
+                      onKeyDown={(e) => e.key === "Enter" && saveAnalisePhone()}
+                      style={{
+                        flex: 1,
+                        background: "var(--bg-0)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 8,
+                        color: "var(--text-1)",
+                        padding: "2px 6px",
+                        fontSize: 11,
+                        fontFamily: "monospace",
+                      }}
+                    />
+                    {savingAnalisePhone && (
                       <span style={{ fontSize: 10, color: "var(--text-3)" }}>
                         💾
                       </span>

@@ -135,7 +135,7 @@ let idbPromise: Promise<IDBPDatabase> | null = null;
 function getIdb() {
   if (typeof window === "undefined") return null; // SSR safety
   if (!idbPromise) {
-    idbPromise = openDB("csv-filter-pro", 4, {
+    idbPromise = openDB("csv-filter-pro", 5, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           if (!db.objectStoreNames.contains("filters")) {
@@ -161,6 +161,11 @@ function getIdb() {
         if (oldVersion < 4) {
           if (!db.objectStoreNames.contains("bio_molecular_settings")) {
             db.createObjectStore("bio_molecular_settings");
+          }
+        }
+        if (oldVersion < 5) {
+          if (!db.objectStoreNames.contains("analises_clinicas_settings")) {
+            db.createObjectStore("analises_clinicas_settings");
           }
         }
       },
@@ -822,6 +827,7 @@ interface NumerosSeed {
   pathologists?: Pathologist[];
   clinics?: Clinic[];
   biomolecular?: string;
+  analises_clinicas?: string;
 }
 
 let _numerosSeedCache: NumerosSeed | null | undefined = undefined;
@@ -1139,6 +1145,36 @@ export async function saveBioMolecularPhone(telefone: string): Promise<void> {
   const idb = await getIdb();
   if (!idb) return;
   await idb.put("bio_molecular_settings", telefone, "telefone");
+}
+
+// --- Análises Clínicas ---
+const SEED_ANALISES_KEY = "csv-filter-analises-seeded";
+
+async function seedDefaultAnalisesClinicas(idb: IDBPDatabase): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(SEED_ANALISES_KEY)) return;
+  try {
+    const seed = await fetchNumerosSeed();
+    const telefone = seed.analises_clinicas ?? "";
+    if (!telefone) return;
+    await idb.put("analises_clinicas_settings", telefone, "telefone");
+    localStorage.setItem(SEED_ANALISES_KEY, "1");
+  } catch {
+    // silently ignore
+  }
+}
+
+export async function getSavedAnalisesClinicasPhone(): Promise<string> {
+  const idb = await getIdb();
+  if (!idb) return "";
+  await seedDefaultAnalisesClinicas(idb);
+  return (await idb.get("analises_clinicas_settings", "telefone") as string) ?? "";
+}
+
+export async function saveAnalisesClinicasPhone(telefone: string): Promise<void> {
+  const idb = await getIdb();
+  if (!idb) return;
+  await idb.put("analises_clinicas_settings", telefone, "telefone");
 }
 
 export async function getBioMolecularSummary(
