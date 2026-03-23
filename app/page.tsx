@@ -213,9 +213,14 @@ export default function Home() {
             const headers = results.data[0];
             const dataRows = results.data.slice(1);
 
-            const isVisualizacaoCSV = headers.some(
-              (h) => HEADER_MAP[h.trim().toLowerCase()] === "visualizacao",
-            );
+            const mappedCols = headers
+              .map((h) => HEADER_MAP[h.trim().toLowerCase()])
+              .filter(Boolean);
+            const isVisualizacaoCSV =
+              mappedCols.includes("visualizacao") &&
+              mappedCols.every((c) =>
+                ["cod_requisicao", "visualizacao"].includes(c),
+              );
 
             if (isVisualizacaoCSV) {
               const { updated, skipped } = await importVisualizacaoCSV(
