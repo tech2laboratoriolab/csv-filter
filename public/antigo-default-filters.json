@@ -1,6 +1,6 @@
 [
   {
-    "id": "imported_1773923535517_0",
+    "id": "1773168196310",
     "name": "ANÁLISES CLÍNICAS",
     "selectedColumns": [
       "cod_requisicao",
@@ -34,7 +34,7 @@
       }
     ],
     "createdAt": "2026-03-10T18:43:16.310Z",
-    "updatedAt": "2026-03-19T12:32:15.518Z",
+    "updatedAt": "2026-03-12T11:52:14.771Z",
     "colorRules": [
       {
         "id": "17733162881470.13836697637247597",
@@ -47,59 +47,13 @@
         "priority": 0,
         "targetColumn": "dta_prevista",
         "textColor": "#ffffff"
-      },
-      {
-        "id": "17734089600270.9833380520778315",
-        "name": "Regra 2",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_today",
-        "value": "",
-        "backgroundColor": "#fff700",
-        "priority": 1,
-        "targetColumn": "dta_prevista"
-      },
-      {
-        "id": "17734089824670.722345764994198",
-        "name": "Regra 3",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_tomorrow",
-        "value": "",
-        "backgroundColor": "#00ccff",
-        "priority": 2,
-        "targetColumn": "dta_prevista"
-      },
-      {
-        "id": "17734090028340.9589307556370938",
-        "name": "Regra 4",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Amostra Pendente de Envio ao Destino",
-        "backgroundColor": "#ff9500",
-        "priority": 3,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734090695140.8490386694431019",
-        "name": "Regra 5",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#ffea00",
-        "priority": 4,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
       }
     ],
     "formulaColumns": [],
     "annotationColumns": []
   },
   {
-    "id": "imported_1773923535519_1",
+    "id": "1773162979107",
     "name": "CAP (Biologia Molecular)",
     "selectedColumns": [
       "cod_requisicao",
@@ -108,6 +62,11 @@
       "nom_local_origem",
       "nom_patologista",
       "dta_solicitacao",
+      "dta_prevista"
+    ],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
       "dta_prevista"
     ],
     "conditions": [
@@ -143,7 +102,7 @@
       }
     ],
     "createdAt": "2026-03-10T17:16:19.107Z",
-    "updatedAt": "2026-03-19T12:32:15.519Z",
+    "updatedAt": "2026-03-12T11:53:58.971Z",
     "colorRules": [
       {
         "id": "17731630034800.5860937796585116",
@@ -207,15 +166,10 @@
       }
     ],
     "formulaColumns": [],
-    "annotationColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
-    ]
+    "annotationColumns": []
   },
   {
-    "id": "imported_1773923535520_2",
+    "id": "imported_1773066497859_0",
     "name": "CRITICO",
     "selectedColumns": [
       "cod_requisicao",
@@ -232,7 +186,7 @@
       }
     ],
     "createdAt": "2026-03-06T17:45:45.305Z",
-    "updatedAt": "2026-03-19T12:32:15.520Z",
+    "updatedAt": "2026-03-11T14:07:58.494Z",
     "colorRules": [
       {
         "id": "17730820643320.2973617643266665",
@@ -260,7 +214,7 @@
     ]
   },
   {
-    "id": "imported_1773923535520_3",
+    "id": "imported_1773066497860_1",
     "name": "IMUNO",
     "selectedColumns": [
       "cod_requisicao",
@@ -289,7 +243,7 @@
       }
     ],
     "createdAt": "2026-03-06T14:41:39.928Z",
-    "updatedAt": "2026-03-19T12:32:15.520Z",
+    "updatedAt": "2026-03-12T11:55:43.747Z",
     "colorRules": [
       {
         "id": "17728186841520.5572375032278349",
@@ -313,42 +267,6 @@
         "priority": 1,
         "targetColumn": "dta_prevista",
         "textColor": "#ffffff"
-      },
-      {
-        "id": "17734091532890.9017198348584059",
-        "name": "Regra 3",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_today",
-        "value": "",
-        "backgroundColor": "#fff700",
-        "priority": 2,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734091788560.993647266063612",
-        "name": "Regra 4",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_tomorrow",
-        "value": "",
-        "backgroundColor": "#00bfff",
-        "priority": 3,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734092187990.6979078515987307",
-        "name": "Regra 5",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#ffdd00",
-        "priority": 4,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
       }
     ],
     "formulaColumns": [],
@@ -361,7 +279,7 @@
     ]
   },
   {
-    "id": "imported_1773923535520_4",
+    "id": "imported_1773066497860_2",
     "name": "RECEBIDO",
     "selectedColumns": [
       "cod_requisicao",
@@ -398,7 +316,7 @@
       }
     ],
     "createdAt": "2026-03-06T11:53:25.870Z",
-    "updatedAt": "2026-03-19T12:57:35.303Z",
+    "updatedAt": "2026-03-11T14:08:58.400Z",
     "colorRules": [
       {
         "id": "17728069605360.8872815431758709",
@@ -422,7 +340,7 @@
     ]
   },
   {
-    "id": "imported_1773923535521_5",
+    "id": "imported_1773066497860_3",
     "name": "CAP",
     "selectedColumns": [
       "cod_requisicao",
@@ -456,7 +374,7 @@
       }
     ],
     "createdAt": "2026-03-05T12:37:57.920Z",
-    "updatedAt": "2026-03-19T12:32:15.521Z",
+    "updatedAt": "2026-03-12T11:56:55.115Z",
     "colorRules": [
       {
         "id": "17727443239420.20981534229568677",
@@ -529,48 +447,13 @@
         "priority": 5,
         "targetColumn": "dta_prevista",
         "textColor": "#ffffff"
-      },
-      {
-        "id": "17734086914940.17151633174928582",
-        "name": "Regra 7",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_today",
-        "value": "",
-        "backgroundColor": "#fbff00",
-        "priority": 6,
-        "targetColumn": "dta_prevista"
-      },
-      {
-        "id": "17734087280530.8904230218494191",
-        "name": "Regra 8",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_tomorrow",
-        "value": "",
-        "backgroundColor": "#00ccff",
-        "priority": 7,
-        "targetColumn": "dta_prevista",
-        "textColor": "#ffffff"
-      },
-      {
-        "id": "17738453468090.2992642262185228",
-        "name": "Regra 9",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Admissão",
-        "backgroundColor": "#00ffe1",
-        "priority": 8,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
       }
     ],
     "formulaColumns": [],
     "annotationColumns": []
   },
   {
-    "id": "imported_1773923535521_6",
+    "id": "imported_1773066497861_4",
     "name": "BIOP",
     "selectedColumns": [
       "cod_requisicao",
@@ -604,8 +487,20 @@
       }
     ],
     "createdAt": "2026-03-04T18:40:10.696Z",
-    "updatedAt": "2026-03-19T12:32:15.521Z",
+    "updatedAt": "2026-03-12T11:59:16.923Z",
     "colorRules": [
+      {
+        "id": "17726510216650.5318766987414241",
+        "name": "Regra 1",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_today",
+        "value": "",
+        "backgroundColor": "#c2a11e",
+        "priority": 0,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
+      },
       {
         "id": "17726525839140.2616239091910396",
         "name": "Regra 2",
@@ -614,21 +509,9 @@
         "operator": "is_past",
         "value": "",
         "backgroundColor": "#d50707",
-        "priority": 0,
-        "targetColumn": "dta_prevista",
-        "textColor": "#ffffff"
-      },
-      {
-        "id": "17726510216650.5318766987414241",
-        "name": "Regra 1",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_today",
-        "value": "",
-        "backgroundColor": "#ffea00",
         "priority": 1,
         "targetColumn": "dta_prevista",
-        "textColor": "#000000"
+        "textColor": "#ffffff"
       },
       {
         "id": "17727451774940.4982746826536646",
@@ -637,7 +520,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Corte - Coloração Esp. / Novos Cortes",
-        "backgroundColor": "#9950f2",
+        "backgroundColor": "#f32b2b",
         "priority": 2,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -661,46 +544,10 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Amostra Pendente de Envio ao Destino",
-        "backgroundColor": "#ff00dd",
+        "backgroundColor": "#b30000",
         "priority": 4,
         "targetColumn": "nom_evento",
         "textColor": "#ffffff"
-      },
-      {
-        "id": "17734085952550.7523995935650373",
-        "name": "Regra 6",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_tomorrow",
-        "value": "",
-        "backgroundColor": "#00bfff",
-        "priority": 5,
-        "targetColumn": "dta_prevista",
-        "textColor": "#ffffff"
-      },
-      {
-        "id": "17738451495800.9624666696669064",
-        "name": "Regra 7",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Disponível para Coleta do LAB",
-        "backgroundColor": "#3fb950",
-        "priority": 6,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17738451955790.0924848309479126",
-        "name": "Regra 8",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Retificação de laudo",
-        "backgroundColor": "#ff00d0",
-        "priority": 7,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
       }
     ],
     "formulaColumns": [],
@@ -712,7 +559,7 @@
     "annotationColumns": []
   },
   {
-    "id": "imported_1773923535522_7",
+    "id": "imported_1773066497861_5",
     "name": "CITO",
     "selectedColumns": [
       "cod_requisicao",
@@ -737,7 +584,7 @@
       {
         "column": "id_convenio",
         "operator": "not_in",
-        "value": "32,46,1004,1015"
+        "value": "32,46,1015"
       },
       {
         "column": "dta_finalizacao",
@@ -751,7 +598,7 @@
       }
     ],
     "createdAt": "2026-03-02T13:46:47.886Z",
-    "updatedAt": "2026-03-19T12:32:15.522Z",
+    "updatedAt": "2026-03-12T12:00:24.563Z",
     "colorRules": [
       {
         "id": "17724614190940.36787949209356696",
@@ -767,7 +614,7 @@
       },
       {
         "id": "17724619347420.11235748418454228",
-        "name": "Convênio",
+        "name": "Regra 2",
         "targetType": "cell",
         "conditionColumn": "nom_evento",
         "operator": "equals",
@@ -790,6 +637,18 @@
         "textColor": "#000000"
       },
       {
+        "id": "17724650339250.7737501799135347",
+        "name": "Hoje",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_today",
+        "value": "",
+        "backgroundColor": "#c0a330",
+        "priority": 3,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
+      },
+      {
         "id": "17724651743010.05473914560459414",
         "name": "Atrasado",
         "targetType": "cell",
@@ -797,56 +656,9 @@
         "operator": "is_past",
         "value": "",
         "backgroundColor": "#d50707",
-        "priority": 3,
-        "targetColumn": "dta_prevista",
-        "textColor": "#ffffff"
-      },
-      {
-        "id": "17734081269810.7093526927249655",
-        "name": "Regra 5",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_tomorrow",
-        "value": "",
-        "backgroundColor": "#00d5ff",
-        "priority": 4,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734081634840.5405090883573446",
-        "name": "Regra 6",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_today",
-        "value": "",
-        "backgroundColor": "#fbff00",
         "priority": 5,
         "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734082239800.6306911990038325",
-        "name": "Revisão Aleatória",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Revisão Aleatória de Citologia",
-        "backgroundColor": "#cc01da",
-        "priority": 6,
-        "targetColumn": "nom_evento",
         "textColor": "#ffffff"
-      },
-      {
-        "id": "17738450852760.033051435780351524",
-        "name": "Regra 7",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Disponível para Coleta do LAB",
-        "backgroundColor": "#00ff1e",
-        "priority": 7,
-        "targetColumn": "nom_evento"
       }
     ],
     "formulaColumns": [],
