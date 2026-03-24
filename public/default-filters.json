@@ -220,15 +220,15 @@
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
-      "nom_local_origem",
-      "nom_patologista",
+      "local_origem",
+      "patologista",
       "dta_finalizacao"
     ],
     "conditions": [
       {
-        "column": "cod_evento",
-        "operator": "not_equals",
-        "value": "1041"
+        "column": "dta_finalizacao",
+        "operator": "is_not_null",
+        "value": ""
       }
     ],
     "createdAt": "2026-03-06T17:45:45.305Z",

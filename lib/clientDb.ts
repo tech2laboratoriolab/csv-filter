@@ -42,6 +42,12 @@ COLUMNS.forEach((c) => {
   HEADER_MAP[c.label.toLowerCase()] = c.name;
 });
 
+function normalizeDateString(raw: string): string {
+  const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}${m[4]}`;
+  return raw;
+}
+
 // --- In-Memory SQLite Setup ---
 let _dbPromise: Promise<Database> | null = null;
 
@@ -250,6 +256,7 @@ export async function importCSV(
           const num = parseFloat(raw.replace(",", "."));
           return isNaN(num) ? null : num;
         }
+        if (m.colDef.type === "date") return normalizeDateString(raw);
         return raw;
       });
 
