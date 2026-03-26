@@ -382,9 +382,9 @@
         "value": "Medigest Centro de Medicina Digestiva"
       },
       {
-        "column": "nom_evento",
+        "column": "cod_evento",
         "operator": "in",
-        "value": "Laudo Concluído (Definitivo),Microscopia,Microscopia - Aguarda Liberação,Concluído - Laudo em Fotos,Envio material parceiro,Histotécnica"
+        "value": "11,16,1000,56,19,9"
       },
       {
         "column": "nom_fonte_pagadora",
