@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import type { ColumnDef, ColorRule, FormulaColumn, AnnotationColumn } from '@/lib/clientDb';
+import type { ColumnDef, ColorRule, FormulaColumn, AnnotationColumn, LookupColumn } from '@/lib/clientDb';
 import { evaluateColorRules } from '@/lib/colorRules';
 
 interface DataTableProps {
@@ -13,6 +13,8 @@ interface DataTableProps {
   formulaValues: string[][];
   annotationColumns: AnnotationColumn[];
   annotationValues: Record<string, string>;
+  lookupColumns: LookupColumn[];
+  lookupValues: string[][];
   onAnnotationChange: (rowId: number, colId: string, value: string) => void;
   sortCol?: string;
   sortDir: 'asc' | 'desc';
@@ -22,39 +24,38 @@ interface DataTableProps {
 type DisplayCol =
   | { type: 'data'; name: string }
   | { type: 'formula'; fc: FormulaColumn; fcIdx: number }
-  | { type: 'annotation'; ac: AnnotationColumn; acIdx: number };
+  | { type: 'annotation'; ac: AnnotationColumn; acIdx: number }
+  | { type: 'lookup'; lc: LookupColumn; lcIdx: number };
 
 function buildDisplayCols(
   selectedCols: string[],
   formulaColumns: FormulaColumn[],
   annotationColumns: AnnotationColumn[],
+  lookupColumns: LookupColumn[] = [],
 ): DisplayCol[] {
   const result: DisplayCol[] = [];
 
   for (const name of selectedCols) {
     result.push({ type: 'data', name });
     formulaColumns.forEach((fc, fcIdx) => {
-      if (fc.insertAfterColumn === name) {
-        result.push({ type: 'formula', fc, fcIdx });
-      }
+      if (fc.insertAfterColumn === name) result.push({ type: 'formula', fc, fcIdx });
     });
     annotationColumns.forEach((ac, acIdx) => {
-      if (ac.insertAfterColumn === name) {
-        result.push({ type: 'annotation', ac, acIdx });
-      }
+      if (ac.insertAfterColumn === name) result.push({ type: 'annotation', ac, acIdx });
+    });
+    lookupColumns.forEach((lc, lcIdx) => {
+      if (lc.insertAfterColumn === name) result.push({ type: 'lookup', lc, lcIdx });
     });
   }
 
   formulaColumns.forEach((fc, fcIdx) => {
-    if (!fc.insertAfterColumn) {
-      result.push({ type: 'formula', fc, fcIdx });
-    }
+    if (!fc.insertAfterColumn || !selectedCols.includes(fc.insertAfterColumn)) result.push({ type: 'formula', fc, fcIdx });
   });
-
   annotationColumns.forEach((ac, acIdx) => {
-    if (!ac.insertAfterColumn) {
-      result.push({ type: 'annotation', ac, acIdx });
-    }
+    if (!ac.insertAfterColumn || !selectedCols.includes(ac.insertAfterColumn)) result.push({ type: 'annotation', ac, acIdx });
+  });
+  lookupColumns.forEach((lc, lcIdx) => {
+    if (!lc.insertAfterColumn || !selectedCols.includes(lc.insertAfterColumn)) result.push({ type: 'lookup', lc, lcIdx });
   });
 
   return result;
@@ -78,13 +79,15 @@ export default function DataTable({
   formulaValues,
   annotationColumns,
   annotationValues,
+  lookupColumns,
+  lookupValues,
   onAnnotationChange,
   sortCol,
   sortDir,
   onSort,
 }: DataTableProps) {
   const getLabel = (name: string) => columns.find(c => c.name === name)?.label ?? name;
-  const displayCols = buildDisplayCols(selectedCols, formulaColumns, annotationColumns);
+  const displayCols = buildDisplayCols(selectedCols, formulaColumns, annotationColumns, lookupColumns);
   // Track pending (uncommitted) edits keyed by "rowId:colId"
   const pendingRef = useRef<Record<string, string>>({});
 
@@ -123,6 +126,16 @@ export default function DataTable({
                   </th>
                 );
               }
+              if (col.type === 'lookup') {
+                return (
+                  <th
+                    key={`lc-${col.lc.id}`}
+                    style={{ width: col.lc.width ?? 220, color: 'var(--blue)' }}
+                  >
+                    ⌗ {col.lc.label}
+                  </th>
+                );
+              }
               return (
                 <th
                   key={col.name}
@@ -140,15 +153,12 @@ export default function DataTable({
         </thead>
         <tbody>
           {rows.map((row, ri) => {
-            // Enrich row with annotation values so color rules can use them as condition columns
-            const enrichedRow = colorRules.length && annotationColumns.length
-              ? {
-                  ...row,
-                  ...Object.fromEntries(
-                    annotationColumns.map(ac => [ac.id, annotationValues[`${row._row_id}:${ac.id}`] ?? ''])
-                  ),
-                }
-              : row;
+            // Enrich row with annotation and lookup values so color rules can use them as condition columns
+            let enrichedRow: Record<string, unknown> = row;
+            if (colorRules.length && annotationColumns.length)
+              enrichedRow = { ...enrichedRow, ...Object.fromEntries(annotationColumns.map(ac => [ac.id, annotationValues[`${row._row_id}:${ac.id}`] ?? ''])) };
+            if (colorRules.length && lookupColumns.length)
+              enrichedRow = { ...enrichedRow, ...Object.fromEntries(lookupColumns.map((lc, lcIdx) => [lc.id, lookupValues[ri]?.[lcIdx] ?? ''])) };
             const { rowStyle, cellStyles } = colorRules.length
               ? evaluateColorRules(enrichedRow, colorRules)
               : { rowStyle: {}, cellStyles: {} };
@@ -165,6 +175,27 @@ export default function DataTable({
                           width: col.fc.width ?? 150,
                           fontFamily: 'monospace',
                           color: val.startsWith('#ERR') ? 'var(--red)' : 'var(--purple)',
+                        }}
+                        title={val}
+                      >
+                        {val}
+                      </td>
+                    );
+                  }
+
+                  if (col.type === 'lookup') {
+                    const val = lookupValues[ri]?.[col.lcIdx] ?? '';
+                    const isPending = !val;
+                    const isFallback = val === col.lc.fallback;
+                    const lcCellStyle = (cellStyles[col.lc.id] || {}) as React.CSSProperties;
+                    return (
+                      <td
+                        key={`lc-${col.lc.id}`}
+                        style={{
+                          width: col.lc.width ?? 220,
+                          color: isPending ? 'var(--text-3)' : isFallback ? 'var(--yellow)' : 'var(--blue)',
+                          fontStyle: isFallback ? 'italic' : 'normal',
+                          ...lcCellStyle,
                         }}
                         title={val}
                       >

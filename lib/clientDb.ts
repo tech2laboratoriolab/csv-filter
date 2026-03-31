@@ -20,6 +20,7 @@ export const COLUMNS: ColumnDef[] = [
   { name: "cod_evento", label: "CodEvento", type: "text" },
   { name: "nom_evento", label: "NomEvento", type: "text" },
   { name: "nom_evento_fatur", label: "NomEventoFatur", type: "text" },
+  { name: "nfereq", label: "NfeReq", type: "text" },
   { name: "cod_medico", label: "CodMedico", type: "text" },
   { name: "id_convenio", label: "IdConvenio", type: "number" },
   { name: "nom_convenio", label: "NomConvenio", type: "text" },
@@ -31,7 +32,11 @@ export const COLUMNS: ColumnDef[] = [
   { name: "patologista", label: "Patologista", type: "text" },
   { name: "patologista_aux", label: "PatologistaAux", type: "text" },
   { name: "des_evento", label: "DesEvento", type: "text" },
+  { name: "des_topografia", label: "DesTopografia", type: "text" },
   { name: "destaque", label: "Destaque", type: "text" },
+  { name: "laudo_macro", label: "LaudoMacro", type: "text" },
+  { name: "des_diagnostico", label: "DesDiagnostico", type: "text" },
+  { name: "dgn_critico", label: "DgnCritico", type: "text" },
   { name: "laudo_micro", label: "LaudoMicro", type: "text" },
   { name: "avaliacao_cito", label: "AvaliacaoCito", type: "text" },
   { name: "visualizacao", label: "Visualizado", type: "number" },
@@ -414,6 +419,19 @@ export interface AnnotationColumn {
   insertAfterColumn?: string;
 }
 
+export interface LookupColumn {
+  id: string;
+  label: string;
+  keyColumn: string;
+  matchConditions: FilterCondition[];
+  displayColumns: string[];
+  separator: string;
+  limit: number;
+  fallback: string;
+  width?: number;
+  insertAfterColumn?: string;
+}
+
 export interface SavedFilter {
   id: string;
   name: string;
@@ -423,6 +441,7 @@ export interface SavedFilter {
   colorRules?: ColorRule[];
   formulaColumns?: FormulaColumn[];
   annotationColumns?: AnnotationColumn[];
+  lookupColumns?: LookupColumn[];
   whatsappLinhasColumns?: string[];
   createdAt: string;
   updatedAt?: string;
@@ -634,6 +653,64 @@ export async function queryFiltered(
   return { rows, total };
 }
 
+export async function evaluateLookupColumns(
+  rows: Record<string, unknown>[],
+  lookupColumns: LookupColumn[],
+): Promise<string[][]> {
+  const db = await getDb();
+  const results: string[][] = rows.map(() => Array(lookupColumns.length).fill(""));
+
+  for (let lcIdx = 0; lcIdx < lookupColumns.length; lcIdx++) {
+    const lc = lookupColumns[lcIdx];
+
+    const keys = Array.from(
+      new Set(
+        rows.map((r) => r[lc.keyColumn]).filter((v) => v != null && v !== ""),
+      ),
+    ) as string[];
+
+    if (!keys.length) {
+      for (let ri = 0; ri < rows.length; ri++) results[ri][lcIdx] = lc.fallback;
+      continue;
+    }
+
+    const dispCols = lc.displayColumns.map((c) => `"${c}"`).join(", ");
+    const keyCol = `"${lc.keyColumn}"`;
+    const placeholders = keys.map(() => "?").join(", ");
+
+    const matchParts: string[] = [];
+    const matchParams: any[] = [];
+    for (const mc of lc.matchConditions) {
+      const { clause, params } = conditionToSQL(mc);
+      matchParts.push(clause);
+      matchParams.push(...params);
+    }
+    const matchWhere = matchParts.length ? ` AND ${matchParts.join(" AND ")}` : "";
+
+    const sql = `SELECT ${keyCol}, ${dispCols} FROM csv_data WHERE ${keyCol} IN (${placeholders})${matchWhere} ORDER BY id`;
+    const res = db.exec(sql, [...keys, ...matchParams]);
+    const matched = resultToObjects(res);
+
+    const grouped = new Map<string, string[]>();
+    for (const row of matched) {
+      const key = String(row[lc.keyColumn] ?? "");
+      if (!grouped.has(key)) grouped.set(key, []);
+      const group = grouped.get(key)!;
+      if (group.length < lc.limit) {
+        group.push(lc.displayColumns.map((c) => String(row[c] ?? "")).join(lc.separator));
+      }
+    }
+
+    for (let ri = 0; ri < rows.length; ri++) {
+      const key = String(rows[ri][lc.keyColumn] ?? "");
+      const group = grouped.get(key);
+      results[ri][lcIdx] = group?.length ? group.join(lc.separator) : lc.fallback;
+    }
+  }
+
+  return results;
+}
+
 export async function getDistinctValues(
   column: string,
   limit = 200,
@@ -705,7 +782,7 @@ export async function exportFilteredCSV(
 }
 
 // --- IndexedDB: Filters ---
-const SEED_KEY = "csv-filter-defaults-seeded-v3";
+const SEED_KEY = "csv-filter-defaults-seeded-v7";
 
 // --- Reset All Data ---
 export async function resetAllData(): Promise<void> {
@@ -792,6 +869,7 @@ export async function deleteDefaultFilters(): Promise<void> {
 export async function getFilterById(id: string): Promise<SavedFilter | null> {
   const idb = await getIdb();
   if (!idb) return null;
+  await seedDefaultFilters(idb);
   return (await idb.get("filters", id)) || null;
 }
 

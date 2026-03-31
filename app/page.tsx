@@ -6,6 +6,7 @@ import type {
   ColorRule,
   FormulaColumn,
   AnnotationColumn,
+  LookupColumn,
 } from "@/lib/clientDb";
 import DataTable from "@/app/components/DataTable";
 import {
@@ -21,6 +22,7 @@ import {
   deleteDefaultFilters,
   getAnnotations,
   setAnnotation,
+  evaluateLookupColumns,
   deriveColumnsFromFilters,
   resetAllData,
   COLUMNS,
@@ -78,6 +80,8 @@ export default function Home() {
   const [colorRules, setColorRules] = useState<ColorRule[]>([]);
   const [formulaColumns, setFormulaColumns] = useState<FormulaColumn[]>([]);
   const [formulaValues, setFormulaValues] = useState<string[][]>([]);
+  const [lookupColumns, setLookupColumns] = useState<LookupColumn[]>([]);
+  const [lookupValues, setLookupValues] = useState<string[][]>([]);
   const [annotationColumns, setAnnotationColumns] = useState<
     AnnotationColumn[]
   >([]);
@@ -143,6 +147,12 @@ export default function Home() {
       .then((vals) => setFormulaValues(vals))
       .catch(() => setFormulaValues([]));
   }, [rows, formulaColumns, columns]);
+
+  // Evaluate lookup columns when rows/lookupColumns change
+  useEffect(() => {
+    if (!lookupColumns.length || !rows.length) { setLookupValues([]); return; }
+    evaluateLookupColumns(rows, lookupColumns).then(setLookupValues).catch(() => setLookupValues([]));
+  }, [rows, lookupColumns]);
 
   // Fetch annotation values when rows/annotationColumns change
   useEffect(() => {
@@ -394,6 +404,7 @@ export default function Home() {
     setColorRules(f.colorRules ?? []);
     setFormulaColumns(f.formulaColumns ?? []);
     setAnnotationColumns(f.annotationColumns ?? []);
+    setLookupColumns(f.lookupColumns ?? []);
     setAnnotationValues({});
     setPage(1);
     fetchData(f.selectedColumns, f.conditions, 1);
@@ -964,6 +975,8 @@ export default function Home() {
                   formulaValues={formulaValues}
                   annotationColumns={annotationColumns}
                   annotationValues={annotationValues}
+                  lookupColumns={lookupColumns}
+                  lookupValues={lookupValues}
                   onAnnotationChange={handleAnnotationChange}
                   sortCol={sortCol}
                   sortDir={sortDir}

@@ -220,15 +220,135 @@
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
+      "dta_finalizacao",
       "local_origem",
       "patologista",
-      "dta_finalizacao"
+      "patologista_aux",
+      "visualizacao"
     ],
     "conditions": [
       {
         "column": "dta_finalizacao",
         "operator": "is_not_null",
         "value": ""
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_contains",
+        "value": "I M CLINIC"
+      },
+      {
+        "column": "avaliacao_cito",
+        "operator": "not_contains",
+        "value": "NEGATIVO PARA LESÃO INTRAEPITELIAN OU MANIGNIDADE NESTA AMOSTRA"
+      },
+      {
+        "column": "avaliacao_cito",
+        "operator": "contains",
+        "value": "ASC-US",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "avaliacao_cito",
+        "operator": "contains",
+        "value": "ASC-H",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "avaliacao_cito",
+        "operator": "contains",
+        "value": "LSIL",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "avaliacao_cito",
+        "operator": "contains",
+        "value": "HSIL",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "avaliacao_cito",
+        "operator": "contains",
+        "value": "CARCINOMA",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "avaliacao_cito",
+        "operator": "contains",
+        "value": "ADENOCARCINOMA",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "avaliacao_cito",
+        "operator": "contains",
+        "value": "NEOPLASIA",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "avaliacao_cito",
+        "operator": "contains",
+        "value": "histoquímica",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "laudo_macro",
+        "operator": "equals",
+        "value": "1",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "des_diagnostico",
+        "operator": "contains",
+        "value": "ASC-US",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "des_diagnostico",
+        "operator": "contains",
+        "value": "ASC-H",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "des_diagnostico",
+        "operator": "contains",
+        "value": "LSIL",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "des_diagnostico",
+        "operator": "contains",
+        "value": "HSIL",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "des_diagnostico",
+        "operator": "contains",
+        "value": "CARCINOMA",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "des_diagnostico",
+        "operator": "contains",
+        "value": "ADENOCARCINOMA",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "des_diagnostico",
+        "operator": "contains",
+        "value": "NEOPLASIA",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "des_diagnostico",
+        "operator": "contains",
+        "value": "histoquímica",
+        "orGroup": "critico_keywords"
+      },
+      {
+        "column": "dgn_critico",
+        "operator": "equals",
+        "value": "1",
+        "orGroup": "critico_keywords"
       }
     ],
     "createdAt": "2026-03-06T17:45:45.305Z",
@@ -395,10 +515,15 @@
         "column": "cod_evento",
         "operator": "not_in",
         "value": "56,1041"
+      },
+      {
+        "column": "nfereq",
+        "operator": "is_null",
+        "value": ""
       }
     ],
     "createdAt": "2026-03-06T11:53:25.870Z",
-    "updatedAt": "2026-03-19T12:57:35.303Z",
+    "updatedAt": "2026-03-31T00:00:00.000Z",
     "colorRules": [
       {
         "id": "17728069605360.8872815431758709",
@@ -867,8 +992,7 @@
       "local_origem",
       "patologista",
       "patologista_aux",
-      "convenio",
-      "avaliacao_cito"
+      "convenio"
     ],
     "conditions": [
       {
@@ -897,12 +1021,58 @@
         "operator": "contains",
         "value": "histoqu",
         "orGroup": "ihq_histoqu"
+      },
+      {
+        "column": "des_topografia",
+        "operator": "contains",
+        "value": "histoqu",
+        "orGroup": "ihq_histoqu"
       }
     ],
     "createdAt": "2026-03-23T00:00:00.000Z",
     "updatedAt": "2026-03-23T00:00:00.000Z",
-    "colorRules": [],
+    "colorRules": [
+      {
+        "id": "17743000000001.ihq_pendente",
+        "name": "IMUNO Pendente",
+        "targetType": "cell",
+        "conditionColumn": "ihq_imuno_lookup",
+        "operator": "equals",
+        "value": "PENDENTE VERIFICAÇÃO",
+        "backgroundColor": "#d50707",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "ihq_imuno_lookup"
+      },
+      {
+        "id": "17743000000002.ihq_encontrado",
+        "name": "IMUNO Encontrado",
+        "targetType": "cell",
+        "conditionColumn": "ihq_imuno_lookup",
+        "operator": "not_equals",
+        "value": "PENDENTE VERIFICAÇÃO",
+        "backgroundColor": "#0066cc",
+        "textColor": "#ffffff",
+        "priority": 1,
+        "targetColumn": "ihq_imuno_lookup"
+      }
+    ],
     "formulaColumns": [],
-    "annotationColumns": []
+    "annotationColumns": [],
+    "lookupColumns": [
+      {
+        "id": "ihq_imuno_lookup",
+        "label": "IMUNO Faturamento",
+        "keyColumn": "nom_paciente",
+        "matchConditions": [
+          { "column": "nom_exame", "operator": "contains", "value": "IMUNO" }
+        ],
+        "displayColumns": ["cod_requisicao", "cod_evento"],
+        "separator": " / ",
+        "limit": 2,
+        "fallback": "PENDENTE VERIFICAÇÃO",
+        "insertAfterColumn": "convenio"
+      }
+    ]
   }
 ]

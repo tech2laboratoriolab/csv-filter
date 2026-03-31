@@ -38,6 +38,7 @@ diferenças entre csv e csv2:
 não há colunas com nomes diferentes representando o mesmo dado. as colunas compartilhadas têm exatamente os mesmos nomes. a diferença é de presença/ausência.
 
 colunas presentes no csv mas ausentes no csv2:
+
 - SetorLocal (col 15)
 - DtaInclusaoLote (col 28)
 - CnsPaciente (col 37)
@@ -75,29 +76,29 @@ A=CodRequisicao, B=DtaSolicitacao, C=DtaPrevista, D=Dta1aLiberacao, E=DtaFinaliz
 colunas usadas por subtabela:
 
 cito (fonte: csv2):
-  select: V=DtaSolicitacao, AI=CodExame, AN=NomEventoFatur, Q=Lote, L=NomLocalOrigem, AZ=QtdCobranca, W=DtaEmissaoPedido, BP=[extra], Z=DtaColeta
-  filtros: AI=CodExame, L=NomLocalOrigem, H=NomFontePagadora, Y=DtaPrevista, AL=NomEvento, AJ=NomExame, AK=CodEvento, BB=VlrLiquido
+select: V=DtaSolicitacao, AI=CodExame, AN=NomEventoFatur, Q=Lote, L=NomLocalOrigem, AZ=QtdCobranca, W=DtaEmissaoPedido, BP=[extra], Z=DtaColeta
+filtros: AI=CodExame, L=NomLocalOrigem, H=NomFontePagadora, Y=DtaPrevista, AL=NomEvento, AJ=NomExame, AK=CodEvento, BB=VlrLiquido
 
 biop (fonte: csv2):
-  select: V=DtaSolicitacao, AI=CodExame, AN=NomEventoFatur, Q=Lote, L=NomLocalOrigem, W=DtaEmissaoPedido, AZ=QtdCobranca, BP=[extra], Z=DtaColeta
-  filtros: AI=CodExame, Y=DtaPrevista, AM=CodEventoFatur, AK=CodEvento
+select: V=DtaSolicitacao, AI=CodExame, AN=NomEventoFatur, Q=Lote, L=NomLocalOrigem, W=DtaEmissaoPedido, AZ=QtdCobranca, BP=[extra], Z=DtaColeta
+filtros: AI=CodExame, Y=DtaPrevista, AM=CodEventoFatur, AK=CodEvento
 
 imuno (fonte: csv2):
-  select: V=DtaSolicitacao, AI=CodExame, AN=NomEventoFatur, H=NomFontePagadora, L=NomLocalOrigem, W=DtaEmissaoPedido, CJ=[extra], BI=[extra], BP=[extra], Z=DtaColeta
-  filtros: AL=NomEvento (CONTAINS 'IMUNO'), AN=NomEventoFatur
+select: V=DtaSolicitacao, AI=CodExame, AN=NomEventoFatur, H=NomFontePagadora, L=NomLocalOrigem, W=DtaEmissaoPedido, CJ=[extra], BI=[extra], BP=[extra], Z=DtaColeta
+filtros: AL=NomEvento (CONTAINS 'IMUNO'), AN=NomEventoFatur
 
 cap (fonte: csv2):
-  select: V=DtaSolicitacao, AI=CodExame, AN=NomEventoFatur, Q=Lote, L=NomLocalOrigem, W=DtaEmissaoPedido, BI=[extra], BP=[extra], Z=DtaColeta
-  filtros: Y=DtaPrevista, AK=CodEvento, AL=NomEvento, AI=CodExame, AV=NomPatologista
+select: V=DtaSolicitacao, AI=CodExame, AN=NomEventoFatur, Q=Lote, L=NomLocalOrigem, W=DtaEmissaoPedido, BI=[extra], BP=[extra], Z=DtaColeta
+filtros: Y=DtaPrevista, AK=CodEvento, AL=NomEvento, AI=CodExame, AV=NomPatologista
 
 recebido (fonte: csv, leitura A:AZ):
-  select: V=CodRequisicao, L=NomLocalOrigem, AQ=NomEventoFatur, AN=CodEvento, W=DtaSolicitacao
-  filtros: AQ=NomEventoFatur, L=NomLocalOrigem, AO=NomEvento, H=NomFontePagadora
+select: V=CodRequisicao, L=NomLocalOrigem, AQ=NomEventoFatur, AN=CodEvento, W=DtaSolicitacao
+filtros: AQ=NomEventoFatur, L=NomLocalOrigem, AO=NomEvento, H=NomFontePagadora
 
 critico (fonte: csvlaudo):
-  select: A=CodRequisicao, J=NomPaciente, E=DtaFinalizacao, W=LocalOrigem, AD=Patologista, AE=PatologistaAux, BN=Visualizado
-  filtros: E=DtaFinalizacao, W=LocalOrigem, AR=AvaliacaoCito, AN=DesDiagnostico, AM=LaudoMacro, AO=DgnCritico
+select: A=CodRequisicao, J=NomPaciente, E=DtaFinalizacao, W=LocalOrigem, AD=Patologista, AE=PatologistaAux, BN=Visualizado
+filtros: E=DtaFinalizacao, W=LocalOrigem, AR=AvaliacaoCito, AN=DesDiagnostico, AM=LaudoMacro, AO=DgnCritico
 
 ihq (fonte: csvlaudo):
-  select: A=CodRequisicao, J=NomPaciente, E=DtaFinalizacao, W=LocalOrigem, AD=Patologista, AE=PatologistaAux, X=Convenio, AR=AvaliacaoCito
-  filtros: E=DtaFinalizacao, I=DesEvento, AV=LaudoMicro, AT=Destaque, AL=DesTopografia
+select: A=CodRequisicao, J=NomPaciente, E=DtaFinalizacao, W=LocalOrigem, AD=Patologista, AE=PatologistaAux, X=Convenio, AR=AvaliacaoCito
+filtros: E=DtaFinalizacao, I=DesEvento, AV=LaudoMicro, AT=Destaque, AL=DesTopografia

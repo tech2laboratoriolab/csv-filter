@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { SavedFilter, ColumnDef, FilterCondition, ColorRule, FormulaColumn, AnnotationColumn } from '@/lib/clientDb';
+import type { SavedFilter, ColumnDef, FilterCondition, ColorRule, FormulaColumn, AnnotationColumn, LookupColumn } from '@/lib/clientDb';
 import ColumnPicker from '@/app/components/ColumnPicker';
 import ConditionEditor from '@/app/components/ConditionEditor';
 import DataTable from '@/app/components/DataTable';
@@ -11,6 +11,7 @@ import AnnotationColumnEditor from '@/app/components/AnnotationColumnEditor';
 import {
   getTableStats,
   queryFiltered,
+  evaluateLookupColumns,
   getAnnotations,
   setAnnotation,
   getFilterById,
@@ -39,6 +40,7 @@ export default function FilterPageClient({ filterId }: Props) {
   const [sortCol, setSortCol] = useState<string | undefined>();
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [formulaValues, setFormulaValues] = useState<string[][]>([]);
+  const [lookupValues, setLookupValues] = useState<string[][]>([]);
   const [annotationValues, setAnnotationValues] = useState<Record<string, string>>({});
   const [editingName, setEditingName] = useState(false);
 
@@ -102,6 +104,14 @@ export default function FilterPageClient({ filterId }: Props) {
       setAnnotationValues(annotations ?? {});
     }).catch(() => {});
   }, [rows, filter?.annotationColumns]);
+
+  // Evaluate lookup columns whenever rows change
+  useEffect(() => {
+    if (!filter) return;
+    const lcs = filter.lookupColumns ?? [];
+    if (!lcs.length || !rows.length) { setLookupValues([]); return; }
+    evaluateLookupColumns(rows, lcs).then(setLookupValues).catch(() => setLookupValues([]));
+  }, [rows, filter?.lookupColumns]);
 
   // Recompute formula values whenever rows or formula columns change
   useEffect(() => {
@@ -186,6 +196,7 @@ export default function FilterPageClient({ filterId }: Props) {
   const colorRules: ColorRule[] = filter.colorRules ?? [];
   const formulaColumns: FormulaColumn[] = filter.formulaColumns ?? [];
   const annotationColumns: AnnotationColumn[] = filter.annotationColumns ?? [];
+  const lookupColumns: LookupColumn[] = filter.lookupColumns ?? [];
   const sampleRow = rows[0];
 
   const handleAnnotationChange = (rowId: number, colId: string, value: string) => {
@@ -289,6 +300,7 @@ export default function FilterPageClient({ filterId }: Props) {
             rules={colorRules}
             columns={columns}
             annotationColumns={annotationColumns}
+            lookupColumns={lookupColumns}
             onChange={rules => updateFilter({ colorRules: rules })}
           />
         )}
@@ -360,6 +372,8 @@ export default function FilterPageClient({ filterId }: Props) {
             formulaValues={formulaValues}
             annotationColumns={annotationColumns}
             annotationValues={annotationValues}
+            lookupColumns={lookupColumns}
+            lookupValues={lookupValues}
             onAnnotationChange={handleAnnotationChange}
             sortCol={sortCol}
             sortDir={sortDir}

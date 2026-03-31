@@ -1326,3 +1326,18 @@ tbody tr:hover td {
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
 }
+
+.modo-individual-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text-2);
+  user-select: none;
+}
+.modo-individual-toggle input[type="checkbox"] {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}

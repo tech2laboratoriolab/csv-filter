@@ -1,12 +1,13 @@
 'use client';
 
-import type { ColorRule, ColumnDef, AnnotationColumn } from '@/lib/clientDb';
+import type { ColorRule, ColumnDef, AnnotationColumn, LookupColumn } from '@/lib/clientDb';
 import { getOpsForType } from '@/lib/operators';
 
 interface ColorRuleEditorProps {
   rules: ColorRule[];
   columns: ColumnDef[];
   annotationColumns?: AnnotationColumn[];
+  lookupColumns?: LookupColumn[];
   onChange: (rules: ColorRule[]) => void;
 }
 
@@ -23,7 +24,7 @@ function createRule(priority: number, defaultColumn: string): ColorRule {
   };
 }
 
-export default function ColorRuleEditor({ rules, columns, annotationColumns = [], onChange }: ColorRuleEditorProps) {
+export default function ColorRuleEditor({ rules, columns, annotationColumns = [], lookupColumns = [], onChange }: ColorRuleEditorProps) {
   const update = (i: number, field: string, val: unknown) => {
     const next = [...rules];
     (next[i] as unknown as Record<string, unknown>)[field] = val;
@@ -125,6 +126,15 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                         ))}
                       </optgroup>
                     )}
+                    {lookupColumns.length > 0 && (
+                      <optgroup label="Lookup">
+                        {lookupColumns.map(lc => (
+                          <option key={lc.id} value={lc.id}>
+                            {lc.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 )}
               </div>
@@ -146,6 +156,15 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                       {annotationColumns.map(ac => (
                         <option key={ac.id} value={ac.id}>
                           {ac.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {lookupColumns.length > 0 && (
+                    <optgroup label="Lookup">
+                      {lookupColumns.map(lc => (
+                        <option key={lc.id} value={lc.id}>
+                          {lc.label}
                         </option>
                       ))}
                     </optgroup>
