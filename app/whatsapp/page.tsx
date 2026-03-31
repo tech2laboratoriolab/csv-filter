@@ -2237,6 +2237,7 @@ export default function WhatsAppPage() {
               alignItems: "center",
               gap: 16,
               flexWrap: "wrap",
+              justifyContent: "space-between",
             }}
           >
             <button
@@ -2264,77 +2265,79 @@ export default function WhatsAppPage() {
               {sending ? "⏳ Enviando..." : "📤 Enviar Mensagens"}
             </button>
 
-            {selectedFilters.length === 0 && (
-              <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-                ← Selecione um ou mais filtros
-              </span>
-            )}
-            {selectedFilters.length > 0 && !template.trim() && (
-              <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-                ← Escreva a mensagem
-              </span>
-            )}
-            <label className="modo-individual-toggle">
-              <input
-                type="checkbox"
-                checked={modoEnvioIndividual}
-                onChange={(e) => {
-                  setModoEnvioIndividual(e.target.checked);
-                  if (!e.target.checked) {
-                    setSelectedPreviewIds(new Set());
-                    setPreviews([]);
-                  }
-                }}
-              />
-              1 mensagem por linha
-            </label>
-
-            {selectedFilters.length > 0 &&
-              template.trim() &&
-              selectedCount === 0 && (
-                <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-                  ← Selecione{" "}
-                  {activeTab === "clinicas" ? "clínicas" : "patologistas"}
-                </span>
-              )}
-            {selectedFilters.length > 0 &&
-              template.trim() &&
-              selectedCount > 0 && (
-                <span style={{ fontSize: 12, color: "var(--text-2)" }}>
-                  Pronto para enviar para{" "}
-                  <strong>
-                    {
-                      activeList.filter(
-                        (p) =>
-                          activeSelectedIds.has(p.nome) &&
-                          (activePhoneEdits[p.nome] || p.telefone).trim(),
-                      ).length
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <label className="modo-individual-toggle">
+                <input
+                  type="checkbox"
+                  checked={modoEnvioIndividual}
+                  onChange={(e) => {
+                    setModoEnvioIndividual(e.target.checked);
+                    if (!e.target.checked) {
+                      setSelectedPreviewIds(new Set());
+                      setPreviews([]);
                     }
-                  </strong>{" "}
-                  {activeTab === "clinicas" ? "clínica(s)" : "patologista(s)"}
+                  }}
+                />
+                1 mensagem por linha
+              </label>
+
+              {selectedFilters.length === 0 && (
+                <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+                  Selecione um ou mais filtros
                 </span>
               )}
-            {modoEnvioIndividual && previews.length > 0 && (
-              <span
-                style={{
-                  fontSize: 12,
-                  color:
-                    selectedPreviewIds.size === 0
-                      ? "var(--red)"
-                      : "var(--text-2)",
-                }}
-              >
-                {selectedPreviewIds.size === 0 ? (
-                  "Nenhuma mensagem individual selecionada"
-                ) : (
-                  <>
-                    <strong>{selectedPreviewIds.size}</strong> de{" "}
-                    <strong>{previews.length}</strong> mensagem(ns)
-                    individual(is) selecionada(s)
-                  </>
+              {selectedFilters.length > 0 && !template.trim() && (
+                <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+                  Escreva a mensagem
+                </span>
+              )}
+              {selectedFilters.length > 0 &&
+                template.trim() &&
+                selectedCount === 0 && (
+                  <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+                    Selecione{" "}
+                    {activeTab === "clinicas" ? "clínicas" : "patologistas"}
+                  </span>
                 )}
-              </span>
-            )}
+              {selectedFilters.length > 0 &&
+                template.trim() &&
+                selectedCount > 0 && (
+                  <span style={{ fontSize: 12, color: "var(--text-2)" }}>
+                    Pronto para enviar para{" "}
+                    <strong>
+                      {
+                        activeList.filter(
+                          (p) =>
+                            activeSelectedIds.has(p.nome) &&
+                            (activePhoneEdits[p.nome] || p.telefone).trim(),
+                        ).length
+                      }
+                    </strong>{" "}
+                    {activeTab === "clinicas" ? "clínica(s)" : "patologista(s)"}
+                  </span>
+                )}
+              {modoEnvioIndividual && previews.length > 0 && (
+                <span
+                  style={{
+                    fontSize: 12,
+                    color:
+                      selectedPreviewIds.size === 0
+                        ? "var(--red)"
+                        : "var(--text-2)",
+                  }}
+                >
+                  {selectedPreviewIds.size === 0 ? (
+                    "Nenhuma mensagem individual selecionada"
+                  ) : (
+                    <>
+                      <strong>{selectedPreviewIds.size}</strong> de{" "}
+                      <strong>{previews.length}</strong> mensagem(ns)
+                      individual(is) selecionada(s)
+                    </>
+                  )}
+                </span>
+              )}
+            </div>
           </div>
 
           {sending && (
