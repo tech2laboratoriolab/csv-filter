@@ -37,6 +37,7 @@ interface SendResult {
 }
 
 interface Preview {
+  id: string;
   nome: string;
   telefone: string;
   total: number;
@@ -137,6 +138,14 @@ function buildLinhasPreview(
     .join("\n");
 }
 
+function getRowEventos(
+  row: Record<string, string>,
+): { nome_evento: string; count: number }[] {
+  const nomeEvento = row["nom_evento"] || row["cod_evento"] || "";
+  if (!nomeEvento) return [];
+  return [{ nome_evento: nomeEvento, count: 1 }];
+}
+
 function formatDateBR(date: Date): string {
   const d = date.getDate().toString().padStart(2, "0");
   const m = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -169,7 +178,11 @@ function applyWhatsAppDateFilter(filter: SavedFilter): FilterCondition[] {
     // Replace only the dta_prevista date-range condition; leave everything else intact
     return filter.conditions.map((c) =>
       c.column === "dta_prevista" && DATE_OPERATORS.includes(c.operator)
-        ? { column: "dta_prevista", operator: "is_today_or_tomorrow" as const, value: "" }
+        ? {
+            column: "dta_prevista",
+            operator: "is_today_or_tomorrow" as const,
+            value: "",
+          }
         : c,
     );
   }
@@ -181,7 +194,11 @@ function applyWhatsAppDateFilter(filter: SavedFilter): FilterCondition[] {
 
   return [
     ...filter.conditions,
-    { column: "dta_prevista", operator: "is_today_or_tomorrow" as const, value: "" },
+    {
+      column: "dta_prevista",
+      operator: "is_today_or_tomorrow" as const,
+      value: "",
+    },
   ];
 }
 
@@ -194,7 +211,7 @@ function sortRowsDescByDate(
   return [...rows].sort((a, b) => {
     const va = a[dateCol.name] ?? "";
     const vb = b[dateCol.name] ?? "";
-    return va.localeCompare(vb);
+    return vb.localeCompare(va);
   });
 }
 
@@ -263,7 +280,11 @@ export default function WhatsAppPage() {
   const [sendResults, setSendResults] = useState<SendResult[]>([]);
   const [loadingPats, setLoadingPats] = useState(false);
   const [linhasColumns, setLinhasColumns] = useState<string[]>([]);
-  type ActiveTab = "patologistas" | "clinicas" | "bio-molecular" | "analises-clinicas";
+  type ActiveTab =
+    | "patologistas"
+    | "clinicas"
+    | "bio-molecular"
+    | "analises-clinicas";
   const [activeTab, setActiveTab] = useState<ActiveTab>("patologistas");
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [selectedClinicIds, setSelectedClinicIds] = useState<Set<string>>(
@@ -279,10 +300,19 @@ export default function WhatsAppPage() {
   const [bioMolPhoneEdit, setBioMolPhoneEdit] = useState("");
   const [savingBioMolPhone, setSavingBioMolPhone] = useState(false);
   const [bioMolSelected, setBioMolSelected] = useState(false);
-  const [templateAnalises, setTemplateAnalises] = useState(DEFAULT_ANALISES_TEMPLATE);
+  const [templateAnalises, setTemplateAnalises] = useState(
+    DEFAULT_ANALISES_TEMPLATE,
+  );
   const [analisePhoneEdit, setAnalisePhoneEdit] = useState("");
   const [savingAnalisePhone, setSavingAnalisePhone] = useState(false);
   const [analiseSelected, setAnaliseSelected] = useState(false);
+  const [modoEnvioIndividual, setModoEnvioIndividual] = useState(false);
+  const [selectedPreviewIds, setSelectedPreviewIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [previewSearchQuery, setPreviewSearchQuery] = useState("");
 
   const selectedFilters = filters.filter((f) => selectedFilterIds.has(f.id));
 
@@ -518,7 +548,9 @@ export default function WhatsAppPage() {
       try {
         const bioResults = await Promise.all(
           selectedFilters.map(async (f) => {
-            const cols = linhasColumns.length ? linhasColumns : f.selectedColumns;
+            const cols = linhasColumns.length
+              ? linhasColumns
+              : f.selectedColumns;
             const conditions = applyWhatsAppDateFilter(f);
             const summary = await getBioMolecularSummary(conditions);
             const rowData = await getBioMolecularRows(conditions, cols);
@@ -558,6 +590,7 @@ export default function WhatsAppPage() {
           .replace(/\{resumo\}/g, resumo)
           .replace(/\{linhas\}/g, linhas);
         newPreviews.push({
+          id: "bio-molecular",
           nome: "Biologia Molecular",
           telefone: bioMolPhoneEdit,
           total: totalCombined,
@@ -565,6 +598,7 @@ export default function WhatsAppPage() {
         });
       } catch {
         newPreviews.push({
+          id: "bio-molecular",
           nome: "Biologia Molecular",
           telefone: bioMolPhoneEdit,
           total: 0,
@@ -579,7 +613,9 @@ export default function WhatsAppPage() {
       try {
         const analisesResults = await Promise.all(
           selectedFilters.map(async (f) => {
-            const cols = linhasColumns.length ? linhasColumns : f.selectedColumns;
+            const cols = linhasColumns.length
+              ? linhasColumns
+              : f.selectedColumns;
             const conditions = applyWhatsAppDateFilter(f);
             const summary = await getBioMolecularSummary(conditions);
             const rowData = await getBioMolecularRows(conditions, cols);
@@ -604,8 +640,8 @@ export default function WhatsAppPage() {
           .map(([nome_evento, count]) => ({ nome_evento, count }))
           .sort((a, b) => b.count - a.count);
         const columnsCombined =
-          analisesResults.find((r) => r.rowData.columns?.length)?.rowData.columns ??
-          [];
+          analisesResults.find((r) => r.rowData.columns?.length)?.rowData
+            .columns ?? [];
         const rowsCombined = sortRowsDescByDate(
           analisesResults.flatMap((r) => r.rowData.rows ?? []),
           columnsCombined,
@@ -619,6 +655,7 @@ export default function WhatsAppPage() {
           .replace(/\{resumo\}/g, resumo)
           .replace(/\{linhas\}/g, linhas);
         newPreviews.push({
+          id: "analises-clinicas",
           nome: "Análises Clínicas",
           telefone: analisePhoneEdit,
           total: totalCombined,
@@ -626,6 +663,7 @@ export default function WhatsAppPage() {
         });
       } catch {
         newPreviews.push({
+          id: "analises-clinicas",
           nome: "Análises Clínicas",
           telefone: analisePhoneEdit,
           total: 0,
@@ -654,31 +692,59 @@ export default function WhatsAppPage() {
 
       for (const item of lista) {
         try {
-          const { totalCombined, eventosCombined, columnsCombined, rowsCombined } =
-            await combineFilterData(
-              selectedFilters,
-              linhasColumns,
-              getSummary,
-              getRows,
-              item.nome,
-            );
+          const {
+            totalCombined,
+            eventosCombined,
+            columnsCombined,
+            rowsCombined,
+          } = await combineFilterData(
+            selectedFilters,
+            linhasColumns,
+            getSummary,
+            getRows,
+            item.nome,
+          );
 
-          const resumo = buildResumoPreview(eventosCombined);
-          const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
-          const msg = template
-            .replace(/\{nome\}/g, formatNome(item.nome))
-            .replace(/\{total\}/g, String(totalCombined))
-            .replace(/\{data_hoje\}/g, dataHoje)
-            .replace(/\{resumo\}/g, resumo)
-            .replace(/\{linhas\}/g, linhas);
-          newPreviews.push({
-            nome: item.nome,
-            telefone: item.telefone,
-            total: totalCombined,
-            message: msg,
-          });
+          if (modoEnvioIndividual && rowsCombined.length > 0) {
+            for (let i = 0; i < rowsCombined.length; i++) {
+              const row = rowsCombined[i];
+              const rowEventos = getRowEventos(row);
+              const resumo = buildResumoPreview(rowEventos);
+              const linhas = buildLinhasPreview(columnsCombined, [row]);
+              const msg = template
+                .replace(/\{nome\}/g, formatNome(item.nome))
+                .replace(/\{total\}/g, "1")
+                .replace(/\{data_hoje\}/g, dataHoje)
+                .replace(/\{resumo\}/g, resumo)
+                .replace(/\{linhas\}/g, linhas);
+              newPreviews.push({
+                id: `${item.nome}-${i}`,
+                nome: `${item.nome} (${i + 1}/${rowsCombined.length})`,
+                telefone: item.telefone,
+                total: 1,
+                message: msg,
+              });
+            }
+          } else {
+            const resumo = buildResumoPreview(eventosCombined);
+            const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
+            const msg = template
+              .replace(/\{nome\}/g, formatNome(item.nome))
+              .replace(/\{total\}/g, String(totalCombined))
+              .replace(/\{data_hoje\}/g, dataHoje)
+              .replace(/\{resumo\}/g, resumo)
+              .replace(/\{linhas\}/g, linhas);
+            newPreviews.push({
+              id: item.nome,
+              nome: item.nome,
+              telefone: item.telefone,
+              total: totalCombined,
+              message: msg,
+            });
+          }
         } catch {
           newPreviews.push({
+            id: `${item.nome}-error`,
             nome: item.nome,
             telefone: item.telefone,
             total: 0,
@@ -689,6 +755,8 @@ export default function WhatsAppPage() {
     }
 
     setPreviews(newPreviews);
+    setSelectedPreviewIds(new Set(newPreviews.map((p) => p.id)));
+    setPreviewSearchQuery("");
     setLoadingPreview(false);
   };
 
@@ -735,9 +803,9 @@ export default function WhatsAppPage() {
         bioResults.find((r) => r.rowData.columns?.length)?.rowData.columns ??
         [];
       const rowsCombined = sortRowsDescByDate(
-          bioResults.flatMap((r) => r.rowData.rows ?? []),
-          columnsCombined,
-        );
+        bioResults.flatMap((r) => r.rowData.rows ?? []),
+        columnsCombined,
+      );
 
       const resumo = buildResumoPreview(eventosCombined);
       const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
@@ -782,8 +850,8 @@ export default function WhatsAppPage() {
         .map(([nome_evento, count]) => ({ nome_evento, count }))
         .sort((a, b) => b.count - a.count);
       const columnsCombined =
-        analisesResults.find((r) => r.rowData.columns?.length)?.rowData.columns ??
-        [];
+        analisesResults.find((r) => r.rowData.columns?.length)?.rowData
+          .columns ?? [];
       const rowsCombined = sortRowsDescByDate(
         analisesResults.flatMap((r) => r.rowData.rows ?? []),
         columnsCombined,
@@ -826,31 +894,56 @@ export default function WhatsAppPage() {
       const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
 
       for (const item of itemsToSend) {
-        const { totalCombined, eventosCombined, columnsCombined, rowsCombined } =
-          await combineFilterData(
-            selectedFilters,
-            linhasColumns,
-            getSummary,
-            getRows,
-            item.nome,
-          );
+        const {
+          totalCombined,
+          eventosCombined,
+          columnsCombined,
+          rowsCombined,
+        } = await combineFilterData(
+          selectedFilters,
+          linhasColumns,
+          getSummary,
+          getRows,
+          item.nome,
+        );
 
         if (!totalCombined) continue;
 
-        const resumo = buildResumoPreview(eventosCombined);
-        const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
-        const finalMessage = template
-          .replace(/\{nome\}/g, formatNome(item.nome))
-          .replace(/\{total\}/g, String(totalCombined))
-          .replace(/\{data_hoje\}/g, dataHoje)
-          .replace(/\{resumo\}/g, resumo)
-          .replace(/\{linhas\}/g, linhas);
-
-        messagesToSend.push({
-          nome: item.nome,
-          telefone: item.telefone,
-          message: finalMessage,
-        });
+        if (modoEnvioIndividual && rowsCombined.length > 0) {
+          for (let i = 0; i < rowsCombined.length; i++) {
+            const msgId = `${item.nome}-${i}`;
+            if (previews.length > 0 && !selectedPreviewIds.has(msgId)) continue;
+            const row = rowsCombined[i];
+            const rowEventos = getRowEventos(row);
+            const resumo = buildResumoPreview(rowEventos);
+            const linhas = buildLinhasPreview(columnsCombined, [row]);
+            const finalMessage = template
+              .replace(/\{nome\}/g, formatNome(item.nome))
+              .replace(/\{total\}/g, "1")
+              .replace(/\{data_hoje\}/g, dataHoje)
+              .replace(/\{resumo\}/g, resumo)
+              .replace(/\{linhas\}/g, linhas);
+            messagesToSend.push({
+              nome: `${item.nome} (linha ${i + 1})`,
+              telefone: item.telefone,
+              message: finalMessage,
+            });
+          }
+        } else {
+          const resumo = buildResumoPreview(eventosCombined);
+          const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
+          const finalMessage = template
+            .replace(/\{nome\}/g, formatNome(item.nome))
+            .replace(/\{total\}/g, String(totalCombined))
+            .replace(/\{data_hoje\}/g, dataHoje)
+            .replace(/\{resumo\}/g, resumo)
+            .replace(/\{linhas\}/g, linhas);
+          messagesToSend.push({
+            nome: item.nome,
+            telefone: item.telefone,
+            message: finalMessage,
+          });
+        }
       }
     }
 
@@ -871,37 +964,53 @@ export default function WhatsAppPage() {
     setSending(false);
   };
 
-  const activeList = (isBioMolActive || isAnalisesActive)
-    ? []
-    : activeTab === "clinicas"
-      ? clinics
-      : pathologists;
-  const activeSelectedIds = (isBioMolActive || isAnalisesActive)
-    ? new Set<string>()
-    : activeTab === "clinicas"
-      ? selectedClinicIds
-      : selectedPatIds;
-  const activePhoneEdits = (isBioMolActive || isAnalisesActive)
-    ? ({} as Record<string, string>)
-    : activeTab === "clinicas"
-      ? clinicPhoneEdits
-      : phoneEdits;
+  const activeList =
+    isBioMolActive || isAnalisesActive
+      ? []
+      : activeTab === "clinicas"
+        ? clinics
+        : pathologists;
+  const activeSelectedIds =
+    isBioMolActive || isAnalisesActive
+      ? new Set<string>()
+      : activeTab === "clinicas"
+        ? selectedClinicIds
+        : selectedPatIds;
+  const activePhoneEdits =
+    isBioMolActive || isAnalisesActive
+      ? ({} as Record<string, string>)
+      : activeTab === "clinicas"
+        ? clinicPhoneEdits
+        : phoneEdits;
 
   const withPhone = isAnalisesActive
-    ? analisePhoneEdit.trim() ? 1 : 0
+    ? analisePhoneEdit.trim()
+      ? 1
+      : 0
     : isBioMolActive
-      ? bioMolPhoneEdit.trim() ? 1 : 0
-      : activeList.filter((p) => (activePhoneEdits[p.nome] || p.telefone).trim())
-          .length;
+      ? bioMolPhoneEdit.trim()
+        ? 1
+        : 0
+      : activeList.filter((p) =>
+          (activePhoneEdits[p.nome] || p.telefone).trim(),
+        ).length;
   const withoutPhone = isAnalisesActive
-    ? analisePhoneEdit.trim() ? 0 : 1
+    ? analisePhoneEdit.trim()
+      ? 0
+      : 1
     : isBioMolActive
-      ? bioMolPhoneEdit.trim() ? 0 : 1
+      ? bioMolPhoneEdit.trim()
+        ? 0
+        : 1
       : activeList.length - withPhone;
   const selectedCount = isAnalisesActive
-    ? analiseSelected ? 1 : 0
+    ? analiseSelected
+      ? 1
+      : 0
     : isBioMolActive
-      ? bioMolSelected ? 1 : 0
+      ? bioMolSelected
+        ? 1
+        : 0
       : activeSelectedIds.size;
   const canSend = isAnalisesActive
     ? selectedFilters.length > 0 &&
@@ -920,7 +1029,21 @@ export default function WhatsAppPage() {
           (p) =>
             activeSelectedIds.has(p.nome) &&
             (activePhoneEdits[p.nome] || p.telefone).trim(),
+        ) &&
+        !(
+          modoEnvioIndividual &&
+          previews.length > 0 &&
+          selectedPreviewIds.size === 0
         );
+
+  const filteredPreviews = previewSearchQuery.trim()
+    ? previews.filter((p) =>
+        [p.nome, p.telefone, p.message]
+          .join(" ")
+          .toLowerCase()
+          .includes(previewSearchQuery.toLowerCase()),
+      )
+    : previews;
 
   return (
     <div
@@ -1005,15 +1128,13 @@ export default function WhatsAppPage() {
                       border: `1px solid ${selectedFilterIds.has(f.id) ? "var(--blue)" : "var(--border)"}`,
                       borderRadius: 12,
                       cursor: "pointer",
-                      background:
-                        selectedFilterIds.has(f.id)
-                          ? "rgba(59,130,246,0.08)"
-                          : "var(--bg-2)",
+                      background: selectedFilterIds.has(f.id)
+                        ? "rgba(59,130,246,0.08)"
+                        : "var(--bg-2)",
                       transition: "all 0.2s",
-                      boxShadow:
-                        selectedFilterIds.has(f.id)
-                          ? "0 0 0 3px rgba(59,130,246,0.1)"
-                          : "none",
+                      boxShadow: selectedFilterIds.has(f.id)
+                        ? "0 0 0 3px rgba(59,130,246,0.1)"
+                        : "none",
                       display: "flex",
                       alignItems: "flex-start",
                       gap: 8,
@@ -1089,7 +1210,8 @@ export default function WhatsAppPage() {
                         key={i}
                         style={{ color: "var(--text-2)", marginBottom: 2 }}
                       >
-                        • <span style={{ color: "var(--blue)" }}>{c.column}</span>{" "}
+                        •{" "}
+                        <span style={{ color: "var(--blue)" }}>{c.column}</span>{" "}
                         {c.operator}{" "}
                         <span style={{ color: "var(--green)" }}>{c.value}</span>
                         {c.value2 && ` — ${c.value2}`}
@@ -1287,14 +1409,85 @@ export default function WhatsAppPage() {
               <div style={{ marginTop: 16 }}>
                 <div
                   style={{
-                    fontSize: 12,
-                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                     marginBottom: 8,
-                    color: "var(--text-2)",
+                    gap: 8,
+                    minHeight: 24,
                   }}
                 >
-                  Preview ({previews.length} mensagem(ns)):
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--text-2)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Preview (
+                    {modoEnvioIndividual
+                      ? `${selectedPreviewIds.size} de ${filteredPreviews.length} selecionada(s)`
+                      : `${filteredPreviews.length}${previewSearchQuery ? ` de ${previews.length}` : ""} mensagem(ns)`}
+                    ):
+                  </div>
+                  {modoEnvioIndividual && (
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                      <button
+                        onClick={() =>
+                          setSelectedPreviewIds(
+                            new Set(previews.map((p) => p.id)),
+                          )
+                        }
+                        style={{
+                          padding: "2px 8px",
+                          fontSize: 11,
+                          background: "var(--bg-3)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          color: "var(--text-2)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Selecionar todas
+                      </button>
+                      <button
+                        onClick={() => setSelectedPreviewIds(new Set())}
+                        style={{
+                          padding: "2px 8px",
+                          fontSize: 11,
+                          background: "var(--bg-3)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          color: "var(--text-2)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Desmarcar todas
+                      </button>
+                    </div>
+                  )}
                 </div>
+                <input
+                  type="text"
+                  placeholder="Pesquisar nas mensagens..."
+                  value={previewSearchQuery}
+                  onChange={(e) => setPreviewSearchQuery(e.target.value)}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    background: "var(--bg-3)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    color: "var(--text-1)",
+                    fontSize: 12,
+                    padding: "4px 8px",
+                    outline: "none",
+                    marginBottom: 8,
+                  }}
+                />
                 <div
                   style={{
                     maxHeight: 500,
@@ -1304,42 +1497,104 @@ export default function WhatsAppPage() {
                     gap: 10,
                   }}
                 >
-                  {previews.map((p, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        background: "var(--bg-2)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        padding: 10,
-                      }}
-                    >
+                  {filteredPreviews.map((p, i) => {
+                    const isSelected =
+                      !modoEnvioIndividual || selectedPreviewIds.has(p.id);
+                    return (
                       <div
+                        key={i}
                         style={{
-                          fontSize: 11,
-                          color: "var(--text-3)",
-                          marginBottom: 6,
+                          background: "var(--bg-2)",
+                          border: `1px solid ${isSelected ? "var(--border)" : "rgba(128,128,128,0.2)"}`,
+                          borderRadius: 12,
+                          padding: 10,
+                          position: "relative",
+                          // opacity: isSelected ? 1 : 0.45,
+                          transition: "opacity 0.15s",
                         }}
                       >
-                        Para:{" "}
-                        <strong style={{ color: "var(--text-0)" }}>
-                          {p.nome}
-                        </strong>{" "}
-                        ({p.telefone}) — {p.total} registro(s)
+                        {modoEnvioIndividual && (
+                          <input
+                            type="checkbox"
+                            checked={selectedPreviewIds.has(p.id)}
+                            onChange={() => {
+                              setSelectedPreviewIds((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(p.id)) next.delete(p.id);
+                                else next.add(p.id);
+                                return next;
+                              });
+                            }}
+                            style={{
+                              position: "absolute",
+                              top: 10,
+                              left: 10,
+                              width: 15,
+                              height: 15,
+                              cursor: "pointer",
+                            }}
+                          />
+                        )}
+                        <button
+                          onClick={() => {
+                            navigator.clipboard
+                              .writeText(p.message)
+                              .then(() => {
+                                setCopiedIndex(i);
+                                setTimeout(() => setCopiedIndex(null), 2000);
+                              });
+                          }}
+                          title="Copiar mensagem"
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            padding: "8px",
+                            fontSize: 11,
+                            background:
+                              copiedIndex === i ? "var(--bg-3)" : "var(--bg-1)",
+                            border: "1px solid var(--border)",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                            color:
+                              copiedIndex === i
+                                ? "var(--green)"
+                                : "var(--text-3)",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          {copiedIndex === i ? "✓ Copiado" : "Copiar"}
+                        </button>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "var(--text-3)",
+                            marginBottom: 6,
+                            paddingRight: 70,
+                            paddingLeft: modoEnvioIndividual ? 22 : 0,
+                          }}
+                        >
+                          Para:{" "}
+                          <strong style={{ color: "var(--text-0)" }}>
+                            {p.nome}
+                          </strong>{" "}
+                          ({p.telefone}) — {p.total} registro(s)
+                        </div>
+                        <pre
+                          style={{
+                            margin: 0,
+                            fontSize: 12,
+                            whiteSpace: "pre-wrap",
+                            color: "var(--text-1)",
+                            fontFamily: "inherit",
+                            paddingLeft: modoEnvioIndividual ? 22 : 0,
+                          }}
+                        >
+                          {p.message}
+                        </pre>
                       </div>
-                      <pre
-                        style={{
-                          margin: 0,
-                          fontSize: 12,
-                          whiteSpace: "pre-wrap",
-                          color: "var(--text-1)",
-                          fontFamily: "inherit",
-                        }}
-                      >
-                        {p.message}
-                      </pre>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1359,45 +1614,53 @@ export default function WhatsAppPage() {
           >
             {/* Tab header */}
             <div style={{ display: "flex", gap: 0, marginBottom: 12 }}>
-              {(["patologistas", "clinicas", "bio-molecular", "analises-clinicas"] as const).map(
-                (tab, idx) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    style={{
-                      padding: "6px 14px",
-                      background:
-                        activeTab === tab
-                          ? "linear-gradient(to right, #3b82f6, #1d4ed8)"
-                          : "var(--bg-2)",
-                      border: "1px solid var(--border)",
-                      borderRadius:
-                        idx === 0
-                          ? "8px 0 0 8px"
-                          : idx === 3
-                            ? "0 8px 8px 0"
-                            : "0",
-                      color: activeTab === tab ? "#fff" : "var(--text-2)",
-                      fontSize: 12,
-                      fontWeight: activeTab === tab ? 600 : 400,
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      boxShadow:
-                        activeTab === tab
-                          ? "0 2px 8px rgba(59,130,246,0.25)"
-                          : "none",
-                    }}
-                  >
-                    {tab === "patologistas"
-                      ? "Patologistas"
-                      : tab === "clinicas"
-                        ? "Clínicas"
-                        : tab === "bio-molecular"
-                          ? "Bio. Molecular"
-                          : "Análises Clínicas"}
-                  </button>
-                ),
-              )}
+              {(
+                [
+                  "patologistas",
+                  "clinicas",
+                  "bio-molecular",
+                  "analises-clinicas",
+                ] as const
+              ).map((tab, idx) => (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    setSearchQuery("");
+                  }}
+                  style={{
+                    padding: "6px 14px",
+                    background:
+                      activeTab === tab
+                        ? "linear-gradient(to right, #3b82f6, #1d4ed8)"
+                        : "var(--bg-2)",
+                    border: "1px solid var(--border)",
+                    borderRadius:
+                      idx === 0
+                        ? "8px 0 0 8px"
+                        : idx === 3
+                          ? "0 8px 8px 0"
+                          : "0",
+                    color: activeTab === tab ? "#fff" : "var(--text-2)",
+                    fontSize: 12,
+                    fontWeight: activeTab === tab ? 600 : 400,
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    boxShadow:
+                      activeTab === tab
+                        ? "0 2px 8px rgba(59,130,246,0.25)"
+                        : "none",
+                  }}
+                >
+                  {tab === "patologistas"
+                    ? "Patologistas"
+                    : tab === "clinicas"
+                      ? "Clínicas"
+                      : tab === "bio-molecular"
+                        ? "Bio. Molecular"
+                        : "Análises Clínicas"}
+                </button>
+              ))}
             </div>
 
             <div
@@ -1423,6 +1686,27 @@ export default function WhatsAppPage() {
                 )}
               </span>
             </div>
+
+            {!isBioMolActive && !isAnalisesActive && (
+              <input
+                type="text"
+                placeholder="Pesquisar..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "6px 10px",
+                  fontSize: 12,
+                  background: "var(--bg-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  color: "var(--text-0)",
+                  marginBottom: 8,
+                  boxSizing: "border-box",
+                  outline: "none",
+                }}
+              />
+            )}
 
             {!isBioMolActive && !isAnalisesActive && (
               <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
@@ -1664,109 +1948,118 @@ export default function WhatsAppPage() {
                     gap: 6,
                   }}
                 >
-                  {pathologists.map((pat) => {
-                    const tel = phoneEdits[pat.nome] ?? pat.telefone;
-                    const hasPhone = tel.trim().length > 0;
-                    const isSelected = selectedPatIds.has(pat.nome);
-                    return (
-                      <div
-                        key={pat.nome}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "8px 10px",
-                          background: isSelected
-                            ? "rgba(59,130,246,0.06)"
-                            : "var(--bg-2)",
-                          border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
-                          borderRadius: 12,
-                          transition: "all 0.2s",
-                          boxShadow: isSelected
-                            ? "0 0 0 2px rgba(59,130,246,0.1)"
-                            : "none",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          disabled={!hasPhone}
-                          onChange={() => togglePatSelect(pat.nome)}
-                          style={{
-                            cursor: hasPhone ? "pointer" : "not-allowed",
-                            accentColor: "var(--blue)",
-                            flexShrink: 0,
-                          }}
-                        />
+                  {pathologists
+                    .filter((pat) =>
+                      pat.nome
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
+                    )
+                    .map((pat) => {
+                      const tel = phoneEdits[pat.nome] ?? pat.telefone;
+                      const hasPhone = tel.trim().length > 0;
+                      const isSelected = selectedPatIds.has(pat.nome);
+                      return (
                         <div
+                          key={pat.nome}
                           style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: "50%",
-                            background: hasPhone
-                              ? "var(--green)"
-                              : "var(--red)",
-                            flexShrink: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "8px 10px",
+                            background: isSelected
+                              ? "rgba(59,130,246,0.06)"
+                              : "var(--bg-2)",
+                            border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
+                            borderRadius: 12,
+                            transition: "all 0.2s",
+                            boxShadow: isSelected
+                              ? "0 0 0 2px rgba(59,130,246,0.1)"
+                              : "none",
                           }}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            disabled={!hasPhone}
+                            onChange={() => togglePatSelect(pat.nome)}
+                            style={{
+                              cursor: hasPhone ? "pointer" : "not-allowed",
+                              accentColor: "var(--blue)",
+                              flexShrink: 0,
+                            }}
+                          />
                           <div
                             style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              color: "var(--text-0)",
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              background: hasPhone
+                                ? "var(--green)"
+                                : "var(--red)",
+                              flexShrink: 0,
                             }}
-                          >
-                            {pat.nome}
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 4,
-                              marginTop: 3,
-                            }}
-                          >
-                            <input
-                              type="text"
-                              placeholder="5511999999999"
-                              value={phoneEdits[pat.nome] ?? pat.telefone}
-                              onChange={(e) =>
-                                setPhoneEdits((prev) => ({
-                                  ...prev,
-                                  [pat.nome]: e.target.value,
-                                }))
-                              }
-                              onBlur={() => savePhone(pat.nome)}
-                              onKeyDown={(e) =>
-                                e.key === "Enter" && savePhone(pat.nome)
-                              }
+                          />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div
                               style={{
-                                flex: 1,
-                                background: "var(--bg-0)",
-                                border: "1px solid var(--border)",
-                                borderRadius: 8,
-                                color: "var(--text-1)",
-                                padding: "2px 6px",
                                 fontSize: 11,
-                                fontFamily: "monospace",
+                                fontWeight: 600,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                color: "var(--text-0)",
                               }}
-                            />
-                            {savingPhone === pat.nome && (
-                              <span
-                                style={{ fontSize: 10, color: "var(--text-3)" }}
-                              >
-                                💾
-                              </span>
-                            )}
+                            >
+                              {pat.nome}
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                marginTop: 3,
+                              }}
+                            >
+                              <input
+                                type="text"
+                                placeholder="5511999999999"
+                                value={phoneEdits[pat.nome] ?? pat.telefone}
+                                onChange={(e) =>
+                                  setPhoneEdits((prev) => ({
+                                    ...prev,
+                                    [pat.nome]: e.target.value,
+                                  }))
+                                }
+                                onBlur={() => savePhone(pat.nome)}
+                                onKeyDown={(e) =>
+                                  e.key === "Enter" && savePhone(pat.nome)
+                                }
+                                style={{
+                                  flex: 1,
+                                  background: "var(--bg-0)",
+                                  border: "1px solid var(--border)",
+                                  borderRadius: 8,
+                                  color: "var(--text-1)",
+                                  padding: "2px 6px",
+                                  fontSize: 11,
+                                  fontFamily: "monospace",
+                                }}
+                              />
+                              {savingPhone === pat.nome && (
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    color: "var(--text-3)",
+                                  }}
+                                >
+                                  💾
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               ))}
 
@@ -1805,113 +2098,123 @@ export default function WhatsAppPage() {
                     gap: 6,
                   }}
                 >
-                  {clinics.map((clinic) => {
-                    const tel =
-                      clinicPhoneEdits[clinic.nome] ?? clinic.telefone;
-                    const hasPhone = tel.trim().length > 0;
-                    const isSelected = selectedClinicIds.has(clinic.nome);
-                    return (
-                      <div
-                        key={clinic.nome}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "8px 10px",
-                          background: isSelected
-                            ? "rgba(59,130,246,0.06)"
-                            : "var(--bg-2)",
-                          border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
-                          borderRadius: 12,
-                          transition: "all 0.2s",
-                          boxShadow: isSelected
-                            ? "0 0 0 2px rgba(59,130,246,0.1)"
-                            : "none",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          disabled={!hasPhone}
-                          onChange={() => toggleClinicSelect(clinic.nome)}
-                          style={{
-                            cursor: hasPhone ? "pointer" : "not-allowed",
-                            accentColor: "var(--blue)",
-                            flexShrink: 0,
-                          }}
-                        />
+                  {clinics
+                    .filter((clinic) =>
+                      clinic.nome
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
+                    )
+                    .map((clinic) => {
+                      const tel =
+                        clinicPhoneEdits[clinic.nome] ?? clinic.telefone;
+                      const hasPhone = tel.trim().length > 0;
+                      const isSelected = selectedClinicIds.has(clinic.nome);
+                      return (
                         <div
+                          key={clinic.nome}
                           style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: "50%",
-                            background: hasPhone
-                              ? "var(--green)"
-                              : "var(--red)",
-                            flexShrink: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "8px 10px",
+                            background: isSelected
+                              ? "rgba(59,130,246,0.06)"
+                              : "var(--bg-2)",
+                            border: `1px solid ${isSelected ? "var(--blue)" : "var(--border)"}`,
+                            borderRadius: 12,
+                            transition: "all 0.2s",
+                            boxShadow: isSelected
+                              ? "0 0 0 2px rgba(59,130,246,0.1)"
+                              : "none",
                           }}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            disabled={!hasPhone}
+                            onChange={() => toggleClinicSelect(clinic.nome)}
+                            style={{
+                              cursor: hasPhone ? "pointer" : "not-allowed",
+                              accentColor: "var(--blue)",
+                              flexShrink: 0,
+                            }}
+                          />
                           <div
                             style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              color: "var(--text-0)",
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              background: hasPhone
+                                ? "var(--green)"
+                                : "var(--red)",
+                              flexShrink: 0,
                             }}
-                          >
-                            {clinic.nome}
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 4,
-                              marginTop: 3,
-                            }}
-                          >
-                            <input
-                              type="text"
-                              placeholder="5511999999999"
-                              value={
-                                clinicPhoneEdits[clinic.nome] ?? clinic.telefone
-                              }
-                              onChange={(e) =>
-                                setClinicPhoneEdits((prev) => ({
-                                  ...prev,
-                                  [clinic.nome]: e.target.value,
-                                }))
-                              }
-                              onBlur={() => saveClinicPhone(clinic.nome)}
-                              onKeyDown={(e) =>
-                                e.key === "Enter" &&
-                                saveClinicPhone(clinic.nome)
-                              }
+                          />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div
                               style={{
-                                flex: 1,
-                                background: "var(--bg-0)",
-                                border: "1px solid var(--border)",
-                                borderRadius: 8,
-                                color: "var(--text-1)",
-                                padding: "2px 6px",
                                 fontSize: 11,
-                                fontFamily: "monospace",
+                                fontWeight: 600,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                color: "var(--text-0)",
                               }}
-                            />
-                            {savingClinicPhone === clinic.nome && (
-                              <span
-                                style={{ fontSize: 10, color: "var(--text-3)" }}
-                              >
-                                💾
-                              </span>
-                            )}
+                            >
+                              {clinic.nome}
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                marginTop: 3,
+                              }}
+                            >
+                              <input
+                                type="text"
+                                placeholder="5511999999999"
+                                value={
+                                  clinicPhoneEdits[clinic.nome] ??
+                                  clinic.telefone
+                                }
+                                onChange={(e) =>
+                                  setClinicPhoneEdits((prev) => ({
+                                    ...prev,
+                                    [clinic.nome]: e.target.value,
+                                  }))
+                                }
+                                onBlur={() => saveClinicPhone(clinic.nome)}
+                                onKeyDown={(e) =>
+                                  e.key === "Enter" &&
+                                  saveClinicPhone(clinic.nome)
+                                }
+                                style={{
+                                  flex: 1,
+                                  background: "var(--bg-0)",
+                                  border: "1px solid var(--border)",
+                                  borderRadius: 8,
+                                  color: "var(--text-1)",
+                                  padding: "2px 6px",
+                                  fontSize: 11,
+                                  fontFamily: "monospace",
+                                }}
+                              />
+                              {savingClinicPhone === clinic.nome && (
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    color: "var(--text-3)",
+                                  }}
+                                >
+                                  💾
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               ))}
           </div>
@@ -1971,25 +2274,65 @@ export default function WhatsAppPage() {
                 ← Escreva a mensagem
               </span>
             )}
-            {selectedFilters.length > 0 && template.trim() && selectedCount === 0 && (
-              <span style={{ fontSize: 12, color: "var(--text-3)" }}>
-                ← Selecione{" "}
-                {activeTab === "clinicas" ? "clínicas" : "patologistas"}
-              </span>
-            )}
-            {selectedFilters.length > 0 && template.trim() && selectedCount > 0 && (
-              <span style={{ fontSize: 12, color: "var(--text-2)" }}>
-                Pronto para enviar para{" "}
-                <strong>
-                  {
-                    activeList.filter(
-                      (p) =>
-                        activeSelectedIds.has(p.nome) &&
-                        (activePhoneEdits[p.nome] || p.telefone).trim(),
-                    ).length
+            <label className="modo-individual-toggle">
+              <input
+                type="checkbox"
+                checked={modoEnvioIndividual}
+                onChange={(e) => {
+                  setModoEnvioIndividual(e.target.checked);
+                  if (!e.target.checked) {
+                    setSelectedPreviewIds(new Set());
+                    setPreviews([]);
                   }
-                </strong>{" "}
-                {activeTab === "clinicas" ? "clínica(s)" : "patologista(s)"}
+                }}
+              />
+              1 mensagem por linha
+            </label>
+
+            {selectedFilters.length > 0 &&
+              template.trim() &&
+              selectedCount === 0 && (
+                <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+                  ← Selecione{" "}
+                  {activeTab === "clinicas" ? "clínicas" : "patologistas"}
+                </span>
+              )}
+            {selectedFilters.length > 0 &&
+              template.trim() &&
+              selectedCount > 0 && (
+                <span style={{ fontSize: 12, color: "var(--text-2)" }}>
+                  Pronto para enviar para{" "}
+                  <strong>
+                    {
+                      activeList.filter(
+                        (p) =>
+                          activeSelectedIds.has(p.nome) &&
+                          (activePhoneEdits[p.nome] || p.telefone).trim(),
+                      ).length
+                    }
+                  </strong>{" "}
+                  {activeTab === "clinicas" ? "clínica(s)" : "patologista(s)"}
+                </span>
+              )}
+            {modoEnvioIndividual && previews.length > 0 && (
+              <span
+                style={{
+                  fontSize: 12,
+                  color:
+                    selectedPreviewIds.size === 0
+                      ? "var(--red)"
+                      : "var(--text-2)",
+                }}
+              >
+                {selectedPreviewIds.size === 0 ? (
+                  "Nenhuma mensagem individual selecionada"
+                ) : (
+                  <>
+                    <strong>{selectedPreviewIds.size}</strong> de{" "}
+                    <strong>{previews.length}</strong> mensagem(ns)
+                    individual(is) selecionada(s)
+                  </>
+                )}
               </span>
             )}
           </div>
