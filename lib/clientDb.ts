@@ -505,7 +505,7 @@ function conditionToSQL(c: FilterCondition): { clause: string; params: any[] } {
       params.push(`%${c.value}%`);
       break;
     case "not_contains":
-      clause = `${col} NOT LIKE ?`;
+      clause = `(${col} IS NULL OR ${col} NOT LIKE ?)`;
       params.push(`%${c.value}%`);
       break;
     case "gt":

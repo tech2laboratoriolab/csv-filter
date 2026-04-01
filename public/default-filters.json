@@ -244,6 +244,11 @@
       },
       {
         "column": "avaliacao_cito",
+        "operator": "not_contains",
+        "value": "endometrite"
+      },
+      {
+        "column": "avaliacao_cito",
         "operator": "contains",
         "value": "ASC-US",
         "orGroup": "critico_keywords"
