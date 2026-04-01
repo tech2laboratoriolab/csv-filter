@@ -32,7 +32,7 @@ import {
   SavedFilter,
 } from "@/lib/clientDb";
 
-const SELECT_COLUMNS = new Set(["nom_medico"]);
+const SELECT_COLUMNS = new Set<string>();
 
 const OPS_TEXT = [
   { v: "equals", l: "Igual" },

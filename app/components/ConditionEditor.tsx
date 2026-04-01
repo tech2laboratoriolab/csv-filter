@@ -6,7 +6,7 @@ import { getOpsForType } from '@/lib/operators';
 import { getDistinctValues } from '@/lib/clientDb';
 
 // Columns that render a select dropdown instead of a free-text input
-const SELECT_COLUMNS = new Set(['nom_medico']);
+const SELECT_COLUMNS = new Set<string>();
 
 interface ConditionEditorProps {
   columns: ColumnDef[];
@@ -105,8 +105,9 @@ export default function ConditionEditor({
 
   const noValue = (op: string) =>
     op === 'is_null' || op === 'is_not_null' ||
-    op === 'is_today' || op === 'is_tomorrow' || op === 'is_today_or_tomorrow' || op === 'is_future' || op === 'is_future_or_today' ||
-    op === 'is_past' || op === 'is_past_or_today';
+    op === 'is_today' || op === 'is_yesterday' || op === 'is_day_before_yesterday' ||
+    op === 'is_tomorrow' || op === 'is_today_or_tomorrow' || op === 'is_future' || op === 'is_future_or_today' ||
+    op === 'is_past' || op === 'is_past_or_today' || op === 'unique_combination';
   const isList = (op: string) => op === 'in' || op === 'not_in';
 
   return (
@@ -126,7 +127,6 @@ export default function ConditionEditor({
       {conditions.map((c, i) => {
         const prevCond = i > 0 ? conditions[i - 1] : null;
         const isPartOfGroup = !!c.orGroup;
-        const isFirstInGroup = isPartOfGroup && (!prevCond || prevCond.orGroup !== c.orGroup);
         const isNotFirstInGroup = isPartOfGroup && prevCond?.orGroup === c.orGroup;
 
         return (

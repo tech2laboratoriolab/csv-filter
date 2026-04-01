@@ -7,6 +7,7 @@ export const OPS_TEXT = [
   { v: 'not_in', l: 'Não em (lista)' },
   { v: 'is_null', l: 'É vazio / nulo' },
   { v: 'is_not_null', l: 'Não é vazio' },
+  { v: 'unique_combination', l: 'Combinação única' },
 ];
 
 export const OPS_NUM = [
@@ -27,6 +28,8 @@ export const OPS_DATE = [
   { v: 'date_before', l: 'Antes' },
   { v: 'date_between', l: 'Entre' },
   { v: 'is_today', l: 'É hoje' },
+  { v: 'is_yesterday', l: 'É ontem' },
+  { v: 'is_day_before_yesterday', l: 'É anteontem' },
   { v: 'is_tomorrow', l: 'É amanhã' },
   { v: 'is_today_or_tomorrow', l: 'É hoje ou amanhã' },
   { v: 'is_future', l: 'É futuro (após hoje)' },

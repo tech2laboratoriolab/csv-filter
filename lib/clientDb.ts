@@ -22,6 +22,7 @@ export const COLUMNS: ColumnDef[] = [
   { name: "nom_evento_fatur", label: "NomEventoFatur", type: "text" },
   { name: "nfereq", label: "NfeReq", type: "text" },
   { name: "cod_medico", label: "CodMedico", type: "text" },
+  { name: "nom_medico", label: "NomMedico", type: "text" },
   { name: "id_convenio", label: "IdConvenio", type: "number" },
   { name: "nom_convenio", label: "NomConvenio", type: "text" },
   { name: "nom_fonte_pagadora", label: "NomFontePagadora", type: "text" },
@@ -40,6 +41,11 @@ export const COLUMNS: ColumnDef[] = [
   { name: "laudo_micro", label: "LaudoMicro", type: "text" },
   { name: "avaliacao_cito", label: "AvaliacaoCito", type: "text" },
   { name: "visualizacao", label: "Visualizado", type: "number" },
+  { name: "sexo", label: "Sexo", type: "text" },
+  { name: "dta_nascimento", label: "DtaNascimento", type: "date" },
+  { name: "cpf", label: "CPF", type: "text" },
+  { name: "fonte_pagadora", label: "FontePagadora", type: "text" },
+  { name: "nom_exame_tipo", label: "NomExameTipo", type: "text" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};
@@ -379,12 +385,15 @@ export interface FilterCondition {
     | "date_before"
     | "date_between"
     | "is_today"
+    | "is_yesterday"
+    | "is_day_before_yesterday"
     | "is_tomorrow"
     | "is_future"
     | "is_past"
     | "is_today_or_tomorrow"
     | "is_future_or_today"
-    | "is_past_or_today";
+    | "is_past_or_today"
+    | "unique_combination";
   value: string | number;
   value2?: string | number;
   orGroup?: string;
@@ -552,6 +561,12 @@ function conditionToSQL(c: FilterCondition): { clause: string; params: any[] } {
     case "is_today":
       clause = `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime'))`;
       break;
+    case "is_yesterday":
+      clause = `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime', '-1 day'))`;
+      break;
+    case "is_day_before_yesterday":
+      clause = `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime', '-2 days'))`;
+      break;
     case "is_tomorrow":
       clause = `(${col} IS NOT NULL AND DATE(${col}) = date('now', 'localtime', '+1 day'))`;
       break;
@@ -569,6 +584,9 @@ function conditionToSQL(c: FilterCondition): { clause: string; params: any[] } {
       break;
     case "is_past_or_today":
       clause = `(${col} IS NOT NULL AND DATE(${col}) <= date('now', 'localtime'))`;
+      break;
+    case "unique_combination":
+      // Handled at query level via window function CTE — no inline clause
       break;
   }
 
@@ -625,17 +643,45 @@ export async function queryFiltered(
   const cols = hasSpecificCols
     ? selectedColumns.map((c) => `"${c}"`).join(", ")
     : "*";
+  const offset = (page - 1) * pageSize;
+
+  // Separate unique_combination conditions — handled via CTE window function
+  const uniqueComboConds = conditions.filter((c) => c.operator === "unique_combination");
+  const regularConds = conditions.filter((c) => c.operator !== "unique_combination");
+
+  const { sql: where, params } = buildWhereClause(regularConds);
+
+  if (uniqueComboConds.length > 0) {
+    const partitionCols = uniqueComboConds.flatMap((cond) => {
+      const columns = [cond.column];
+      if (cond.value) columns.push(...String(cond.value).split(",").map((v) => v.trim()));
+      return columns;
+    });
+    const partitionSQL = partitionCols.map((c) => `"${c}"`).join(", ");
+    const orderBy = sortColumn ? `ORDER BY "${sortColumn}" ${sortDir}` : "ORDER BY id";
+
+    const ctePart = `WITH _base AS (SELECT * FROM csv_data ${where}), _windowed AS (SELECT *, COUNT(*) OVER (PARTITION BY ${partitionSQL}) AS _combo_count FROM _base)`;
+
+    const resTotal = db.exec(`${ctePart} SELECT COUNT(*) as total FROM _windowed WHERE _combo_count = 1`, params);
+    const total = resTotal.length > 0 ? resTotal[0].values[0][0] : 0;
+
+    const resRows = db.exec(
+      `${ctePart} SELECT ${cols}, id as _row_id FROM _windowed WHERE _combo_count = 1 ${orderBy} LIMIT ? OFFSET ?`,
+      [...params, pageSize, offset],
+    );
+    const rows = resultToObjects(resRows);
+    return { rows, total };
+  }
+
   const rowIdExpr = hasSpecificCols
     ? ", MIN(id) as _row_id"
     : ", id as _row_id";
-  const { sql: where, params } = buildWhereClause(conditions);
   const groupBy = hasSpecificCols ? `GROUP BY ${cols}` : "";
   const orderBy = sortColumn
     ? `ORDER BY "${sortColumn}" ${sortDir}`
     : hasSpecificCols
       ? "ORDER BY MIN(id)"
       : "ORDER BY id";
-  const offset = (page - 1) * pageSize;
 
   const countSql = hasSpecificCols
     ? `SELECT COUNT(*) as total FROM (SELECT 1 FROM csv_data ${where} ${groupBy})`
@@ -782,7 +828,7 @@ export async function exportFilteredCSV(
 }
 
 // --- IndexedDB: Filters ---
-const SEED_KEY = "csv-filter-defaults-seeded-v7";
+const SEED_KEY = "csv-filter-defaults-seeded-v8";
 
 // --- Reset All Data ---
 export async function resetAllData(): Promise<void> {
