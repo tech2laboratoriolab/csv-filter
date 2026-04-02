@@ -63,6 +63,18 @@ function matchesRule(row: Record<string, unknown>, rule: ColorRule): boolean {
       const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       return value !== '' && value.split(' ')[0] < today;
     }
+    case 'is_yesterday': {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      const yesterday = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return value !== '' && value.split(' ')[0] === yesterday;
+    }
+    case 'is_day_before_yesterday': {
+      const d = new Date();
+      d.setDate(d.getDate() - 2);
+      const dayBefore = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return value !== '' && value.split(' ')[0] === dayBefore;
+    }
     case 'is_tomorrow': {
       const d = new Date();
       d.setDate(d.getDate() + 1);
