@@ -48,7 +48,7 @@ const DEFAULT_PAT_TEMPLATE =
   "Olá Dr(a) {nome}.\n\nSegue abaixo os casos do dia e de amanhã. Caso tenha necessidade de novas lâminas/reclivagem/cortes, por favor, avise-me. Ótimo dia!\n\nExame(s) pendente(s) em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
 
 const DEFAULT_CLINIC_TEMPLATE =
-  "Prezado Parceiro {nome}.\n\nViemos informar que os Laudos do(a)s Pacientes estão disponíveis abaixo:\n\nLaudos disponíveis em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
+  "Prezado Parceiro,\n\nViemos informar que o Laudo do(a) Paciente {cod_requisicao} - {nom_paciente} está disponível.\n\n⚠️ *Recomendamos que seja apresentado ao médico solicitante.*";
 
 const DEFAULT_BIOMOL_TEMPLATE =
   "Prezado Parceiro.\n\nSegue abaixo os casos de Biologia Molecular do dia. Ótimo dia!\n\nRegistros em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
@@ -66,6 +66,8 @@ const VARIABLES_PAT = [
 
 const VARIABLES_CLINIC = [
   { key: "{nome}", desc: "Nome da clínica" },
+  { key: "{cod_requisicao}", desc: "Código da requisição do paciente" },
+  { key: "{nom_paciente}", desc: "Nome do paciente" },
   { key: "{total}", desc: "Total de registros no filtro" },
   { key: "{data_hoje}", desc: "Data atual (DD/MM/YYYY)" },
   { key: "{resumo}", desc: "Lista de eventos e contagens" },
@@ -713,6 +715,8 @@ export default function WhatsAppPage() {
               const linhas = buildLinhasPreview(columnsCombined, [row]);
               const msg = template
                 .replace(/\{nome\}/g, formatNome(item.nome))
+                .replace(/\{cod_requisicao\}/g, row["cod_requisicao"] ?? "")
+                .replace(/\{nom_paciente\}/g, row["nom_paciente"] ?? "")
                 .replace(/\{total\}/g, "1")
                 .replace(/\{data_hoje\}/g, dataHoje)
                 .replace(/\{resumo\}/g, resumo)
@@ -919,6 +923,8 @@ export default function WhatsAppPage() {
             const linhas = buildLinhasPreview(columnsCombined, [row]);
             const finalMessage = template
               .replace(/\{nome\}/g, formatNome(item.nome))
+              .replace(/\{cod_requisicao\}/g, row["cod_requisicao"] ?? "")
+              .replace(/\{nom_paciente\}/g, row["nom_paciente"] ?? "")
               .replace(/\{total\}/g, "1")
               .replace(/\{data_hoje\}/g, dataHoje)
               .replace(/\{resumo\}/g, resumo)
