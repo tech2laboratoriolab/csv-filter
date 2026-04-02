@@ -180,7 +180,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                     </option>
                   ))}
                 </select>
-                {!['is_null','is_not_null','is_today','is_tomorrow','is_today_or_tomorrow','is_future','is_future_or_today','is_past','is_past_or_today'].includes(rule.operator) && (
+                {!['is_null','is_not_null','is_today','is_yesterday','is_day_before_yesterday','is_tomorrow','is_today_or_tomorrow','is_future','is_future_or_today','is_past','is_past_or_today'].includes(rule.operator) && (
                   <input
                     type={condCol?.type === 'date' ? 'date' : 'text'}
                     placeholder={rule.operator === 'in' || rule.operator === 'not_in' ? 'val1,val2' : 'Valor'}
