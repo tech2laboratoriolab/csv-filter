@@ -369,6 +369,42 @@
         "backgroundColor": "#d5b907",
         "priority": 0,
         "targetColumn": "17730820405240.8328552882176657"
+      },
+      {
+        "id": "17751305618990.14449845599943034",
+        "name": "Regra 2",
+        "targetType": "cell",
+        "conditionColumn": "dta_finalizacao",
+        "operator": "is_yesterday",
+        "value": "",
+        "backgroundColor": "#fff700",
+        "priority": 1,
+        "targetColumn": "dta_finalizacao",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17751306248580.8657794618317612",
+        "name": "Regra 3",
+        "targetType": "cell",
+        "conditionColumn": "dta_finalizacao",
+        "operator": "is_day_before_yesterday",
+        "value": "",
+        "backgroundColor": "#ffae00",
+        "priority": 2,
+        "targetColumn": "dta_finalizacao",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17751327391770.7005153702105242",
+        "name": "Regra 4",
+        "targetType": "cell",
+        "conditionColumn": "visualizacao",
+        "operator": "equals",
+        "value": "0",
+        "backgroundColor": "#fff700",
+        "priority": 3,
+        "targetColumn": "visualizacao",
+        "textColor": "#000000"
       }
     ],
     "formulaColumns": [],
@@ -416,17 +452,6 @@
     "createdAt": "2026-03-06T14:41:39.928Z",
     "updatedAt": "2026-03-19T12:32:15.520Z",
     "colorRules": [
-      {
-        "id": "17728186841520.5572375032278349",
-        "name": "Regra 1",
-        "targetType": "cell",
-        "conditionColumn": "17728186589600.5580783753230334",
-        "operator": "is_not_null",
-        "value": "",
-        "backgroundColor": "#8a6c00",
-        "priority": 0,
-        "targetColumn": "17728186589600.5580783753230334"
-      },
       {
         "id": "17733165216350.5520487987428974",
         "name": "Regra 2",
@@ -529,19 +554,7 @@
     ],
     "createdAt": "2026-03-06T11:53:25.870Z",
     "updatedAt": "2026-03-31T00:00:00.000Z",
-    "colorRules": [
-      {
-        "id": "17728069605360.8872815431758709",
-        "name": "Regra 1",
-        "targetType": "cell",
-        "conditionColumn": "17728069078720.8874528474932675",
-        "operator": "is_not_null",
-        "value": "",
-        "backgroundColor": "#566100",
-        "priority": 0,
-        "targetColumn": "17728069078720.8874528474932675"
-      }
-    ],
+    "colorRules": [],
     "formulaColumns": [],
     "annotationColumns": [
       {
@@ -1070,9 +1083,16 @@
         "label": "IMUNO Faturamento",
         "keyColumn": "nom_paciente",
         "matchConditions": [
-          { "column": "nom_exame", "operator": "contains", "value": "IMUNO" }
+          {
+            "column": "nom_exame",
+            "operator": "contains",
+            "value": "IMUNO"
+          }
         ],
-        "displayColumns": ["cod_requisicao", "cod_evento"],
+        "displayColumns": [
+          "cod_requisicao",
+          "cod_evento"
+        ],
         "separator": " / ",
         "limit": 2,
         "fallback": "PENDENTE VERIFICAÇÃO",
@@ -1091,12 +1111,39 @@
       "cpf"
     ],
     "conditions": [
-      { "column": "fonte_pagadora", "operator": "is_not_null", "value": "" },
-      { "column": "nom_exame_tipo", "operator": "is_not_null", "value": "" },
-      { "column": "cod_requisicao", "operator": "is_not_null", "value": "" },
-      { "column": "sexo", "operator": "is_null", "value": "", "orGroup": "dn_missing_fields" },
-      { "column": "dta_nascimento", "operator": "is_null", "value": "", "orGroup": "dn_missing_fields" },
-      { "column": "cpf", "operator": "is_null", "value": "", "orGroup": "dn_missing_fields" }
+      {
+        "column": "fonte_pagadora",
+        "operator": "is_not_null",
+        "value": ""
+      },
+      {
+        "column": "nom_exame_tipo",
+        "operator": "is_not_null",
+        "value": ""
+      },
+      {
+        "column": "cod_requisicao",
+        "operator": "is_not_null",
+        "value": ""
+      },
+      {
+        "column": "sexo",
+        "operator": "is_null",
+        "value": "",
+        "orGroup": "dn_missing_fields"
+      },
+      {
+        "column": "dta_nascimento",
+        "operator": "is_null",
+        "value": "",
+        "orGroup": "dn_missing_fields"
+      },
+      {
+        "column": "cpf",
+        "operator": "is_null",
+        "value": "",
+        "orGroup": "dn_missing_fields"
+      }
     ],
     "createdAt": "2026-04-01T00:00:00.000Z",
     "updatedAt": "2026-04-01T00:00:00.000Z",
@@ -1150,47 +1197,243 @@
   {
     "id": "default_erros_cadastro",
     "name": "ERROS CADASTRO",
-    "selectedColumns": ["local_origem", "nom_medico", "cod_requisicao"],
+    "selectedColumns": [
+      "local_origem",
+      "nom_medico",
+      "cod_requisicao"
+    ],
     "conditions": [
-      { "column": "local_origem", "operator": "not_in", "value": "LAB - LABORATORIO DE PATOLOGIA E CITOLOGIA APLICADA LTDA,HOSPITAL SANTA LUCIA NORTE,HOSPITAL SANTA WUCIA,HOSPITAL SANTA LUZIA,HOSPITAL DA PLASTICA,VERHUM - LAGO SUL,ECOMED,VITALITY - MEDICINA INTEGRADA LTDA" },
-      { "column": "nom_medico", "operator": "not_equals", "value": "ANGELICA ANGELO DE MENESES" },
-      { "column": "local_origem", "operator": "not_equals", "value": "GUIDO SILVA GARCIA FREIRE", "orGroup": "excl_p1" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "BRENO CESAR ABREU SENA",   "orGroup": "excl_p1" },
-      { "column": "local_origem", "operator": "not_equals", "value": "NEXUS", "orGroup": "excl_p2" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "MIRIAN HELENA HOESCHI ABREU MACEDO", "orGroup": "excl_p2" },
-      { "column": "local_origem", "operator": "not_equals", "value": "Medigest Centro de Medicina Digestiva", "orGroup": "excl_p3" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "CALIXTO ABRÃO NETO", "orGroup": "excl_p3" },
-      { "column": "local_origem", "operator": "not_equals", "value": "COEM", "orGroup": "excl_p4" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "IVAN RIBEIRO JUNIOR", "orGroup": "excl_p4" },
-      { "column": "local_origem", "operator": "not_equals", "value": "ENDOCENTRO", "orGroup": "excl_p5" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "JULIANA BERGA CALIXTO", "orGroup": "excl_p5" },
-      { "column": "local_origem", "operator": "not_equals", "value": "DRA CARMEN REGINA FIGUEIREDO", "orGroup": "excl_p6" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "CARMEN REGINA FIGUEIREDO", "orGroup": "excl_p6" },
-      { "column": "local_origem", "operator": "not_equals", "value": "CLAF - CLINICA DE ATENDIMENTO DA FAMILIA", "orGroup": "excl_p7" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "FERNANDA NASCIMENTO SAMARA", "orGroup": "excl_p7" },
-      { "column": "local_origem", "operator": "not_equals", "value": "LUIZ FERNANDO FERNANDES PETRUCCE", "orGroup": "excl_p8" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "LUIZ FERNANDO FERNANDES PETRUCCE", "orGroup": "excl_p8" },
-      { "column": "local_origem", "operator": "not_equals", "value": "CLAF - CLINICA DE ATENDIMENTO DA FAMILIA", "orGroup": "excl_p9" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "ALINE TEIXEIRA LEAL", "orGroup": "excl_p9" },
-      { "column": "local_origem", "operator": "not_equals", "value": "AEPIT CENTRO CIRURGICO", "orGroup": "excl_p10" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "PHABIO CLAUDINO ESTRELA TERRA THEODORO", "orGroup": "excl_p10" },
-      { "column": "local_origem", "operator": "not_equals", "value": "NASCER BRASILIA", "orGroup": "excl_p11" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "NATHAN ALMEIDA MILWARD DE AZEVEDO", "orGroup": "excl_p11" },
-      { "column": "local_origem", "operator": "not_equals", "value": "CLINICA GINORTE", "orGroup": "excl_p12" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "EDNA MARCIA XAVIER", "orGroup": "excl_p12" },
-      { "column": "local_origem", "operator": "not_equals", "value": "CLAF - CLINICA DE ATENDIMENTO DA FAMILIA", "orGroup": "excl_p13" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "ISADORA FERREIRA PINHEIRO", "orGroup": "excl_p13" },
-      { "column": "local_origem", "operator": "not_equals", "value": "CLAF - CLINICA DE ATENDIMENTO DA FAMILIA", "orGroup": "excl_p14" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "FERNANDO RAMOS CAIADO", "orGroup": "excl_p14" },
-      { "column": "local_origem", "operator": "not_equals", "value": "CLAF - TAGUATINGA", "orGroup": "excl_p15" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "LARISSA ABU KAMEL LASMAR", "orGroup": "excl_p15" },
-      { "column": "local_origem", "operator": "not_equals", "value": "CLAF - TAGUATINGA", "orGroup": "excl_p16" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "RAPHISA ALVES CAMPOS CARNEIRO", "orGroup": "excl_p16" },
-      { "column": "local_origem", "operator": "not_equals", "value": "I M CLINIC CENTER", "orGroup": "excl_p17" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "IVAN RIBEIRO JUNIOR", "orGroup": "excl_p17" },
-      { "column": "local_origem", "operator": "not_equals", "value": "LUZIA MULHER", "orGroup": "excl_p18" },
-      { "column": "nom_medico",   "operator": "not_equals", "value": "Ricardo Barbosa Alves", "orGroup": "excl_p18" },
-      { "column": "local_origem", "operator": "unique_combination", "value": "nom_medico" }
+      {
+        "column": "local_origem",
+        "operator": "not_in",
+        "value": "LAB - LABORATORIO DE PATOLOGIA E CITOLOGIA APLICADA LTDA,HOSPITAL SANTA LUCIA NORTE,HOSPITAL SANTA WUCIA,HOSPITAL SANTA LUZIA,HOSPITAL DA PLASTICA,VERHUM - LAGO SUL,ECOMED,VITALITY - MEDICINA INTEGRADA LTDA"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "ANGELICA ANGELO DE MENESES"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "GUIDO SILVA GARCIA FREIRE",
+        "orGroup": "excl_p1"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "BRENO CESAR ABREU SENA",
+        "orGroup": "excl_p1"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "NEXUS",
+        "orGroup": "excl_p2"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "MIRIAN HELENA HOESCHI ABREU MACEDO",
+        "orGroup": "excl_p2"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "Medigest Centro de Medicina Digestiva",
+        "orGroup": "excl_p3"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "CALIXTO ABRÃO NETO",
+        "orGroup": "excl_p3"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "COEM",
+        "orGroup": "excl_p4"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "IVAN RIBEIRO JUNIOR",
+        "orGroup": "excl_p4"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "ENDOCENTRO",
+        "orGroup": "excl_p5"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "JULIANA BERGA CALIXTO",
+        "orGroup": "excl_p5"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "DRA CARMEN REGINA FIGUEIREDO",
+        "orGroup": "excl_p6"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "CARMEN REGINA FIGUEIREDO",
+        "orGroup": "excl_p6"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "CLAF - CLINICA DE ATENDIMENTO DA FAMILIA",
+        "orGroup": "excl_p7"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "FERNANDA NASCIMENTO SAMARA",
+        "orGroup": "excl_p7"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "LUIZ FERNANDO FERNANDES PETRUCCE",
+        "orGroup": "excl_p8"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "LUIZ FERNANDO FERNANDES PETRUCCE",
+        "orGroup": "excl_p8"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "CLAF - CLINICA DE ATENDIMENTO DA FAMILIA",
+        "orGroup": "excl_p9"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "ALINE TEIXEIRA LEAL",
+        "orGroup": "excl_p9"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "AEPIT CENTRO CIRURGICO",
+        "orGroup": "excl_p10"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "PHABIO CLAUDINO ESTRELA TERRA THEODORO",
+        "orGroup": "excl_p10"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "NASCER BRASILIA",
+        "orGroup": "excl_p11"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "NATHAN ALMEIDA MILWARD DE AZEVEDO",
+        "orGroup": "excl_p11"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "CLINICA GINORTE",
+        "orGroup": "excl_p12"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "EDNA MARCIA XAVIER",
+        "orGroup": "excl_p12"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "CLAF - CLINICA DE ATENDIMENTO DA FAMILIA",
+        "orGroup": "excl_p13"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "ISADORA FERREIRA PINHEIRO",
+        "orGroup": "excl_p13"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "CLAF - CLINICA DE ATENDIMENTO DA FAMILIA",
+        "orGroup": "excl_p14"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "FERNANDO RAMOS CAIADO",
+        "orGroup": "excl_p14"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "CLAF - TAGUATINGA",
+        "orGroup": "excl_p15"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "LARISSA ABU KAMEL LASMAR",
+        "orGroup": "excl_p15"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "CLAF - TAGUATINGA",
+        "orGroup": "excl_p16"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "RAPHISA ALVES CAMPOS CARNEIRO",
+        "orGroup": "excl_p16"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "I M CLINIC CENTER",
+        "orGroup": "excl_p17"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "IVAN RIBEIRO JUNIOR",
+        "orGroup": "excl_p17"
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_equals",
+        "value": "LUZIA MULHER",
+        "orGroup": "excl_p18"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "not_equals",
+        "value": "Ricardo Barbosa Alves",
+        "orGroup": "excl_p18"
+      },
+      {
+        "column": "local_origem",
+        "operator": "unique_combination",
+        "value": "nom_medico"
+      }
     ],
     "annotationColumns": [
       {
