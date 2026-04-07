@@ -487,6 +487,16 @@ tr {
   border-color: rgba(239, 68, 68, 0.35);
 }
 
+.btn-yellow {
+  background: rgba(234, 179, 8, 0.1);
+  color: #ca8a04;
+  border-color: rgba(234, 179, 8, 0.25);
+}
+.btn-yellow:hover {
+  background: rgba(234, 179, 8, 0.18);
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--text-2);

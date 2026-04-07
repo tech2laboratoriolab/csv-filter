@@ -7,6 +7,7 @@ import type {
   FormulaColumn,
   AnnotationColumn,
   LookupColumn,
+  TemplateColumn,
 } from "@/lib/clientDb";
 import DataTable from "@/app/components/DataTable";
 import {
@@ -63,6 +64,7 @@ export default function Home() {
   const [conditions, setConditions] = useState<FilterCondition[]>([]);
   const [rows, setRows] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
+  const [templateColumns, setTemplateColumns] = useState<TemplateColumn[]>([]);
   const [page, setPage] = useState(1);
   const [sortCol, setSortCol] = useState<string | undefined>();
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -405,6 +407,7 @@ export default function Home() {
     setFormulaColumns(f.formulaColumns ?? []);
     setAnnotationColumns(f.annotationColumns ?? []);
     setLookupColumns(f.lookupColumns ?? []);
+    setTemplateColumns(f.templateColumns ?? []);
     setAnnotationValues({});
     setPage(1);
     fetchData(f.selectedColumns, f.conditions, 1);
@@ -447,6 +450,7 @@ export default function Home() {
     setFormulaColumns([]);
     setFormulaValues([]);
     setAnnotationColumns([]);
+    setTemplateColumns([]);
     setAnnotationValues({});
     setPage(1);
     setSortCol(undefined);
@@ -981,6 +985,7 @@ export default function Home() {
                   sortCol={sortCol}
                   sortDir={sortDir}
                   onSort={handleSort}
+                  templateColumns={templateColumns}
                 />
               )}
             </div>

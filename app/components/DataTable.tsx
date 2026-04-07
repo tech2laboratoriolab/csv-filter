@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
-import type { ColumnDef, ColorRule, FormulaColumn, AnnotationColumn, LookupColumn } from '@/lib/clientDb';
+import { useRef, useState } from 'react';
+import type { ColumnDef, ColorRule, FormulaColumn, AnnotationColumn, LookupColumn, TemplateColumn } from '@/lib/clientDb';
 import { evaluateColorRules } from '@/lib/colorRules';
 
 interface DataTableProps {
@@ -15,6 +15,7 @@ interface DataTableProps {
   annotationValues: Record<string, string>;
   lookupColumns: LookupColumn[];
   lookupValues: string[][];
+  templateColumns: TemplateColumn[];
   onAnnotationChange: (rowId: number, colId: string, value: string) => void;
   sortCol?: string;
   sortDir: 'asc' | 'desc';
@@ -25,13 +26,15 @@ type DisplayCol =
   | { type: 'data'; name: string }
   | { type: 'formula'; fc: FormulaColumn; fcIdx: number }
   | { type: 'annotation'; ac: AnnotationColumn; acIdx: number }
-  | { type: 'lookup'; lc: LookupColumn; lcIdx: number };
+  | { type: 'lookup'; lc: LookupColumn; lcIdx: number }
+  | { type: 'template'; tc: TemplateColumn; tcIdx: number };
 
 function buildDisplayCols(
   selectedCols: string[],
   formulaColumns: FormulaColumn[],
   annotationColumns: AnnotationColumn[],
   lookupColumns: LookupColumn[] = [],
+  templateColumns: TemplateColumn[] = [],
 ): DisplayCol[] {
   const result: DisplayCol[] = [];
 
@@ -46,6 +49,9 @@ function buildDisplayCols(
     lookupColumns.forEach((lc, lcIdx) => {
       if (lc.insertAfterColumn === name) result.push({ type: 'lookup', lc, lcIdx });
     });
+    templateColumns.forEach((tc, tcIdx) => {
+      if (tc.insertAfterColumn === name) result.push({ type: 'template', tc, tcIdx });
+    });
   }
 
   formulaColumns.forEach((fc, fcIdx) => {
@@ -56,6 +62,9 @@ function buildDisplayCols(
   });
   lookupColumns.forEach((lc, lcIdx) => {
     if (!lc.insertAfterColumn || !selectedCols.includes(lc.insertAfterColumn)) result.push({ type: 'lookup', lc, lcIdx });
+  });
+  templateColumns.forEach((tc, tcIdx) => {
+    if (!tc.insertAfterColumn || !selectedCols.includes(tc.insertAfterColumn)) result.push({ type: 'template', tc, tcIdx });
   });
 
   return result;
@@ -81,15 +90,38 @@ export default function DataTable({
   annotationValues,
   lookupColumns,
   lookupValues,
+  templateColumns,
   onAnnotationChange,
   sortCol,
   sortDir,
   onSort,
 }: DataTableProps) {
   const getLabel = (name: string) => columns.find(c => c.name === name)?.label ?? name;
-  const displayCols = buildDisplayCols(selectedCols, formulaColumns, annotationColumns, lookupColumns);
+  const displayCols = buildDisplayCols(selectedCols, formulaColumns, annotationColumns, lookupColumns, templateColumns);
   // Track pending (uncommitted) edits keyed by "rowId:colId"
   const pendingRef = useRef<Record<string, string>>({});
+  const [copiedTemplateKey, setCopiedTemplateKey] = useState<string | null>(null);
+
+  const copyTemplateText = async (text: string, key: string) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setCopiedTemplateKey(key);
+      setTimeout(() => {
+        setCopiedTemplateKey(prev => (prev === key ? null : prev));
+      }, 1200);
+    } catch {
+      // ignore clipboard failures silently to avoid breaking table rendering
+    }
+  };
 
   if (!rows.length) {
     return (
@@ -133,6 +165,16 @@ export default function DataTable({
                     style={{ width: col.lc.width ?? 220, color: 'var(--blue)' }}
                   >
                     ⌗ {col.lc.label}
+                  </th>
+                );
+              }
+              if (col.type === 'template') {
+                return (
+                  <th
+                    key={`tc-${col.tc.id}`}
+                    style={{ width: col.tc.width ?? 280, color: 'var(--yellow)' }}
+                  >
+                    ✉ {col.tc.label}
                   </th>
                 );
               }
@@ -199,6 +241,43 @@ export default function DataTable({
                         }}
                         title={val}
                       >
+                        {val}
+                      </td>
+                    );
+                  }
+
+                  if (col.type === 'template') {
+                    const val = col.tc.template.replace(/\{(\w+)\}/g, (_, key) => String(row[key] ?? ''));
+                    const rowId = String(row._row_id ?? ri);
+                    const copyKey = `${rowId}:${col.tc.id}`;
+                    return (
+                      <td
+                        key={`tc-${col.tc.id}`}
+                        style={{
+                          position: 'relative',
+                          width: col.tc.width ?? 280,
+                          whiteSpace: 'pre-wrap',
+                          color: 'var(--text-1)',
+                          fontSize: 11,
+                          lineHeight: 1.4,
+                          verticalAlign: 'top',
+                          padding: '24px 6px 6px',
+                        }}
+                        title={val}
+                      >
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm btn-icon"
+                          style={{ position: 'absolute', top: 4, right: 4 }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            copyTemplateText(val, copyKey);
+                          }}
+                          title="Copiar mensagem"
+                          aria-label="Copiar mensagem"
+                        >
+                          {copiedTemplateKey === copyKey ? '✓' : '📋'}
+                        </button>
                         {val}
                       </td>
                     );

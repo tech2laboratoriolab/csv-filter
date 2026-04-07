@@ -441,6 +441,14 @@ export interface LookupColumn {
   insertAfterColumn?: string;
 }
 
+export interface TemplateColumn {
+  id: string;
+  label: string;
+  template: string;
+  width?: number;
+  insertAfterColumn?: string;
+}
+
 export interface SavedFilter {
   id: string;
   name: string;
@@ -451,6 +459,7 @@ export interface SavedFilter {
   formulaColumns?: FormulaColumn[];
   annotationColumns?: AnnotationColumn[];
   lookupColumns?: LookupColumn[];
+  templateColumns?: TemplateColumn[];
   whatsappLinhasColumns?: string[];
   createdAt: string;
   updatedAt?: string;

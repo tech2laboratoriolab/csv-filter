@@ -8,6 +8,7 @@ import DataTable from '@/app/components/DataTable';
 import ColorRuleEditor from '@/app/components/ColorRuleEditor';
 import FormulaColumnEditor from '@/app/components/FormulaColumnEditor';
 import AnnotationColumnEditor from '@/app/components/AnnotationColumnEditor';
+import TemplateColumnEditor from '@/app/components/TemplateColumnEditor';
 import {
   getTableStats,
   queryFiltered,
@@ -20,7 +21,7 @@ import {
   COLUMNS
 } from '@/lib/clientDb';
 
-type Tab = 'columns' | 'filters' | 'color' | 'formula' | 'annotation';
+type Tab = 'columns' | 'filters' | 'color' | 'formula' | 'annotation' | 'template';
 const PAGE_SIZE = 50;
 
 interface Props {
@@ -197,6 +198,7 @@ export default function FilterPageClient({ filterId }: Props) {
   const formulaColumns: FormulaColumn[] = filter.formulaColumns ?? [];
   const annotationColumns: AnnotationColumn[] = filter.annotationColumns ?? [];
   const lookupColumns: LookupColumn[] = filter.lookupColumns ?? [];
+  const templateColumns = filter.templateColumns ?? [];
   const sampleRow = rows[0];
 
   const handleAnnotationChange = (rowId: number, colId: string, value: string) => {
@@ -210,6 +212,7 @@ export default function FilterPageClient({ filterId }: Props) {
     ['color', 'Regras de Cor'],
     ['formula', 'Colunas de Fórmula'],
     ['annotation', 'Anotações'],
+    ['template', 'Mensagens'],
   ];
 
   return (
@@ -271,6 +274,9 @@ export default function FilterPageClient({ filterId }: Props) {
             {tab === 'annotation' && annotationColumns.length > 0 && (
               <span className="fp-tab-badge">{annotationColumns.length}</span>
             )}
+            {tab === 'template' && templateColumns.length > 0 && (
+              <span className="fp-tab-badge">{templateColumns.length}</span>
+            )}
           </button>
         ))}
       </div>
@@ -321,6 +327,15 @@ export default function FilterPageClient({ filterId }: Props) {
             columns={columns}
             selectedCols={filter.selectedColumns}
             onChange={acs => updateFilter({ annotationColumns: acs })}
+          />
+        )}
+
+        {activeTab === 'template' && (
+          <TemplateColumnEditor
+            templateColumns={templateColumns}
+            columns={columns}
+            selectedCols={filter.selectedColumns}
+            onChange={tcs => updateFilter({ templateColumns: tcs })}
           />
         )}
       </div>
@@ -374,6 +389,7 @@ export default function FilterPageClient({ filterId }: Props) {
             annotationValues={annotationValues}
             lookupColumns={lookupColumns}
             lookupValues={lookupValues}
+            templateColumns={templateColumns}
             onAnnotationChange={handleAnnotationChange}
             sortCol={sortCol}
             sortDir={sortDir}

@@ -208,11 +208,7 @@
     ],
     "formulaColumns": [],
     "annotationColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
-    ]
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"]
   },
   {
     "id": "imported_1773923535520_2",
@@ -415,10 +411,16 @@
         "width": 180
       }
     ],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente"
-    ]
+    "templateColumns": [
+      {
+        "id": "critico_whatsapp_message",
+        "label": "Mensagem WhatsApp",
+        "template": "Prezado Parceiro,\n\nViemos informar que o Laudo do(a) Paciente {cod_requisicao} - {nom_paciente} está disponível.\n\n⚠️ *Recomendamos que seja apresentado ao médico solicitante.*",
+        "width": 420,
+        "insertAfterColumn": "visualizacao"
+      }
+    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"]
   },
   {
     "id": "imported_1773923535520_3",
@@ -847,11 +849,7 @@
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
-    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
     "annotationColumns": []
   },
   {
@@ -993,11 +991,7 @@
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
-    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
     "annotationColumns": []
   },
   {
@@ -1089,10 +1083,7 @@
             "value": "IMUNO"
           }
         ],
-        "displayColumns": [
-          "cod_requisicao",
-          "cod_evento"
-        ],
+        "displayColumns": ["cod_requisicao", "cod_evento"],
         "separator": " / ",
         "limit": 2,
         "fallback": "PENDENTE VERIFICAÇÃO",
@@ -1197,11 +1188,7 @@
   {
     "id": "default_erros_cadastro",
     "name": "ERROS CADASTRO",
-    "selectedColumns": [
-      "local_origem",
-      "nom_medico",
-      "cod_requisicao"
-    ],
+    "selectedColumns": ["local_origem", "nom_medico", "cod_requisicao"],
     "conditions": [
       {
         "column": "local_origem",
