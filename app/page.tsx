@@ -13,6 +13,7 @@ import DataTable from "@/app/components/DataTable";
 import {
   importCSV,
   importVisualizacaoCSV,
+  importPatologiaMolecularCSV,
   getTableStats,
   getSavedFilters,
   getDistinctValues,
@@ -234,6 +235,10 @@ export default function Home() {
                 ["cod_requisicao", "visualizacao"].includes(c),
               );
 
+            const isPatologiaMolecularCSV =
+              mappedCols.includes("conclusao") &&
+              mappedCols.includes("cod_requisicao");
+
             if (isVisualizacaoCSV) {
               const { updated, skipped } = await importVisualizacaoCSV(
                 headers,
@@ -242,6 +247,15 @@ export default function Home() {
               setProgress(100);
               alert(
                 `${updated} registro(s) atualizados com visualização${skipped > 0 ? ` (${skipped} não encontrados)` : ""}`,
+              );
+            } else if (isPatologiaMolecularCSV) {
+              const { updated, skipped } = await importPatologiaMolecularCSV(
+                headers,
+                dataRows,
+              );
+              setProgress(100);
+              alert(
+                `${updated} registro(s) atualizados com dados moleculares${skipped > 0 ? ` (${skipped} não encontrados)` : ""}`,
               );
             } else {
               const allFilters = await getSavedFilters();
@@ -557,6 +571,26 @@ export default function Home() {
       <div className="sidebar">
         <div className="sidebar-header">
           <div className="logo">LAB SHEETS</div>
+          <a
+            href="/semanas"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              padding: "6px 10px",
+              background: "rgba(99,102,241,0.12)",
+              border: "1px solid rgba(99,102,241,0.3)",
+              borderRadius: 6,
+              color: "#6366f1",
+              textDecoration: "none",
+              fontSize: 12,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}
+          >
+            🗓 Escala
+          </a>
           <a
             href="/whatsapp"
             style={{

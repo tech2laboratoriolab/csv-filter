@@ -46,6 +46,18 @@ export const COLUMNS: ColumnDef[] = [
   { name: "cpf", label: "CPF", type: "text" },
   { name: "fonte_pagadora", label: "FontePagadora", type: "text" },
   { name: "nom_exame_tipo", label: "NomExameTipo", type: "text" },
+  { name: "status_requisicao", label: "StatusRequisicao", type: "text" },
+  { name: "status_frasco", label: "StatusFrasco", type: "text" },
+  { name: "conclusao", label: "Conclusao", type: "text" },
+  { name: "titulo_resultado", label: "TituloResultado", type: "text" },
+  { name: "resultado", label: "Resultado", type: "text" },
+  { name: "titulo_conclusao", label: "TituloConclusao", type: "text" },
+  { name: "des_conclusao", label: "DesConclusao", type: "text" },
+  { name: "faixa_etaria", label: "FaixaEtaria", type: "text" },
+  { name: "assinatura1", label: "Assinatura1", type: "text" },
+  { name: "assinatura2", label: "Assinatura2", type: "text" },
+  { name: "informacoes", label: "Informacoes", type: "text" },
+  { name: "id_requisicao_captura", label: "IdRequisicaoCaptura", type: "text" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};
@@ -364,7 +376,87 @@ export async function importVisualizacaoCSV(
   return { updated, skipped };
 }
 
-// --- Query ---
+// --- Patologia Molecular CSV Import (secondary CSV enrichment) ---
+export async function importPatologiaMolecularCSV(
+  headers: string[],
+  rows: string[][],
+): Promise<{ updated: number; skipped: number }> {
+  const db = await getDb();
+
+  const codReqIdx = headers.findIndex(
+    (h) => HEADER_MAP[h.trim().toLowerCase()] === "cod_requisicao",
+  );
+
+  if (codReqIdx < 0) {
+    throw new Error(
+      "CSV de patologia molecular precisa ter a coluna CodRequisicao",
+    );
+  }
+
+  // Map all headers that exist in our schema (excluding cod_requisicao itself)
+  const PATMOL_EXCLUDED = new Set([
+    "cod_requisicao",
+    // Columns already present in the main CSV — do not overwrite
+    "nom_paciente", "dta_solicitacao", "dta_finalizacao", "dta_coleta",
+    "nom_exame", "nom_local_origem", "nom_medico", "dta_nascimento",
+    "sexo", "nom_convenio", "nom_fonte_pagadora",
+  ]);
+
+  const colMapping: { csvIndex: number; dbCol: string }[] = [];
+  headers.forEach((h, i) => {
+    const dbCol = HEADER_MAP[h.trim().toLowerCase()];
+    if (dbCol && !PATMOL_EXCLUDED.has(dbCol)) {
+      colMapping.push({ csvIndex: i, dbCol });
+    }
+  });
+
+  if (colMapping.length === 0) {
+    throw new Error(
+      "Nenhuma coluna do CSV de patologia molecular corresponde ao schema esperado",
+    );
+  }
+
+  const setClauses = colMapping.map((m) => `"${m.dbCol}" = ?`).join(", ");
+
+  let updated = 0;
+  let skipped = 0;
+
+  db.run("BEGIN TRANSACTION;");
+  const stmt = db.prepare(
+    `UPDATE csv_data SET ${setClauses} WHERE "cod_requisicao" = ?`,
+  );
+
+  for (const row of rows) {
+    try {
+      const codReq = (row[codReqIdx] || "").trim();
+      if (!codReq) {
+        skipped++;
+        continue;
+      }
+      const values = colMapping.map((m) => {
+        const raw = (row[m.csvIndex] ?? "").trim();
+        return raw === "" ? null : raw;
+      });
+      values.push(codReq);
+      stmt.run(values);
+      if (db.getRowsModified() > 0) updated++;
+      else skipped++;
+    } catch {
+      skipped++;
+    }
+  }
+
+  stmt.free();
+  db.run("COMMIT;");
+
+  const idb = await getIdb();
+  if (idb) {
+    const snapshot = db.export();
+    await idb.put("csv_database", snapshot, "snapshot");
+  }
+
+  return { updated, skipped };
+}
 export interface FilterCondition {
   column: string;
   operator:

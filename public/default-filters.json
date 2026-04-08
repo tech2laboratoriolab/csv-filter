@@ -1430,5 +1430,94 @@
       }
     ],
     "createdAt": "2026-04-01T00:00:00.000Z"
+  },
+  {
+    "id": "default_molecular_positivo_1",
+    "name": "MOLECULAR POSITIVO",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_finalizacao",
+      "local_origem",
+      "patologista",
+      "patologista_aux",
+      "des_conclusao",
+      "resultado",
+      "visualizacao"
+    ],
+    "conditions": [
+      {
+        "column": "dta_finalizacao",
+        "operator": "is_not_null",
+        "value": ""
+      },
+      {
+        "column": "local_origem",
+        "operator": "not_contains",
+        "value": "I M CLINIC"
+      },
+      {
+        "column": "des_conclusao",
+        "operator": "equals",
+        "value": "Positivo"
+      }
+    ],
+    "colorRules": [
+      {
+        "id": "molpos_color_1",
+        "name": "Regra 1",
+        "targetType": "cell",
+        "conditionColumn": "dta_finalizacao",
+        "operator": "is_yesterday",
+        "value": "",
+        "backgroundColor": "#fff700",
+        "priority": 1,
+        "targetColumn": "dta_finalizacao",
+        "textColor": "#000000"
+      },
+      {
+        "id": "molpos_color_2",
+        "name": "Regra 2",
+        "targetType": "cell",
+        "conditionColumn": "dta_finalizacao",
+        "operator": "is_day_before_yesterday",
+        "value": "",
+        "backgroundColor": "#ffae00",
+        "priority": 2,
+        "targetColumn": "dta_finalizacao",
+        "textColor": "#000000"
+      },
+      {
+        "id": "molpos_color_3",
+        "name": "Regra 3",
+        "targetType": "cell",
+        "conditionColumn": "visualizacao",
+        "operator": "equals",
+        "value": "0",
+        "backgroundColor": "#fff700",
+        "priority": 3,
+        "targetColumn": "visualizacao",
+        "textColor": "#000000"
+      }
+    ],
+    "formulaColumns": [],
+    "annotationColumns": [
+      {
+        "id": "molpos_ann_enviado",
+        "label": "enviado",
+        "width": 180
+      }
+    ],
+    "templateColumns": [
+      {
+        "id": "molpos_whatsapp_message",
+        "label": "Mensagem WhatsApp",
+        "template": "Prezado Parceiro,\n\nViemos informar que o Laudo do(a) Paciente {cod_requisicao} - {nom_paciente} está disponível.\n\n⚠️ *Recomendamos que seja apresentado ao médico solicitante.*",
+        "width": 420,
+        "insertAfterColumn": "visualizacao"
+      }
+    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"],
+    "createdAt": "2026-04-08T00:00:00.000Z"
   }
 ]
