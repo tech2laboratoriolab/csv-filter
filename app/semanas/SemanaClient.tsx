@@ -7,7 +7,6 @@ import Link from 'next/link';
 
 interface Patologista {
   nome: string;
-  telefone?: string;
 }
 
 interface PatologistaSchedule {
@@ -85,7 +84,6 @@ export default function SemanaClient() {
   const [showGerir, setShowGerir]      = useState(false);
   const [gerirList, setGerirList]      = useState<Patologista[]>([]);
   const [gerirNovo, setGerirNovo]      = useState('');
-  const [gerirTel, setGerirTel]        = useState('');
 
   const dataRef    = useRef<SemanaData | null>(null);
   const saveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -190,7 +188,6 @@ export default function SemanaClient() {
   function openGerir() {
     setGerirList([...patologistas]);
     setGerirNovo('');
-    setGerirTel('');
     setShowGerir(true);
   }
 
@@ -201,9 +198,8 @@ export default function SemanaClient() {
   function gerirAdd() {
     const slug = gerirNovo.trim().toLowerCase().replace(/\s+/g, '.');
     if (!slug || gerirList.find(p => p.nome === slug)) return;
-    setGerirList(prev => [...prev, { nome: slug, telefone: gerirTel.trim() }]);
+    setGerirList(prev => [...prev, { nome: slug }]);
     setGerirNovo('');
-    setGerirTel('');
   }
 
   async function gerirSave() {
@@ -436,7 +432,6 @@ export default function SemanaClient() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 500, color: 'var(--text-0)', fontSize: 13 }}>{nomeDisplay(p.nome)}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{p.telefone || 'sem telefone'}</div>
                   </div>
                   <button className="btn btn-red btn-sm btn-icon" onClick={() => gerirRemove(p.nome)} title="Remover">✕</button>
                 </div>
@@ -452,26 +447,16 @@ export default function SemanaClient() {
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-3)', marginBottom: 10 }}>
                 Adicionar patologista
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   type="text"
                   placeholder="Nome (ex: joao.silva)"
                   value={gerirNovo}
                   onChange={e => setGerirNovo(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && gerirAdd()}
-                  style={modalInputStyle}
+                  style={{ ...modalInputStyle, flex: 1 }}
                 />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    type="text"
-                    placeholder="Telefone (opcional, ex: 5561...)"
-                    value={gerirTel}
-                    onChange={e => setGerirTel(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && gerirAdd()}
-                    style={{ ...modalInputStyle, flex: 1 }}
-                  />
-                  <button className="btn btn-primary btn-sm" onClick={gerirAdd}>+ Adicionar</button>
-                </div>
+                <button className="btn btn-primary btn-sm" onClick={gerirAdd}>+ Adicionar</button>
               </div>
             </div>
 
