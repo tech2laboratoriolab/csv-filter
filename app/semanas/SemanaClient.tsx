@@ -221,7 +221,6 @@ export default function SemanaClient() {
 
   // Totals
   const totalReq = patologistas.reduce((s, p) => s + getSchedule(p.nome).req, 0);
-  const totalTop = patologistas.reduce((s, p) => s + getSchedule(p.nome).top, 0);
   const totalLam = patologistas.reduce((s, p) => s + getSchedule(p.nome).lam, 0);
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -386,7 +385,6 @@ export default function SemanaClient() {
                   <tr>
                     <th style={{ textAlign: 'left' }}>Patologista</th>
                     <th style={{ width: 90, textAlign: 'center' }}>Req.</th>
-                    <th style={{ width: 90, textAlign: 'center' }}>Top.</th>
                     <th style={{ width: 90, textAlign: 'center' }}>Lâm.</th>
                   </tr>
                 </thead>
@@ -397,7 +395,6 @@ export default function SemanaClient() {
                       <tr key={p.nome}>
                         <td style={{ fontWeight: 500 }}>{nomeDisplay(p.nome)}</td>
                         <td><NumberCell value={s.req} onChange={v => updateField(p.nome, 'req', v)} /></td>
-                        <td><NumberCell value={s.top} onChange={v => updateField(p.nome, 'top', v)} /></td>
                         <td><NumberCell value={s.lam} onChange={v => updateField(p.nome, 'lam', v)} /></td>
                       </tr>
                     );
@@ -407,7 +404,6 @@ export default function SemanaClient() {
                   <tr style={{ fontWeight: 700, borderTop: '2px solid var(--border)' }}>
                     <td style={{ padding: '8px 12px', color: 'var(--text-0)' }}>TOTAL:</td>
                     <td style={{ textAlign: 'center', padding: '8px 12px', color: 'var(--text-0)' }}>{totalReq}</td>
-                    <td style={{ textAlign: 'center', padding: '8px 12px', color: 'var(--text-0)' }}>{totalTop}</td>
                     <td style={{ textAlign: 'center', padding: '8px 12px', color: 'var(--text-0)' }}>{totalLam}</td>
                   </tr>
                 </tfoot>
