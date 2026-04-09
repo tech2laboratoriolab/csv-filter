@@ -876,11 +876,6 @@
         "value": "4,10,20,24,30,33,35"
       },
       {
-        "column": "id_convenio",
-        "operator": "not_in",
-        "value": "32,46,1004,1015"
-      },
-      {
         "column": "dta_finalizacao",
         "operator": "is_null",
         "value": ""
