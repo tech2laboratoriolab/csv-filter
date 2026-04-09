@@ -323,6 +323,7 @@ export default function SemanaClient() {
               <SemanaItem
                 weekKey={currentWeek}
                 active={true}
+                isCurrent={currentWeek === todaySat}
                 unsaved
                 onClick={() => {}}
               />
@@ -332,6 +333,7 @@ export default function SemanaClient() {
                 key={wk}
                 weekKey={wk}
                 active={wk === currentWeek}
+                isCurrent={wk === todaySat}
                 onClick={() => setCurrentWeek(wk)}
               />
             ))}
@@ -485,7 +487,7 @@ export default function SemanaClient() {
 
 // ── SemanaItem (sidebar button) ───────────────────────────────────────────────
 
-function SemanaItem({ weekKey, active, unsaved, onClick }: { weekKey: string; active: boolean; unsaved?: boolean; onClick: () => void }) {
+function SemanaItem({ weekKey, active, isCurrent, unsaved, onClick }: { weekKey: string; active: boolean; isCurrent?: boolean; unsaved?: boolean; onClick: () => void }) {
   const sat = parseDateLocal(weekKey);
   const sun = addDays(sat, 1);
   const month = sat.toLocaleString('pt-BR', { month: 'short' });
@@ -506,9 +508,19 @@ function SemanaItem({ weekKey, active, unsaved, onClick }: { weekKey: string; ac
         gap: 2,
       }}
     >
-      <span style={{ fontSize: 11, fontWeight: 700, color: active ? 'var(--blue)' : 'var(--text-2)', letterSpacing: '0.3px' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: active ? 'var(--blue)' : 'var(--text-2)', letterSpacing: '0.3px' }}>
         {month.toUpperCase()} {sat.getFullYear()}
-        {unsaved && <span style={{ marginLeft: 6, fontSize: 9, color: 'var(--text-3)', fontWeight: 500 }}>nova</span>}
+        {isCurrent && (
+          <span style={{
+            display: 'inline-block',
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: 'var(--blue)',
+            flexShrink: 0,
+          }} title="Semana atual" />
+        )}
+        {unsaved && <span style={{ marginLeft: 2, fontSize: 9, color: 'var(--text-3)', fontWeight: 500 }}>nova</span>}
       </span>
       <span style={{ fontSize: 12, color: active ? 'var(--blue)' : 'var(--text-3)' }}>
         {sat.getDate().toString().padStart(2, '0')}/{(sat.getMonth()+1).toString().padStart(2,'0')}
