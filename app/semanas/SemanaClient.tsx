@@ -207,13 +207,18 @@ export default function SemanaClient() {
   }
 
   async function gerirSave() {
-    await fetch('/api/patologistas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(gerirList),
-    });
-    setPatologistas(gerirList);
-    setShowGerir(false);
+    try {
+      const res = await fetch('/api/patologistas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(gerirList),
+      });
+      if (!res.ok) throw new Error('Erro ao salvar');
+      setPatologistas(gerirList);
+      setShowGerir(false);
+    } catch {
+      alert('Erro ao salvar lista de patologistas. Tente novamente.');
+    }
   }
 
   const todaySat      = toIso(getSaturday(new Date()));
