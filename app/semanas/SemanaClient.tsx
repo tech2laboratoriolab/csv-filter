@@ -10,22 +10,11 @@ interface Patologista {
   telefone?: string;
 }
 
-interface LaudoRow {
-  id: string;
-  protocolo?: string;
-  nom_paciente?: string;
-  tipo_material?: string;
-  dta_recebimento?: string;
-  prazo?: string;
-  prioridade?: 'Normal' | 'Urgente' | 'Urgentíssimo';
-  status?: 'Pendente' | 'Em análise' | 'Concluído' | 'Revisão';
-  laudo?: string;
-  observacoes?: string;
-}
-
 interface PatologistaSchedule {
   patologistaId: string;
-  rows: LaudoRow[];
+  req: number;
+  top: number;
+  lam: number;
 }
 
 interface SemanaData {
@@ -73,44 +62,34 @@ function nomeDisplay(slug: string): string {
   return slug.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
 }
 
-function uid(): string {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+/** Migrate old format (rows[]) → new format (req/top/lam) */
+function normalizeSchedule(raw: Record<string, unknown>): PatologistaSchedule {
+  return {
+    patologistaId: raw.patologistaId as string,
+    req: typeof raw.req === 'number' ? raw.req : 0,
+    top: typeof raw.top === 'number' ? raw.top : 0,
+    lam: typeof raw.lam === 'number' ? raw.lam : 0,
+  };
 }
-
-// ── Colour mappings ───────────────────────────────────────────────────────────
-
-const PRIO_STYLE: Record<string, React.CSSProperties> = {
-  'Normal':        { color: 'var(--text-3)', background: 'var(--bg-3)', borderColor: 'var(--border)' },
-  'Urgente':       { color: '#d97706', background: 'var(--orange-bg)', borderColor: 'rgba(245,158,11,0.3)' },
-  'Urgentíssimo':  { color: '#dc2626', background: 'var(--red-bg)',    borderColor: 'rgba(239,68,68,0.3)' },
-};
-
-const STATUS_STYLE: Record<string, React.CSSProperties> = {
-  'Pendente':    { color: 'var(--text-2)', background: 'var(--bg-3)',    borderColor: 'var(--border)' },
-  'Em análise':  { color: 'var(--blue)',   background: 'var(--blue-bg)', borderColor: 'rgba(59,130,246,0.3)' },
-  'Concluído':   { color: '#16a34a',       background: 'var(--green-bg)',borderColor: 'rgba(34,197,94,0.3)' },
-  'Revisão':     { color: '#d97706',       background: 'var(--orange-bg)',borderColor: 'rgba(245,158,11,0.3)' },
-};
 
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SemanaClient() {
-  const [patologistas, setPatologistas]   = useState<Patologista[]>([]);
-  const [semanas, setSemanas]             = useState<string[]>([]);
-  const [currentWeek, setCurrentWeek]    = useState<string>('');
-  const [data, setData]                  = useState<SemanaData | null>(null);
-  const [activeTab, setActiveTab]        = useState<string>('');
-  const [loading, setLoading]            = useState(false);
-  const [saving, setSaving]              = useState(false);
-  const [savedOk, setSavedOk]            = useState(false);
-  const [showGerir, setShowGerir]        = useState(false);
-  const [gerirList, setGerirList]        = useState<Patologista[]>([]);
-  const [gerirNovo, setGerirNovo]        = useState('');
-  const [gerirTel, setGerirTel]          = useState('');
+  const [patologistas, setPatologistas] = useState<Patologista[]>([]);
+  const [semanas, setSemanas]           = useState<string[]>([]);
+  const [currentWeek, setCurrentWeek]  = useState<string>('');
+  const [data, setData]                = useState<SemanaData | null>(null);
+  const [loading, setLoading]          = useState(false);
+  const [saving, setSaving]            = useState(false);
+  const [savedOk, setSavedOk]          = useState(false);
+  const [showGerir, setShowGerir]      = useState(false);
+  const [gerirList, setGerirList]      = useState<Patologista[]>([]);
+  const [gerirNovo, setGerirNovo]      = useState('');
+  const [gerirTel, setGerirTel]        = useState('');
 
-  const dataRef      = useRef<SemanaData | null>(null);
-  const saveTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const weekKeyRef   = useRef<string>('');
+  const dataRef    = useRef<SemanaData | null>(null);
+  const saveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const weekKeyRef = useRef<string>('');
 
   // keep refs in sync
   useEffect(() => { dataRef.current = data; }, [data]);
@@ -125,11 +104,8 @@ export default function SemanaClient() {
     ]).then(([pats, sems]: [Patologista[], string[]]) => {
       setPatologistas(pats);
       setSemanas(sems);
-      if (pats.length > 0) setActiveTab(pats[0].nome);
     });
-
-    const sat = getSaturday(new Date());
-    setCurrentWeek(toIso(sat));
+    setCurrentWeek(toIso(getSaturday(new Date())));
   }, []);
 
   // ── Load week ──────────────────────────────────────────────────────────────
@@ -138,8 +114,12 @@ export default function SemanaClient() {
     setLoading(true);
     try {
       const res = await fetch(`/api/semanas?week=${wk}`);
-      const d: SemanaData = await res.json();
-      setData(d);
+      const raw = await res.json();
+      const normalized: SemanaData = {
+        weekKey: raw.weekKey,
+        patologistas: (raw.patologistas ?? []).map(normalizeSchedule),
+      };
+      setData(normalized);
     } finally {
       setLoading(false);
     }
@@ -152,20 +132,21 @@ export default function SemanaClient() {
   // ── Schedule helpers ───────────────────────────────────────────────────────
 
   function getSchedule(patId: string): PatologistaSchedule {
-    return data?.patologistas.find(p => p.patologistaId === patId) ?? { patologistaId: patId, rows: [] };
+    return data?.patologistas.find(p => p.patologistaId === patId) ?? { patologistaId: patId, req: 0, top: 0, lam: 0 };
   }
 
-  function updateSchedule(patId: string, rows: LaudoRow[]) {
+  function updateField(patId: string, field: 'req' | 'top' | 'lam', value: number) {
     setData(prev => {
-      if (!prev) return { weekKey: weekKeyRef.current, patologistas: [{ patologistaId: patId, rows }] };
-      const exists = prev.patologistas.some(p => p.patologistaId === patId);
+      const base: SemanaData = prev ?? { weekKey: weekKeyRef.current, patologistas: [] };
+      const exists = base.patologistas.some(p => p.patologistaId === patId);
       return {
-        ...prev,
+        ...base,
         patologistas: exists
-          ? prev.patologistas.map(p => p.patologistaId === patId ? { ...p, rows } : p)
-          : [...prev.patologistas, { patologistaId: patId, rows }],
+          ? base.patologistas.map(p => p.patologistaId === patId ? { ...p, [field]: value } : p)
+          : [...base.patologistas, { patologistaId: patId, req: 0, top: 0, lam: 0, [field]: value }],
       };
     });
+    scheduleSave();
   }
 
   // ── Save ───────────────────────────────────────────────────────────────────
@@ -194,31 +175,10 @@ export default function SemanaClient() {
     }
   }
 
-  // ── Row operations ─────────────────────────────────────────────────────────
-
-  function updateRow(patId: string, rowId: string, field: keyof LaudoRow, value: string) {
-    const schedule = getSchedule(patId);
-    const newRows = schedule.rows.map(r => r.id === rowId ? { ...r, [field]: value } : r);
-    updateSchedule(patId, newRows);
-    scheduleSave();
-  }
-
-  function addRow(patId: string) {
-    const schedule = getSchedule(patId);
-    updateSchedule(patId, [...schedule.rows, { id: uid(), status: 'Pendente', prioridade: 'Normal' }]);
-  }
-
-  function removeRow(patId: string, rowId: string) {
-    const schedule = getSchedule(patId);
-    updateSchedule(patId, schedule.rows.filter(r => r.id !== rowId));
-    scheduleSave();
-  }
-
   // ── Week navigation ────────────────────────────────────────────────────────
 
   function navigate(dir: -1 | 1) {
-    const sat = parseDateLocal(currentWeek);
-    setCurrentWeek(toIso(addDays(sat, dir * 7)));
+    setCurrentWeek(toIso(addDays(parseDateLocal(currentWeek), dir * 7)));
   }
 
   function goToday() {
@@ -253,15 +213,16 @@ export default function SemanaClient() {
       body: JSON.stringify(gerirList),
     });
     setPatologistas(gerirList);
-    if (gerirList.length > 0 && !gerirList.find(p => p.nome === activeTab)) {
-      setActiveTab(gerirList[0].nome);
-    }
     setShowGerir(false);
   }
 
-  const schedule      = getSchedule(activeTab);
   const todaySat      = toIso(getSaturday(new Date()));
   const isCurrentWeek = currentWeek === todaySat;
+
+  // Totals
+  const totalReq = patologistas.reduce((s, p) => s + getSchedule(p.nome).req, 0);
+  const totalTop = patologistas.reduce((s, p) => s + getSchedule(p.nome).top, 0);
+  const totalLam = patologistas.reduce((s, p) => s + getSchedule(p.nome).lam, 0);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -383,109 +344,74 @@ export default function SemanaClient() {
         </div>
 
         {/* ── Main ──────────────────────────────────────────────────────── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-0)' }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px', background: 'var(--bg-0)' }}>
 
-          {/* Tabs */}
-          <div className="fp-tabs">
-            {patologistas.map(p => {
-              const rows = getSchedule(p.nome).rows;
-              return (
-                <button
-                  key={p.nome}
-                  className={`fp-tab${activeTab === p.nome ? ' active' : ''}`}
-                  onClick={() => setActiveTab(p.nome)}
-                >
-                  {nomeDisplay(p.nome)}
-                  {rows.length > 0 && (
-                    <span className="fp-tab-badge">{rows.length}</span>
-                  )}
-                </button>
-              );
-            })}
-            <button
-              className="fp-tab"
-              onClick={openGerir}
-              style={{ marginLeft: 'auto', gap: 4 }}
-            >
-              ⚙ Gerir Patologistas
+          {/* Barra de ações */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <button className="btn btn-ghost" onClick={openGerir}>⚙ Gerir Patologistas</button>
+            <button className="btn btn-primary" onClick={doSave} disabled={saving}>
+              {saving ? 'Salvando...' : '💾 Salvar'}
             </button>
           </div>
 
-          {/* Table panel */}
-          <div className="fp-table-area" style={{ padding: '16px 20px' }}>
-            {loading ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, gap: 10, color: 'var(--text-3)' }}>
-                <div className="animate-pulse-soft">Carregando...</div>
+          {loading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: 'var(--text-3)' }}>
+              Carregando...
+            </div>
+          ) : patologistas.length === 0 ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 12, padding: 48, border: '2px dashed var(--border)', borderRadius: 'var(--radius)',
+              background: 'var(--bg-1)', color: 'var(--text-3)',
+            }}>
+              <div style={{ fontSize: 28 }}>🔬</div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-2)' }}>
+                Nenhum patologista cadastrado
               </div>
-            ) : (
-              <>
-                {/* Toolbar */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                  <button className="btn btn-primary" onClick={() => addRow(activeTab)}>
-                    + Adicionar Linha
-                  </button>
-                  <button className="btn btn-green" onClick={doSave} disabled={saving}>
-                    {saving ? 'Salvando...' : '💾 Salvar'}
-                  </button>
-                  {schedule.rows.length > 0 && (
-                    <span style={{ marginLeft: 4, fontSize: 12, color: 'var(--text-3)' }}>
-                      {schedule.rows.length} laudo{schedule.rows.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
-
-                {schedule.rows.length === 0 ? (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 12,
-                    padding: 48,
-                    border: '2px dashed var(--border)',
-                    borderRadius: 'var(--radius)',
-                    background: 'var(--bg-1)',
-                    color: 'var(--text-3)',
-                  }}>
-                    <div style={{ fontSize: 28 }}>🔬</div>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-2)' }}>
-                      Nenhum laudo para {nomeDisplay(activeTab)} neste final de semana
-                    </div>
-                    <div style={{ fontSize: 12 }}>Clique em "+ Adicionar Linha" para começar</div>
-                  </div>
-                ) : (
-                  <div className="table-container" style={{ background: 'var(--bg-1)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-                    <table style={{ minWidth: 1080 }}>
-                      <thead>
-                        <tr>
-                          <th style={{ width: 110 }}>Protocolo</th>
-                          <th style={{ minWidth: 160 }}>Paciente</th>
-                          <th style={{ minWidth: 130 }}>Material</th>
-                          <th style={{ width: 120 }}>Recebimento</th>
-                          <th style={{ width: 110 }}>Prazo</th>
-                          <th style={{ width: 120 }}>Prioridade</th>
-                          <th style={{ width: 120 }}>Status</th>
-                          <th style={{ minWidth: 200 }}>Laudo</th>
-                          <th style={{ minWidth: 160 }}>Observações</th>
-                          <th style={{ width: 48, position: 'sticky', right: 0, background: 'var(--bg-1)', zIndex: 3, boxShadow: '-2px 0 6px rgba(0,0,0,0.06)' }}></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {schedule.rows.map(row => (
-                          <LaudoRowEditor
-                            key={row.id}
-                            row={row}
-                            onChange={(field, value) => updateRow(activeTab, row.id, field, value)}
-                            onRemove={() => removeRow(activeTab, row.id)}
-                          />
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              <div style={{ fontSize: 12 }}>Clique em "⚙ Gerir Patologistas" para adicionar</div>
+            </div>
+          ) : (
+            <div className="table-container" style={{
+              background: 'var(--bg-1)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-sm)',
+              overflow: 'hidden',
+              maxWidth: 600,
+            }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left' }}>Patologista</th>
+                    <th style={{ width: 90, textAlign: 'center' }}>Req.</th>
+                    <th style={{ width: 90, textAlign: 'center' }}>Top.</th>
+                    <th style={{ width: 90, textAlign: 'center' }}>Lâm.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {patologistas.map(p => {
+                    const s = getSchedule(p.nome);
+                    return (
+                      <tr key={p.nome}>
+                        <td style={{ fontWeight: 500 }}>{nomeDisplay(p.nome)}</td>
+                        <td><NumberCell value={s.req} onChange={v => updateField(p.nome, 'req', v)} /></td>
+                        <td><NumberCell value={s.top} onChange={v => updateField(p.nome, 'top', v)} /></td>
+                        <td><NumberCell value={s.lam} onChange={v => updateField(p.nome, 'lam', v)} /></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ fontWeight: 700, borderTop: '2px solid var(--border)' }}>
+                    <td style={{ padding: '8px 12px', color: 'var(--text-0)' }}>TOTAL:</td>
+                    <td style={{ textAlign: 'center', padding: '8px 12px', color: 'var(--text-0)' }}>{totalReq}</td>
+                    <td style={{ textAlign: 'center', padding: '8px 12px', color: 'var(--text-0)' }}>{totalTop}</td>
+                    <td style={{ textAlign: 'center', padding: '8px 12px', color: 'var(--text-0)' }}>{totalLam}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
@@ -593,19 +519,33 @@ function SemanaItem({ weekKey, active, unsaved, onClick }: { weekKey: string; ac
   );
 }
 
-// ── LaudoRowEditor ────────────────────────────────────────────────────────────
+// ── NumberCell — inline numeric input ─────────────────────────────────────────
 
-const cellInput: React.CSSProperties = {
-  border: 'none',
-  background: 'transparent',
-  width: '100%',
-  fontSize: 13,
-  color: 'var(--text-0)',
-  padding: '3px 4px',
-  borderRadius: 4,
-  outline: 'none',
-  transition: 'background 0.15s, box-shadow 0.15s',
-};
+function NumberCell({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <input
+      type="number"
+      min={0}
+      value={value === 0 ? '' : value}
+      placeholder="0"
+      onChange={e => onChange(Number(e.target.value) || 0)}
+      style={{
+        width: '100%',
+        textAlign: 'center',
+        border: 'none',
+        background: 'transparent',
+        fontSize: 13,
+        color: 'var(--text-0)',
+        padding: '4px 6px',
+        outline: 'none',
+      }}
+      onFocus={e => { e.target.style.background = 'rgba(59,130,246,0.06)'; }}
+      onBlur={e => { e.target.style.background = 'transparent'; }}
+    />
+  );
+}
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const modalInputStyle: React.CSSProperties = {
   width: '100%',
@@ -617,145 +557,3 @@ const modalInputStyle: React.CSSProperties = {
   color: 'var(--text-0)',
   outline: 'none',
 };
-
-interface RowEditorProps {
-  row: LaudoRow;
-  onChange: (field: keyof LaudoRow, value: string) => void;
-  onRemove: () => void;
-}
-
-function LaudoRowEditor({ row, onChange, onRemove }: RowEditorProps) {
-  const prioStyle  = PRIO_STYLE[row.prioridade ?? 'Normal']  ?? PRIO_STYLE['Normal'];
-  const statStyle  = STATUS_STYLE[row.status ?? 'Pendente']  ?? STATUS_STYLE['Pendente'];
-
-  const selectStyle = (extra: React.CSSProperties): React.CSSProperties => ({
-    ...cellInput,
-    ...extra,
-    cursor: 'pointer',
-    fontWeight: 500,
-    fontSize: 12,
-    padding: '3px 6px',
-    border: `1px solid ${extra.borderColor}`,
-    background: extra.background as string,
-    borderRadius: 20,
-    appearance: 'none' as const,
-    WebkitAppearance: 'none',
-  });
-
-  return (
-    <tr>
-      <td>
-        <CellInput value={row.protocolo ?? ''} onChange={v => onChange('protocolo', v)} placeholder="—" />
-      </td>
-      <td>
-        <CellInput value={row.nom_paciente ?? ''} onChange={v => onChange('nom_paciente', v)} placeholder="Nome do paciente" />
-      </td>
-      <td>
-        <CellInput value={row.tipo_material ?? ''} onChange={v => onChange('tipo_material', v)} placeholder="Material" />
-      </td>
-      <td>
-        <input
-          type="date"
-          style={{ ...cellInput, fontSize: 12 }}
-          value={row.dta_recebimento ?? ''}
-          onChange={e => onChange('dta_recebimento', e.target.value)}
-          onFocus={e => { (e.target as HTMLInputElement).style.background = 'rgba(59,130,246,0.06)'; (e.target as HTMLInputElement).style.boxShadow = '0 0 0 2px rgba(59,130,246,0.15)'; }}
-          onBlur={e => { (e.target as HTMLInputElement).style.background = 'transparent'; (e.target as HTMLInputElement).style.boxShadow = 'none'; }}
-        />
-      </td>
-      <td>
-        <input
-          type="date"
-          style={{ ...cellInput, fontSize: 12 }}
-          value={row.prazo ?? ''}
-          onChange={e => onChange('prazo', e.target.value)}
-          onFocus={e => { (e.target as HTMLInputElement).style.background = 'rgba(59,130,246,0.06)'; (e.target as HTMLInputElement).style.boxShadow = '0 0 0 2px rgba(59,130,246,0.15)'; }}
-          onBlur={e => { (e.target as HTMLInputElement).style.background = 'transparent'; (e.target as HTMLInputElement).style.boxShadow = 'none'; }}
-        />
-      </td>
-      <td>
-        <select
-          style={selectStyle(prioStyle)}
-          value={row.prioridade ?? 'Normal'}
-          onChange={e => onChange('prioridade', e.target.value)}
-        >
-          <option value="Normal">Normal</option>
-          <option value="Urgente">Urgente</option>
-          <option value="Urgentíssimo">Urgentíssimo</option>
-        </select>
-      </td>
-      <td>
-        <select
-          style={selectStyle(statStyle)}
-          value={row.status ?? 'Pendente'}
-          onChange={e => onChange('status', e.target.value)}
-        >
-          <option value="Pendente">Pendente</option>
-          <option value="Em análise">Em análise</option>
-          <option value="Concluído">Concluído</option>
-          <option value="Revisão">Revisão</option>
-        </select>
-      </td>
-      <td>
-        <CellInput value={row.laudo ?? ''} onChange={v => onChange('laudo', v)} placeholder="Laudo..." />
-      </td>
-      <td>
-        <CellInput value={row.observacoes ?? ''} onChange={v => onChange('observacoes', v)} placeholder="Obs..." />
-      </td>
-      <td style={{ textAlign: 'center', padding: '4px 6px', position: 'sticky', right: 0, background: 'var(--bg-1)', boxShadow: '-2px 0 6px rgba(0,0,0,0.06)' }}>
-        <button
-          onClick={onRemove}
-          title="Excluir linha"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 28,
-            height: 28,
-            borderRadius: 'var(--radius-xs)',
-            border: '1px solid rgba(239,68,68,0.25)',
-            background: 'var(--red-bg)',
-            color: '#dc2626',
-            cursor: 'pointer',
-            fontSize: 14,
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => {
-            const t = e.currentTarget;
-            t.style.background = 'rgba(239,68,68,0.18)';
-            t.style.borderColor = 'rgba(239,68,68,0.5)';
-            t.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={e => {
-            const t = e.currentTarget;
-            t.style.background = 'var(--red-bg)';
-            t.style.borderColor = 'rgba(239,68,68,0.25)';
-            t.style.transform = 'scale(1)';
-          }}
-        >
-          🗑
-        </button>
-      </td>
-    </tr>
-  );
-}
-
-// ── CellInput — transparent inline input with focus highlight ─────────────────
-
-function CellInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <input
-      style={{
-        ...cellInput,
-        background: focused ? 'rgba(59,130,246,0.06)' : 'transparent',
-        boxShadow: focused ? '0 0 0 2px rgba(59,130,246,0.15)' : 'none',
-      }}
-      value={value}
-      placeholder={placeholder}
-      onChange={e => onChange(e.target.value)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-    />
-  );
-}
