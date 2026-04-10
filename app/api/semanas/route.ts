@@ -1,43 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const SEMANAS_DIR = path.join(process.cwd(), 'data', 'semanas');
-
-function ensureDir() {
-  if (!fs.existsSync(SEMANAS_DIR)) fs.mkdirSync(SEMANAS_DIR, { recursive: true });
-}
+import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
-  ensureDir();
   const { searchParams } = new URL(req.url);
 
-  if (searchParams.get('list') === 'true') {
-    const files = fs.readdirSync(SEMANAS_DIR)
-      .filter(f => f.endsWith('.json'))
-      .map(f => f.replace('.json', ''))
-      .sort((a, b) => b.localeCompare(a)); // mais recente primeiro
-    return NextResponse.json(files);
+  if (searchParams.get("list") === "true") {
+    const { data, error } = await supabase
+      .from("semanas")
+      .select("week_key")
+      .order("week_key", { ascending: false });
+
+    if (error)
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json((data ?? []).map((r) => r.week_key));
   }
 
-  const week = searchParams.get('week');
-  if (!week) return NextResponse.json({ error: 'Parâmetro week obrigatório' }, { status: 400 });
+  const week = searchParams.get("week");
+  if (!week)
+    return NextResponse.json(
+      { error: "Parâmetro week obrigatório" },
+      { status: 400 },
+    );
 
-  const filePath = path.join(SEMANAS_DIR, `${week}.json`);
-  if (!fs.existsSync(filePath)) {
-    return NextResponse.json({ weekKey: week, patologistas: [] });
-  }
+  const { data, error } = await supabase
+    .from("semanas")
+    .select("week_key, patologistas")
+    .eq("week_key", week)
+    .maybeSingle();
 
-  const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  return NextResponse.json(data);
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ weekKey: week, patologistas: [] });
+
+  return NextResponse.json({
+    weekKey: data.week_key,
+    patologistas: data.patologistas,
+  });
 }
 
 export async function POST(req: NextRequest) {
-  ensureDir();
   const body = await req.json();
-  if (!body.weekKey) return NextResponse.json({ error: 'weekKey obrigatório' }, { status: 400 });
+  if (!body.weekKey)
+    return NextResponse.json({ error: "weekKey obrigatório" }, { status: 400 });
 
-  const filePath = path.join(SEMANAS_DIR, `${body.weekKey}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(body, null, 2), 'utf-8');
+  const { error } = await supabase
+    .from("semanas")
+    .upsert(
+      { week_key: body.weekKey, patologistas: body.patologistas ?? [] },
+      { onConflict: "week_key" },
+    );
+
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

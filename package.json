@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.103.0",
     "hyperformula": "^3.2.0",
     "idb": "^8.0.3",
     "next": "^14.2.0",

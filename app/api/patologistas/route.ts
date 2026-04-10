@@ -1,24 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const FILE_PATH = path.join(process.cwd(), 'data', 'pathologists.json');
-
-function ensureDir() {
-  const dir = path.join(process.cwd(), 'data');
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
+import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  if (!fs.existsSync(FILE_PATH)) return NextResponse.json([]);
-  const data = JSON.parse(fs.readFileSync(FILE_PATH, 'utf-8'));
-  return NextResponse.json(data);
+  const { data, error } = await supabase
+    .from("patologistas")
+    .select("nome")
+    .order("nome");
+
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(req: NextRequest) {
-  ensureDir();
   const body = await req.json();
-  if (!Array.isArray(body)) return NextResponse.json({ error: 'Array esperado' }, { status: 400 });
-  fs.writeFileSync(FILE_PATH, JSON.stringify(body, null, 2), 'utf-8');
+  if (!Array.isArray(body))
+    return NextResponse.json({ error: "Array esperado" }, { status: 400 });
+
+  // Apaga tudo e reinsere (mesmo comportamento da versão anterior com writeFileSync)
+  const { error: delError } = await supabase
+    .from("patologistas")
+    .delete()
+    .neq("id", 0);
+  if (delError)
+    return NextResponse.json({ error: delError.message }, { status: 500 });
+
+  if (body.length > 0) {
+    const rows = body.map((p: { nome: string }) => ({ nome: p.nome }));
+    const { error: insError } = await supabase
+      .from("patologistas")
+      .insert(rows);
+    if (insError)
+      return NextResponse.json({ error: insError.message }, { status: 500 });
+  }
+
   return NextResponse.json({ ok: true });
 }
