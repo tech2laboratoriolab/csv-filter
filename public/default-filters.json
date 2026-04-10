@@ -1427,8 +1427,8 @@
     "createdAt": "2026-04-01T00:00:00.000Z"
   },
   {
-    "id": "default_molecular_positivo_1",
-    "name": "MOLECULAR POSITIVO",
+    "id": "default_critico_positivo",
+    "name": "CRITICO (positivo)",
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",

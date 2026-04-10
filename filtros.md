@@ -15,6 +15,10 @@ csvlaudo ->
 CodRequisicao,DtaSolicitacao,DtaPrevista,Dta1aLiberacao,DtaFinalizacao,DtaColeta,NomExame,NomExameTipo,DesEvento,NomPaciente,DtaNascimento,Idade,CPF,RGNumero,Sexo,Consentimento,NomMedico,CRM,CRMUF,CBO,Laboratorio,Unidade,LocalOrigem,Convenio,FontePagadora,PatologistaResp,DadosClinicos,Macroscopista,Especialidade,Patologista,PatologistaAux,Citotecnico,DtaDiagnosticoCit,DtaDiagnosticoPat,NumProcedimento,DesProcedimento,NumPeca,DesTopografia,LaudoMacro,DesDiagnostico,DgnCritico,ObsCritico,DgnCriticoDes,AvaliacaoCito,Critico,Destaque,UsuarioDgn,LaudoMicro,LaudoDiagnostico,Blocos,Laminas,Imuno,QtdFrasco,QtdSaco,QtdBloco,QtdLamina,NumExterno,ExtTopografia,ExtMorfologia,ExtCID,ExtQuantidade,Campo3,Campo4,Campo6,Campo8,Visualizado
 0040000845003,16/12/2025 07:34,26/12/2025,22/12/2025 07:13,22/12/2025 07:13,16/12/2025,MEDICINA LABORATORIAL,EXAMES REALIZADOS POR PARCEIROS,Concluído - Laudo em Fotos,CLECIO MIRANDA MARTINS,1982-07-31,43,71305238168,,M,0,CARLOS BIANKINI RODRIGUES,14590,DF,,LAB - LABORATORIO DE PATOLOGIA E CITOLOGIA APLICADA LTDA,LAB - LABORATORIO DE PATOLOGIA E CITOLOGIA APLICADA LTDA,CLAF - CLINICA DE ATENDIMENTO DA FAMILIA,PMDF - MEDICINA LABORATORIAL,PMDF,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,0,0,0,,,,,,,,,,1
 
+csvlaudoPositivo ->
+IdRequisicao;CodRequisicao;NomExame;DtaSolicitacao;DtaFinalizacao;StatusRequisicao;NomFontePagadora;NomPaciente;DtaNascimento;Idade;Sexo;NomLocalOrigem;NomMedico;Teste;Controle;StatusFrasco;Topografia;IdRequisicaoCaptura;Conclusao;TituloResultado;Resultado;TituloConclusao;DesConclusao;Assinatura1;Assinatura2;FaixaEtaria;Endereco;Bairro;Cidade;CEP;TelFixo;TelCelular;Informacoes;NumExterno;Visualizado
+172255;0200053077008;PCR;2026-02-09;2026-02-13;"Laudo Concluído (Definitivo)";"BRADESCO SAUDE - 005711";"LORENA AUGUSTA DAS MERCES DA COSTA";1996-12-02;29;F;"CLAF - TAGUATINGA";"LARISSA ABU KAMEL LASMAR";"Genotipagem HPV 28 - PCR";6599891281;Análise/Conclusão;"Sem observação específica";112827;1;"ALTO RISCO HPV 39";;"ALTO RISCO HPV 39";Positivo;"Ana Clara Vieira Frois";;20-29;;;;;;;"Amostra: 24-TGI; Conservantes: 1-SEM CONSERVANTE INDICADO ; Frascos: 1; Coletor(a): ; ";;0
+
 csv2_tratamento_anatomo -> =QUERY(csvLaudo!A:AT; "SELECT \* WHERE Y <> '' AND H <> '' ORDER BY A ASC " )
 
 cito -> =QUERY('CSV2'!A3:BU;"SELECT V, AI, AN,Q,L,AZ, W,BP, Z WHERE NOT AI CONTAINS 'TESTE' and L <> 'NUCLEO - FAT EXT - CITOLOGIA' and not H CONTAINS 'BIOCITHO' AND AI <> 'TESTE' AND Y IS NULL AND AL <> '46' AND AL <> '1004' and AL <> '1015' AND AJ <> '32'AND (AK = '30' OR AK = '20'OR AK = '24' OR AK = '10' OR AK = '33' OR AK = '4' OR AK = '35' OR AK = '10') AND AK <> '37' AND BB <> '40601161' AND AI IS NOT NULL ORDER BY Z" )
@@ -76,6 +80,9 @@ A=Ano, B=Mes, C=IdLaboratorio, D=NomLaboratorio, E=IdUnidade, F=NomUnidade, G=Id
 
 ---
 
+mapeamento de letras -> nomes no csvlaudoPositivo:
+A=IdRequisicao, B=CodRequisicao, C=NomExame, D=DtaSolicitacao, E=DtaFinalizacao, F=StatusRequisicao, G=NomFontePagadora, H=NomPaciente, I=DtaNascimento, J=Idade, K=Sexo, L=NomLocalOrigem, M=NomMedico, N=Teste, O=Controle, P=StatusFrasco, Q=Topografia, R=IdRequisicaoCaptura, S=Conclusao, T=TituloResultado, U=Resultado, V=TituloConclusao, W=DesConclusao, X=Assinatura1, Y=Assinatura2, Z=FaixaEtaria, AA=Endereco, AB=Bairro, AC=Cidade, AD=CEP, AE=TelFixo, AF=TelCelular, AG=Informacoes, AH=NumExterno, AI=Visualizado
+
 mapeamento de letras -> nomes no csvlaudo:
 A=CodRequisicao, B=DtaSolicitacao, C=DtaPrevista, D=Dta1aLiberacao, E=DtaFinalizacao, F=DtaColeta, G=NomExame, H=NomExameTipo, I=DesEvento, J=NomPaciente, K=DtaNascimento, L=Idade, M=CPF, N=RGNumero, O=Sexo, P=Consentimento, Q=NomMedico, R=CRM, S=CRMUF, T=CBO, U=Laboratorio, V=Unidade, W=LocalOrigem, X=Convenio, Y=FontePagadora, Z=PatologistaResp, AA=DadosClinicos, AB=Macroscopista, AC=Especialidade, AD=Patologista, AE=PatologistaAux, AF=Citotecnico, AG=DtaDiagnosticoCit, AH=DtaDiagnosticoPat, AI=NumProcedimento, AJ=DesProcedimento, AK=NumPeca, AL=DesTopografia, AM=LaudoMacro, AN=DesDiagnostico, AO=DgnCritico, AP=ObsCritico, AQ=DgnCriticoDes, AR=AvaliacaoCito, AS=Critico, AT=Destaque, AU=UsuarioDgn, AV=LaudoMicro, AW=LaudoDiagnostico, AX=Blocos, AY=Laminas, AZ=Imuno, BA=QtdFrasco, BB=QtdSaco, BC=QtdBloco, BD=QtdLamina, BE=NumExterno, BF=ExtTopografia, BG=ExtMorfologia, BH=ExtCID, BI=ExtQuantidade, BJ=Campo3, BK=Campo4, BL=Campo6, BM=Campo8, BN=Visualizado
 
@@ -110,3 +117,7 @@ filtros: E=DtaFinalizacao, W=LocalOrigem, AR=AvaliacaoCito, AN=DesDiagnostico, A
 ihq (fonte: csvlaudo):
 select: A=CodRequisicao, J=NomPaciente, E=DtaFinalizacao, W=LocalOrigem, AD=Patologista, AE=PatologistaAux, X=Convenio, AR=AvaliacaoCito
 filtros: E=DtaFinalizacao, I=DesEvento, AV=LaudoMicro, AT=Destaque, AL=DesTopografia
+
+critico (positivo) (fonte: csvlaudoPositivo):
+select: B=CodRequisicao, H=NomPaciente, E=DtaFinalizacao, L=NomLocalOrigem, W=DesConclusao, U=Resultado, AI=Visualizado
+filtros: E=DtaFinalizacao, L=NomLocalOrigem, W=DesConclusao

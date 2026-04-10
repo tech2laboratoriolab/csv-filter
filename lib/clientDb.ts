@@ -46,18 +46,8 @@ export const COLUMNS: ColumnDef[] = [
   { name: "cpf", label: "CPF", type: "text" },
   { name: "fonte_pagadora", label: "FontePagadora", type: "text" },
   { name: "nom_exame_tipo", label: "NomExameTipo", type: "text" },
-  { name: "status_requisicao", label: "StatusRequisicao", type: "text" },
-  { name: "status_frasco", label: "StatusFrasco", type: "text" },
-  { name: "conclusao", label: "Conclusao", type: "text" },
-  { name: "titulo_resultado", label: "TituloResultado", type: "text" },
   { name: "resultado", label: "Resultado", type: "text" },
-  { name: "titulo_conclusao", label: "TituloConclusao", type: "text" },
   { name: "des_conclusao", label: "DesConclusao", type: "text" },
-  { name: "faixa_etaria", label: "FaixaEtaria", type: "text" },
-  { name: "assinatura1", label: "Assinatura1", type: "text" },
-  { name: "assinatura2", label: "Assinatura2", type: "text" },
-  { name: "informacoes", label: "Informacoes", type: "text" },
-  { name: "id_requisicao_captura", label: "IdRequisicaoCaptura", type: "text" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};
@@ -67,7 +57,8 @@ COLUMNS.forEach((c) => {
 
 function normalizeDateString(raw: string): string {
   const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)/);
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}${m[4]}`;
+  if (m)
+    return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}${m[4]}`;
   return raw;
 }
 
@@ -236,7 +227,7 @@ export async function importCSV(
   const existingMap = new Map<string, number[]>();
   if (codReqMapping) {
     const existingRes = db.exec(
-      `SELECT id, "cod_requisicao" FROM csv_data WHERE "cod_requisicao" IS NOT NULL AND "cod_requisicao" != ''`
+      `SELECT id, "cod_requisicao" FROM csv_data WHERE "cod_requisicao" IS NOT NULL AND "cod_requisicao" != ''`,
     );
     if (existingRes.length > 0) {
       const { values } = existingRes[0];
@@ -285,16 +276,22 @@ export async function importCSV(
 
       const codReqVal = codReqIdx >= 0 ? parsedValues[codReqIdx] : null;
 
-      if (codReqVal != null && codReqVal !== "" && existingMap.has(String(codReqVal))) {
+      if (
+        codReqVal != null &&
+        codReqVal !== "" &&
+        existingMap.has(String(codReqVal))
+      ) {
         // Merge: SET all columns (direct overwrite) for every matching row
         const ids = existingMap.get(String(codReqVal))!;
-        const setValues = updateCols.map((m) => parsedValues[colMapping.indexOf(m)]);
+        const setValues = updateCols.map(
+          (m) => parsedValues[colMapping.indexOf(m)],
+        );
 
         for (const id of ids) {
-          db.run(
-            `UPDATE csv_data SET ${updateSetClause} WHERE id = ?`,
-            [...setValues, id] as (string | number | null)[],
-          );
+          db.run(`UPDATE csv_data SET ${updateSetClause} WHERE id = ?`, [
+            ...setValues,
+            id,
+          ] as (string | number | null)[]);
           merged++;
         }
       } else {
@@ -397,9 +394,17 @@ export async function importPatologiaMolecularCSV(
   const PATMOL_EXCLUDED = new Set([
     "cod_requisicao",
     // Columns already present in the main CSV — do not overwrite
-    "nom_paciente", "dta_solicitacao", "dta_finalizacao", "dta_coleta",
-    "nom_exame", "nom_local_origem", "nom_medico", "dta_nascimento",
-    "sexo", "nom_convenio", "nom_fonte_pagadora",
+    "nom_paciente",
+    "dta_solicitacao",
+    "dta_finalizacao",
+    "dta_coleta",
+    "nom_exame",
+    "nom_local_origem",
+    "nom_medico",
+    "dta_nascimento",
+    "sexo",
+    "nom_convenio",
+    "nom_fonte_pagadora",
   ]);
 
   const colMapping: { csvIndex: number; dbCol: string }[] = [];
@@ -630,13 +635,17 @@ function conditionToSQL(c: FilterCondition): { clause: string; params: any[] } {
       params.push(Number(c.value), Number(c.value2));
       break;
     case "in": {
-      const vals = String(c.value).split(",").map((v) => v.trim());
+      const vals = String(c.value)
+        .split(",")
+        .map((v) => v.trim());
       clause = `${col} IN (${vals.map(() => "?").join(",")})`;
       params.push(...vals);
       break;
     }
     case "not_in": {
-      const vals = String(c.value).split(",").map((v) => v.trim());
+      const vals = String(c.value)
+        .split(",")
+        .map((v) => v.trim());
       clause = `${col} NOT IN (${vals.map(() => "?").join(",")})`;
       params.push(...vals);
       break;
@@ -747,23 +756,37 @@ export async function queryFiltered(
   const offset = (page - 1) * pageSize;
 
   // Separate unique_combination conditions — handled via CTE window function
-  const uniqueComboConds = conditions.filter((c) => c.operator === "unique_combination");
-  const regularConds = conditions.filter((c) => c.operator !== "unique_combination");
+  const uniqueComboConds = conditions.filter(
+    (c) => c.operator === "unique_combination",
+  );
+  const regularConds = conditions.filter(
+    (c) => c.operator !== "unique_combination",
+  );
 
   const { sql: where, params } = buildWhereClause(regularConds);
 
   if (uniqueComboConds.length > 0) {
     const partitionCols = uniqueComboConds.flatMap((cond) => {
       const columns = [cond.column];
-      if (cond.value) columns.push(...String(cond.value).split(",").map((v) => v.trim()));
+      if (cond.value)
+        columns.push(
+          ...String(cond.value)
+            .split(",")
+            .map((v) => v.trim()),
+        );
       return columns;
     });
     const partitionSQL = partitionCols.map((c) => `"${c}"`).join(", ");
-    const orderBy = sortColumn ? `ORDER BY "${sortColumn}" ${sortDir}` : "ORDER BY id";
+    const orderBy = sortColumn
+      ? `ORDER BY "${sortColumn}" ${sortDir}`
+      : "ORDER BY id";
 
     const ctePart = `WITH _base AS (SELECT * FROM csv_data ${where}), _windowed AS (SELECT *, COUNT(*) OVER (PARTITION BY ${partitionSQL}) AS _combo_count FROM _base)`;
 
-    const resTotal = db.exec(`${ctePart} SELECT COUNT(*) as total FROM _windowed WHERE _combo_count = 1`, params);
+    const resTotal = db.exec(
+      `${ctePart} SELECT COUNT(*) as total FROM _windowed WHERE _combo_count = 1`,
+      params,
+    );
     const total = resTotal.length > 0 ? resTotal[0].values[0][0] : 0;
 
     const resRows = db.exec(
@@ -805,7 +828,9 @@ export async function evaluateLookupColumns(
   lookupColumns: LookupColumn[],
 ): Promise<string[][]> {
   const db = await getDb();
-  const results: string[][] = rows.map(() => Array(lookupColumns.length).fill(""));
+  const results: string[][] = rows.map(() =>
+    Array(lookupColumns.length).fill(""),
+  );
 
   for (let lcIdx = 0; lcIdx < lookupColumns.length; lcIdx++) {
     const lc = lookupColumns[lcIdx];
@@ -832,7 +857,9 @@ export async function evaluateLookupColumns(
       matchParts.push(clause);
       matchParams.push(...params);
     }
-    const matchWhere = matchParts.length ? ` AND ${matchParts.join(" AND ")}` : "";
+    const matchWhere = matchParts.length
+      ? ` AND ${matchParts.join(" AND ")}`
+      : "";
 
     const sql = `SELECT ${keyCol}, ${dispCols} FROM csv_data WHERE ${keyCol} IN (${placeholders})${matchWhere} ORDER BY id`;
     const res = db.exec(sql, [...keys, ...matchParams]);
@@ -844,14 +871,18 @@ export async function evaluateLookupColumns(
       if (!grouped.has(key)) grouped.set(key, []);
       const group = grouped.get(key)!;
       if (group.length < lc.limit) {
-        group.push(lc.displayColumns.map((c) => String(row[c] ?? "")).join(lc.separator));
+        group.push(
+          lc.displayColumns.map((c) => String(row[c] ?? "")).join(lc.separator),
+        );
       }
     }
 
     for (let ri = 0; ri < rows.length; ri++) {
       const key = String(rows[ri][lc.keyColumn] ?? "");
       const group = grouped.get(key);
-      results[ri][lcIdx] = group?.length ? group.join(lc.separator) : lc.fallback;
+      results[ri][lcIdx] = group?.length
+        ? group.join(lc.separator)
+        : lc.fallback;
     }
   }
 
@@ -1068,7 +1099,10 @@ async function fetchNumerosSeed(): Promise<NumerosSeed> {
   if (_numerosSeedCache !== undefined) return _numerosSeedCache ?? {};
   try {
     const res = await fetch("/api/numeros");
-    if (!res.ok) { _numerosSeedCache = null; return {}; }
+    if (!res.ok) {
+      _numerosSeedCache = null;
+      return {};
+    }
     _numerosSeedCache = await res.json();
     return _numerosSeedCache ?? {};
   } catch {
@@ -1347,7 +1381,6 @@ export async function getClinicaRows(
   };
 }
 
-
 // --- Biologia Molecular ---
 const SEED_BIOMOLECULAR_KEY = "csv-filter-biomolecular-seeded";
 
@@ -1400,10 +1433,14 @@ export async function getSavedAnalisesClinicasPhone(): Promise<string> {
   const idb = await getIdb();
   if (!idb) return "";
   await seedDefaultAnalisesClinicas(idb);
-  return (await idb.get("analises_clinicas_settings", "telefone") as string) ?? "";
+  return (
+    ((await idb.get("analises_clinicas_settings", "telefone")) as string) ?? ""
+  );
 }
 
-export async function saveAnalisesClinicasPhone(telefone: string): Promise<void> {
+export async function saveAnalisesClinicasPhone(
+  telefone: string,
+): Promise<void> {
   const idb = await getIdb();
   if (!idb) return;
   await idb.put("analises_clinicas_settings", telefone, "telefone");
