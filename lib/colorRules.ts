@@ -1,4 +1,10 @@
-import type { ColorRule } from './clientDb';
+import type { ColorRule, ColorCondition } from './clientDb';
+
+function offsetDate(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 type StyleObj = Record<string, string>;
 
@@ -7,13 +13,23 @@ export interface ColorRuleResult {
   cellStyles: Record<string, StyleObj>;
 }
 
-function matchesRule(row: Record<string, unknown>, rule: ColorRule): boolean {
-  const rawValue = row[rule.conditionColumn];
-  const value = rawValue == null ? '' : String(rawValue);
-  const ruleVal = rule.value || '';
-  const ruleVal2 = rule.value2 || '';
+function getConditions(rule: ColorRule): ColorCondition[] {
+  if (rule.conditions && rule.conditions.length > 0) return rule.conditions;
+  return [{
+    conditionColumn: rule.conditionColumn ?? '',
+    operator: rule.operator ?? 'equals',
+    value: rule.value ?? '',
+    value2: rule.value2,
+  }];
+}
 
-  switch (rule.operator) {
+function matchesCondition(row: Record<string, unknown>, cond: ColorCondition): boolean {
+  const rawValue = row[cond.conditionColumn];
+  const value = rawValue == null ? '' : String(rawValue);
+  const ruleVal = cond.value || '';
+  const ruleVal2 = cond.value2 || '';
+
+  switch (cond.operator) {
     case 'equals':
       return value === ruleVal;
     case 'not_equals':
@@ -99,9 +115,31 @@ function matchesRule(row: Record<string, unknown>, rule: ColorRule): boolean {
       const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       return value !== '' && value.split(' ')[0] <= today;
     }
+    case 'days_ahead_gte': {
+      const n = parseInt(ruleVal) || 0;
+      return value !== '' && value.split(' ')[0] >= offsetDate(n);
+    }
+    case 'days_ahead_lte': {
+      const n = parseInt(ruleVal) || 0;
+      const day = value.split(' ')[0];
+      return value !== '' && day > offsetDate(0) && day <= offsetDate(n);
+    }
+    case 'days_ago_gte': {
+      const n = parseInt(ruleVal) || 0;
+      return value !== '' && value.split(' ')[0] <= offsetDate(-n);
+    }
+    case 'days_ago_lte': {
+      const n = parseInt(ruleVal) || 0;
+      const day = value.split(' ')[0];
+      return value !== '' && day >= offsetDate(-n) && day < offsetDate(0);
+    }
     default:
       return false;
   }
+}
+
+function matchesRule(row: Record<string, unknown>, rule: ColorRule): boolean {
+  return getConditions(rule).every(cond => matchesCondition(row, cond));
 }
 
 export function evaluateColorRules(

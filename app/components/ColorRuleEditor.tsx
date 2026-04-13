@@ -1,6 +1,6 @@
 'use client';
 
-import type { ColorRule, ColumnDef, AnnotationColumn, LookupColumn } from '@/lib/clientDb';
+import type { ColorRule, ColorCondition, ColumnDef, AnnotationColumn, LookupColumn } from '@/lib/clientDb';
 import { getOpsForType } from '@/lib/operators';
 
 interface ColorRuleEditorProps {
@@ -16,18 +16,51 @@ function createRule(priority: number, defaultColumn: string): ColorRule {
     id: Date.now().toString() + Math.random(),
     name: `Regra ${priority + 1}`,
     targetType: 'row',
-    conditionColumn: defaultColumn,
-    operator: 'equals',
-    value: '',
+    conditions: [{ conditionColumn: defaultColumn, operator: 'equals', value: '' }],
     backgroundColor: '#3fb950',
     priority,
   };
 }
 
+function normalizeConditions(rule: ColorRule): ColorCondition[] {
+  if (rule.conditions?.length) return rule.conditions;
+  return [{
+    conditionColumn: rule.conditionColumn ?? '',
+    operator: rule.operator ?? 'equals',
+    value: rule.value ?? '',
+    value2: rule.value2,
+  }];
+}
+
+const NO_VALUE_OPS = ['is_null','is_not_null','is_today','is_yesterday','is_day_before_yesterday','is_tomorrow','is_today_or_tomorrow','is_future','is_future_or_today','is_past','is_past_or_today'];
+const DAYS_OFFSET_OPS = ['days_ahead_gte','days_ahead_lte','days_ago_gte','days_ago_lte'];
+
 export default function ColorRuleEditor({ rules, columns, annotationColumns = [], lookupColumns = [], onChange }: ColorRuleEditorProps) {
-  const update = (i: number, field: string, val: unknown) => {
+  const updateRule = (i: number, field: string, val: unknown) => {
     const next = [...rules];
     (next[i] as unknown as Record<string, unknown>)[field] = val;
+    onChange(next);
+  };
+
+  const updateCondition = (ruleIdx: number, condIdx: number, field: string, val: unknown) => {
+    const next = [...rules];
+    const conds = [...normalizeConditions(next[ruleIdx])];
+    (conds[condIdx] as unknown as Record<string, unknown>)[field] = val;
+    next[ruleIdx] = { ...next[ruleIdx], conditions: conds, conditionColumn: undefined, operator: undefined, value: undefined, value2: undefined };
+    onChange(next);
+  };
+
+  const addCondition = (ruleIdx: number) => {
+    const next = [...rules];
+    const conds = [...normalizeConditions(next[ruleIdx]), { conditionColumn: columns[0]?.name ?? '', operator: 'equals', value: '' }];
+    next[ruleIdx] = { ...next[ruleIdx], conditions: conds };
+    onChange(next);
+  };
+
+  const removeCondition = (ruleIdx: number, condIdx: number) => {
+    const next = [...rules];
+    const conds = normalizeConditions(next[ruleIdx]).filter((_, j) => j !== condIdx);
+    next[ruleIdx] = { ...next[ruleIdx], conditions: conds };
     onChange(next);
   };
 
@@ -47,6 +80,28 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
     onChange([...rules, createRule(rules.length, col)]);
   };
 
+  const columnOptions = (
+    <>
+      {columns.map(c => (
+        <option key={c.name} value={c.name}>{c.label}</option>
+      ))}
+      {annotationColumns.length > 0 && (
+        <optgroup label="Anotações">
+          {annotationColumns.map(ac => (
+            <option key={ac.id} value={ac.id}>{ac.label}</option>
+          ))}
+        </optgroup>
+      )}
+      {lookupColumns.length > 0 && (
+        <optgroup label="Lookup">
+          {lookupColumns.map(lc => (
+            <option key={lc.id} value={lc.id}>{lc.label}</option>
+          ))}
+        </optgroup>
+      )}
+    </>
+  );
+
   return (
     <div>
       {rules.length === 0 && (
@@ -62,17 +117,14 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
         </div>
       )}
       {rules.map((rule, i) => {
-        const condCol = columns.find(c => c.name === rule.conditionColumn);
-        const isAnnotationCond = annotationColumns.some(ac => ac.id === rule.conditionColumn);
-        const ops = getOpsForType(isAnnotationCond ? 'text' : (condCol?.type ?? 'text'));
-        const isBetween = rule.operator === 'between' || rule.operator === 'date_between';
+        const conds = normalizeConditions(rule);
         return (
           <div key={rule.id} className="rule-card">
             <div className="rule-card-header">
               <input
                 className="rule-name-input"
                 value={rule.name}
-                onChange={e => update(i, 'name', e.target.value)}
+                onChange={e => updateRule(i, 'name', e.target.value)}
                 placeholder="Nome da regra"
               />
               <div style={{ display: 'flex', gap: 2 }}>
@@ -101,7 +153,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                 <label>Alvo</label>
                 <select
                   value={rule.targetType}
-                  onChange={e => update(i, 'targetType', e.target.value)}
+                  onChange={e => updateRule(i, 'targetType', e.target.value)}
                 >
                   <option value="row">Linha inteira</option>
                   <option value="cell">Célula específica</option>
@@ -109,96 +161,81 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                 {rule.targetType === 'cell' && (
                   <select
                     value={rule.targetColumn || ''}
-                    onChange={e => update(i, 'targetColumn', e.target.value || undefined)}
+                    onChange={e => updateRule(i, 'targetColumn', e.target.value || undefined)}
                   >
                     <option value="">— Selecionar coluna —</option>
-                    {columns.map(c => (
-                      <option key={c.name} value={c.name}>
-                        {c.label}
-                      </option>
-                    ))}
-                    {annotationColumns.length > 0 && (
-                      <optgroup label="Anotações">
-                        {annotationColumns.map(ac => (
-                          <option key={ac.id} value={ac.id}>
-                            {ac.label}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    {lookupColumns.length > 0 && (
-                      <optgroup label="Lookup">
-                        {lookupColumns.map(lc => (
-                          <option key={lc.id} value={lc.id}>
-                            {lc.label}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
+                    {columnOptions}
                   </select>
                 )}
               </div>
 
-              {/* Condition */}
-              <div className="rule-row">
-                <label>Condição</label>
-                <select
-                  value={rule.conditionColumn}
-                  onChange={e => update(i, 'conditionColumn', e.target.value)}
+              {/* Conditions (AND) */}
+              <div className="rule-conditions">
+                {conds.map((cond, ci) => {
+                  const condCol = columns.find(c => c.name === cond.conditionColumn);
+                  const isAnnotationCond = annotationColumns.some(ac => ac.id === cond.conditionColumn);
+                  const ops = getOpsForType(isAnnotationCond ? 'text' : (condCol?.type ?? 'text'));
+                  const isBetween = cond.operator === 'between' || cond.operator === 'date_between';
+                  const isDaysOffset = DAYS_OFFSET_OPS.includes(cond.operator);
+                  const noValue = NO_VALUE_OPS.includes(cond.operator);
+                  return (
+                    <div key={ci} className="rule-row" style={{ alignItems: 'center' }}>
+                      <label style={{ minWidth: 20, color: 'var(--text-3)', fontSize: 11, textAlign: 'right' }}>
+                        {ci === 0 ? 'Se' : 'E'}
+                      </label>
+                      <select
+                        value={cond.conditionColumn}
+                        onChange={e => updateCondition(i, ci, 'conditionColumn', e.target.value)}
+                      >
+                        {columnOptions}
+                      </select>
+                      <select
+                        value={cond.operator}
+                        onChange={e => updateCondition(i, ci, 'operator', e.target.value)}
+                      >
+                        {ops.map(o => (
+                          <option key={o.v} value={o.v}>{o.l}</option>
+                        ))}
+                      </select>
+                      {!noValue && (
+                        <input
+                          type={isDaysOffset ? 'number' : condCol?.type === 'date' ? 'date' : 'text'}
+                          placeholder={isDaysOffset ? 'Nº de dias' : cond.operator === 'in' || cond.operator === 'not_in' ? 'val1,val2' : 'Valor'}
+                          min={isDaysOffset ? '0' : undefined}
+                          value={cond.value}
+                          onChange={e => updateCondition(i, ci, 'value', e.target.value)}
+                          className="rule-value-input"
+                        />
+                      )}
+                      {isBetween && (
+                        <input
+                          type={condCol?.type === 'date' ? 'date' : 'text'}
+                          placeholder="Até"
+                          value={cond.value2 || ''}
+                          onChange={e => updateCondition(i, ci, 'value2', e.target.value)}
+                          className="rule-value-input"
+                          style={{ maxWidth: 90 }}
+                        />
+                      )}
+                      {conds.length > 1 && (
+                        <button
+                          className="btn btn-sm btn-icon btn-ghost"
+                          onClick={() => removeCondition(i, ci)}
+                          title="Remover condição"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                <button
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => addCondition(i)}
+                  style={{ marginTop: 4, fontSize: 12 }}
                 >
-                  {columns.map(c => (
-                    <option key={c.name} value={c.name}>
-                      {c.label}
-                    </option>
-                  ))}
-                  {annotationColumns.length > 0 && (
-                    <optgroup label="Anotações">
-                      {annotationColumns.map(ac => (
-                        <option key={ac.id} value={ac.id}>
-                          {ac.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {lookupColumns.length > 0 && (
-                    <optgroup label="Lookup">
-                      {lookupColumns.map(lc => (
-                        <option key={lc.id} value={lc.id}>
-                          {lc.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-                <select
-                  value={rule.operator}
-                  onChange={e => update(i, 'operator', e.target.value)}
-                >
-                  {ops.map(o => (
-                    <option key={o.v} value={o.v}>
-                      {o.l}
-                    </option>
-                  ))}
-                </select>
-                {!['is_null','is_not_null','is_today','is_yesterday','is_day_before_yesterday','is_tomorrow','is_today_or_tomorrow','is_future','is_future_or_today','is_past','is_past_or_today'].includes(rule.operator) && (
-                  <input
-                    type={condCol?.type === 'date' ? 'date' : 'text'}
-                    placeholder={rule.operator === 'in' || rule.operator === 'not_in' ? 'val1,val2' : 'Valor'}
-                    value={rule.value}
-                    onChange={e => update(i, 'value', e.target.value)}
-                    className="rule-value-input"
-                  />
-                )}
-                {isBetween && (
-                  <input
-                    type={condCol?.type === 'date' ? 'date' : 'text'}
-                    placeholder="Até"
-                    value={rule.value2 || ''}
-                    onChange={e => update(i, 'value2', e.target.value)}
-                    className="rule-value-input"
-                    style={{ maxWidth: 90 }}
-                  />
-                )}
+                  + Condição (E)
+                </button>
               </div>
 
               {/* Colors */}
@@ -209,7 +246,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                     <input
                       type="color"
                       value={rule.backgroundColor}
-                      onChange={e => update(i, 'backgroundColor', e.target.value)}
+                      onChange={e => updateRule(i, 'backgroundColor', e.target.value)}
                       title="Cor de fundo"
                       className="color-picker"
                     />
@@ -220,7 +257,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                       type="checkbox"
                       checked={!!rule.textColor}
                       onChange={e =>
-                        update(i, 'textColor', e.target.checked ? '#ffffff' : undefined)
+                        updateRule(i, 'textColor', e.target.checked ? '#ffffff' : undefined)
                       }
                       id={`tc-${rule.id}`}
                     />
@@ -234,7 +271,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                       <input
                         type="color"
                         value={rule.textColor}
-                        onChange={e => update(i, 'textColor', e.target.value)}
+                        onChange={e => updateRule(i, 'textColor', e.target.value)}
                         className="color-picker"
                       />
                     )}

@@ -596,7 +596,7 @@ tbody td {
   white-space: nowrap;
 }
 
-tbody tr:hover td {
+tbody tr:not(.colored-row):hover td {
   background: var(--bg-hover);
   color: var(--text-0);
 }

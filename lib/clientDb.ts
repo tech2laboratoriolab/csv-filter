@@ -496,15 +496,25 @@ export interface FilterCondition {
   orGroup?: string;
 }
 
+export interface ColorCondition {
+  conditionColumn: string;
+  operator: string;
+  value: string;
+  value2?: string;
+}
+
 export interface ColorRule {
   id: string;
   name: string;
   targetType: "row" | "cell";
   targetColumn?: string;
-  conditionColumn: string;
-  operator: string;
-  value: string;
+  // Campos legados (backward compat)
+  conditionColumn?: string;
+  operator?: string;
+  value?: string;
   value2?: string;
+  // Múltiplas condições com AND
+  conditions?: ColorCondition[];
   backgroundColor: string;
   textColor?: string;
   priority: number;
@@ -573,7 +583,12 @@ export function deriveColumnsFromFilters(filters: SavedFilter[]): Set<string> {
       if (validNames.has(c.column)) needed.add(c.column);
     });
     f.colorRules?.forEach((r) => {
-      if (validNames.has(r.conditionColumn)) needed.add(r.conditionColumn);
+      const conds = r.conditions?.length
+        ? r.conditions
+        : r.conditionColumn ? [{ conditionColumn: r.conditionColumn }] : [];
+      conds.forEach((c) => {
+        if (validNames.has(c.conditionColumn)) needed.add(c.conditionColumn);
+      });
       if (r.targetColumn && validNames.has(r.targetColumn))
         needed.add(r.targetColumn);
     });

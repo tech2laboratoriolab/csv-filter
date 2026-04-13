@@ -36,6 +36,10 @@ export const OPS_DATE = [
   { v: 'is_future_or_today', l: 'É futuro ou hoje (≥ hoje)' },
   { v: 'is_past', l: 'É passado (antes de hoje)' },
   { v: 'is_past_or_today', l: 'É passado ou hoje (≤ hoje)' },
+  { v: 'days_ahead_gte', l: '≥ N dias no futuro' },
+  { v: 'days_ahead_lte', l: '≤ N dias no futuro' },
+  { v: 'days_ago_gte',   l: '≥ N dias no passado' },
+  { v: 'days_ago_lte',   l: '≤ N dias no passado' },
   { v: 'is_null', l: 'É vazio / nulo' },
   { v: 'is_not_null', l: 'Não é vazio' },
 ];

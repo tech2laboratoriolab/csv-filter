@@ -206,7 +206,7 @@ export default function DataTable({
               : { rowStyle: {}, cellStyles: {} };
 
             return (
-              <tr key={ri} style={rowStyle as React.CSSProperties}>
+              <tr key={ri} style={rowStyle as React.CSSProperties} className={(rowStyle as React.CSSProperties).backgroundColor ? 'colored-row' : undefined}>
                 {displayCols.map(col => {
                   if (col.type === 'formula') {
                     const val = formulaValues[ri]?.[col.fcIdx] ?? '';
@@ -230,12 +230,13 @@ export default function DataTable({
                     const isPending = !val;
                     const isFallback = val === col.lc.fallback;
                     const lcCellStyle = (cellStyles[col.lc.id] || {}) as React.CSSProperties;
+                    const rowTextColorLc = (rowStyle as React.CSSProperties).color as string | undefined;
                     return (
                       <td
                         key={`lc-${col.lc.id}`}
                         style={{
                           width: col.lc.width ?? 220,
-                          color: isPending ? 'var(--text-3)' : isFallback ? 'var(--yellow)' : 'var(--blue)',
+                          color: isPending ? 'var(--text-3)' : isFallback ? 'var(--yellow)' : (rowTextColorLc || 'var(--blue)'),
                           fontStyle: isFallback ? 'italic' : 'normal',
                           ...lcCellStyle,
                         }}
@@ -257,7 +258,7 @@ export default function DataTable({
                           position: 'relative',
                           width: col.tc.width ?? 280,
                           whiteSpace: 'pre-wrap',
-                          color: 'var(--text-1)',
+                          color: ((rowStyle as React.CSSProperties).color as string) || 'var(--text-1)',
                           fontSize: 11,
                           lineHeight: 1.4,
                           verticalAlign: 'top',
@@ -317,6 +318,10 @@ export default function DataTable({
                   }
 
                   const cellStyle = (cellStyles[col.name] || {}) as React.CSSProperties;
+                  const rowTextColor = (rowStyle as React.CSSProperties).color;
+                  const mergedStyle: React.CSSProperties = rowTextColor && !cellStyle.color
+                    ? { ...cellStyle, color: rowTextColor }
+                    : cellStyle;
                   const val = row[col.name] ?? '';
                   const colType = columns.find(c => c.name === col.name)?.type;
                   const displayVal =
@@ -324,7 +329,7 @@ export default function DataTable({
                       ? formatDate(String(val))
                       : String(val);
                   return (
-                    <td key={col.name} style={cellStyle} title={displayVal}>
+                    <td key={col.name} style={mergedStyle} title={displayVal}>
                       {displayVal}
                     </td>
                   );
