@@ -93,6 +93,26 @@
         "priority": 4,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
+      },
+      {
+        "id": "color_ac_dta3_evento_azul",
+        "name": "Prevista +3 dias / evento ativo",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Amostra Pendente de Envio ao Destino"
+          }
+        ],
+        "backgroundColor": "#0969da",
+        "textColor": "#ffffff",
+        "priority": 5
       }
     ],
     "formulaColumns": [],
@@ -208,7 +228,11 @@
     ],
     "formulaColumns": [],
     "annotationColumns": [],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"]
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ]
   },
   {
     "id": "imported_1773923535520_2",
@@ -420,7 +444,10 @@
         "insertAfterColumn": "visualizacao"
       }
     ],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"]
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente"
+    ]
   },
   {
     "id": "imported_1773923535520_3",
@@ -501,6 +528,26 @@
         "priority": 4,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
+      },
+      {
+        "id": "color_imuno_dta3_evento_azul",
+        "name": "Prevista +3 dias / evento ativo",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Amostra Pendente de Envio ao Destino"
+          }
+        ],
+        "backgroundColor": "#0969da",
+        "textColor": "#ffffff",
+        "priority": 4
       }
     ],
     "formulaColumns": [],
@@ -709,6 +756,26 @@
         "priority": 8,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
+      },
+      {
+        "id": "color_cap_dta3_evento_azul",
+        "name": "Prevista +3 dias / evento ativo",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,IPOG - Liberado"
+          }
+        ],
+        "backgroundColor": "#0969da",
+        "textColor": "#ffffff",
+        "priority": 9
       }
     ],
     "formulaColumns": [],
@@ -846,10 +913,34 @@
         "priority": 7,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
+      },
+      {
+        "id": "color_biop_dta3_evento_azul",
+        "name": "Prevista +3 dias / evento ativo",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Distribuição,Histotécnica,Macroscopia"
+          }
+        ],
+        "backgroundColor": "#0969da",
+        "textColor": "#ffffff",
+        "priority": 8
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
     "annotationColumns": []
   },
   {
@@ -983,10 +1074,34 @@
         "backgroundColor": "#00ff1e",
         "priority": 7,
         "targetColumn": "nom_evento"
+      },
+      {
+        "id": "color_cito_dta3_evento_azul",
+        "name": "Prevista +3 dias / evento ativo",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Citologia - Coloração,Distribuição"
+          }
+        ],
+        "backgroundColor": "#0969da",
+        "textColor": "#ffffff",
+        "priority": 8
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
     "annotationColumns": []
   },
   {
@@ -1078,7 +1193,10 @@
             "value": "IMUNO"
           }
         ],
-        "displayColumns": ["cod_requisicao", "cod_evento"],
+        "displayColumns": [
+          "cod_requisicao",
+          "cod_evento"
+        ],
         "separator": " / ",
         "limit": 2,
         "fallback": "PENDENTE VERIFICAÇÃO",
@@ -1183,7 +1301,11 @@
   {
     "id": "default_erros_cadastro",
     "name": "ERROS CADASTRO",
-    "selectedColumns": ["local_origem", "nom_medico", "cod_requisicao"],
+    "selectedColumns": [
+      "local_origem",
+      "nom_medico",
+      "cod_requisicao"
+    ],
     "conditions": [
       {
         "column": "local_origem",
@@ -1512,7 +1634,10 @@
         "insertAfterColumn": "visualizacao"
       }
     ],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente"
+    ],
     "createdAt": "2026-04-08T00:00:00.000Z"
   }
 ]
