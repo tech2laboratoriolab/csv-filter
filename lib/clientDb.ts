@@ -571,6 +571,7 @@ export interface SavedFilter {
   whatsappLinhasColumns?: string[];
   createdAt: string;
   updatedAt?: string;
+  sortOrder?: number;
 }
 
 export function deriveColumnsFromFilters(filters: SavedFilter[]): Set<string> {
@@ -976,7 +977,7 @@ export async function exportFilteredCSV(
 }
 
 // --- IndexedDB: Filters ---
-const SEED_KEY = "csv-filter-defaults-seeded-v8";
+const SEED_KEY = "csv-filter-defaults-seeded-v9";
 
 // --- Reset All Data ---
 export async function resetAllData(): Promise<void> {
@@ -1029,7 +1030,14 @@ export async function getSavedFilters(): Promise<SavedFilter[]> {
   if (!idb) return [];
   await seedDefaultFilters(idb);
   const filters = await idb.getAll("filters");
-  return filters.sort((a, b) => a.name.localeCompare(b.name, "pt", { sensitivity: "base" }));
+  return filters.sort((a, b) => {
+    const aHas = a.sortOrder != null;
+    const bHas = b.sortOrder != null;
+    if (aHas && bHas) return a.sortOrder! - b.sortOrder!;
+    if (aHas) return -1;
+    if (bHas) return 1;
+    return a.name.localeCompare(b.name, "pt", { sensitivity: "base" });
+  });
 }
 
 export async function saveFilterToFile(filter: SavedFilter): Promise<void> {

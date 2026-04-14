@@ -116,7 +116,8 @@
       }
     ],
     "formulaColumns": [],
-    "annotationColumns": []
+    "annotationColumns": [],
+    "sortOrder": 0
   },
   {
     "id": "imported_1773923535521_6",
@@ -278,7 +279,342 @@
       "nom_paciente",
       "dta_prevista"
     ],
-    "annotationColumns": []
+    "annotationColumns": [],
+    "sortOrder": 1
+  },
+  {
+    "id": "imported_1773923535522_7b",
+    "name": "CITO (de líquido)",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "nom_evento",
+      "nom_local_origem",
+      "nom_patologista",
+      "dta_solicitacao",
+      "dta_prevista"
+    ],
+    "conditions": [
+      {
+        "column": "cod_exame",
+        "operator": "not_equals",
+        "value": "37"
+      },
+      {
+        "column": "cod_exame",
+        "operator": "in",
+        "value": "4,10,20,24,30,33,35"
+      },
+      {
+        "column": "dta_finalizacao",
+        "operator": "is_null",
+        "value": ""
+      },
+      {
+        "column": "cod_evento",
+        "operator": "not_in",
+        "value": "11,56,1041"
+      },
+      {
+        "column": "nom_exame",
+        "operator": "equals",
+        "value": "CITOLOGIA ONCÓTICA DE LÍQUIDOS"
+      }
+    ],
+    "createdAt": "2026-04-14T00:00:00.000Z",
+    "updatedAt": "2026-04-14T00:00:00.000Z",
+    "colorRules": [
+      {
+        "id": "17724614190940.36787949209356696",
+        "name": "Regra 1",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Microscopia - Aguarda Liberação",
+        "backgroundColor": "#00f054",
+        "priority": 0,
+        "targetColumn": "nom_evento",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17724619347420.11235748418454228",
+        "name": "Convênio",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Aguarda autorização do convênio",
+        "backgroundColor": "#e8be64",
+        "priority": 1,
+        "targetColumn": "nom_evento",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17724620412370.7272276896165059",
+        "name": "Regra 3",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Descrição do material recebido",
+        "backgroundColor": "#823ffd",
+        "priority": 2,
+        "targetColumn": "nom_evento",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17724651743010.05473914560459414",
+        "name": "Atrasado",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_past",
+        "value": "",
+        "backgroundColor": "#d50707",
+        "priority": 3,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
+      },
+      {
+        "id": "17734081269810.7093526927249655",
+        "name": "Regra 5",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_tomorrow",
+        "value": "",
+        "backgroundColor": "#00d5ff",
+        "priority": 4,
+        "targetColumn": "dta_prevista",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17734081634840.5405090883573446",
+        "name": "Regra 6",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_today",
+        "value": "",
+        "backgroundColor": "#fbff00",
+        "priority": 5,
+        "targetColumn": "dta_prevista",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17734082239800.6306911990038325",
+        "name": "Revisão Aleatória",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Revisão Aleatória de Citologia",
+        "backgroundColor": "#cc01da",
+        "priority": 6,
+        "targetColumn": "nom_evento",
+        "textColor": "#ffffff"
+      },
+      {
+        "id": "17738450852760.033051435780351524",
+        "name": "Regra 7",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Disponível para Coleta do LAB",
+        "backgroundColor": "#00ff1e",
+        "priority": 7,
+        "targetColumn": "nom_evento"
+      },
+      {
+        "id": "color_cito_dta3_evento_azul_b",
+        "name": "Prevista +3 dias / evento ativo",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Citologia - Coloração,Distribuição"
+          }
+        ],
+        "backgroundColor": "#0969da",
+        "textColor": "#ffffff",
+        "priority": 8
+      }
+    ],
+    "formulaColumns": [],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
+    "annotationColumns": [],
+    "sortOrder": 2
+  },
+  {
+    "id": "imported_1773923535522_7a",
+    "name": "CITO (meio líquido)",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "nom_evento",
+      "nom_local_origem",
+      "nom_patologista",
+      "dta_solicitacao",
+      "dta_prevista"
+    ],
+    "conditions": [
+      {
+        "column": "cod_exame",
+        "operator": "not_equals",
+        "value": "37"
+      },
+      {
+        "column": "cod_exame",
+        "operator": "in",
+        "value": "4,10,20,24,30,33,35"
+      },
+      {
+        "column": "dta_finalizacao",
+        "operator": "is_null",
+        "value": ""
+      },
+      {
+        "column": "cod_evento",
+        "operator": "not_in",
+        "value": "11,56,1041"
+      },
+      {
+        "column": "nom_exame",
+        "operator": "not_contains",
+        "value": "CITOLOGIA ONCÓTICA DE LÍQUIDOS"
+      }
+    ],
+    "createdAt": "2026-03-02T13:46:47.886Z",
+    "updatedAt": "2026-03-19T12:32:15.522Z",
+    "colorRules": [
+      {
+        "id": "17724614190940.36787949209356696",
+        "name": "Regra 1",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Microscopia - Aguarda Liberação",
+        "backgroundColor": "#00f054",
+        "priority": 0,
+        "targetColumn": "nom_evento",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17724619347420.11235748418454228",
+        "name": "Convênio",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Aguarda autorização do convênio",
+        "backgroundColor": "#e8be64",
+        "priority": 1,
+        "targetColumn": "nom_evento",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17724620412370.7272276896165059",
+        "name": "Regra 3",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Descrição do material recebido",
+        "backgroundColor": "#823ffd",
+        "priority": 2,
+        "targetColumn": "nom_evento",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17724651743010.05473914560459414",
+        "name": "Atrasado",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_past",
+        "value": "",
+        "backgroundColor": "#d50707",
+        "priority": 3,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
+      },
+      {
+        "id": "17734081269810.7093526927249655",
+        "name": "Regra 5",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_tomorrow",
+        "value": "",
+        "backgroundColor": "#00d5ff",
+        "priority": 4,
+        "targetColumn": "dta_prevista",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17734081634840.5405090883573446",
+        "name": "Regra 6",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_today",
+        "value": "",
+        "backgroundColor": "#fbff00",
+        "priority": 5,
+        "targetColumn": "dta_prevista",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17734082239800.6306911990038325",
+        "name": "Revisão Aleatória",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Revisão Aleatória de Citologia",
+        "backgroundColor": "#cc01da",
+        "priority": 6,
+        "targetColumn": "nom_evento",
+        "textColor": "#ffffff"
+      },
+      {
+        "id": "17738450852760.033051435780351524",
+        "name": "Regra 7",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Disponível para Coleta do LAB",
+        "backgroundColor": "#00ff1e",
+        "priority": 7,
+        "targetColumn": "nom_evento"
+      },
+      {
+        "id": "color_cito_dta3_evento_azul",
+        "name": "Prevista +3 dias / evento ativo",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Citologia - Coloração,Distribuição"
+          }
+        ],
+        "backgroundColor": "#0969da",
+        "textColor": "#ffffff",
+        "priority": 8
+      }
+    ],
+    "formulaColumns": [],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
+    "annotationColumns": [],
+    "sortOrder": 3
   },
   {
     "id": "imported_1773923535521_5",
@@ -446,7 +782,8 @@
       }
     ],
     "formulaColumns": [],
-    "annotationColumns": []
+    "annotationColumns": [],
+    "sortOrder": 4
   },
   {
     "id": "imported_1773923535519_1",
@@ -562,147 +899,91 @@
       "cod_requisicao",
       "nom_paciente",
       "dta_prevista"
-    ]
+    ],
+    "sortOrder": 5
   },
   {
-    "id": "imported_1773923535522_7",
-    "name": "CITO",
+    "id": "imported_1773923535520_3",
+    "name": "IMUNO",
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
-      "nom_evento",
+      "nom_fonte_pagadora",
       "nom_local_origem",
-      "nom_patologista",
-      "dta_solicitacao",
+      "nom_evento",
+      "dta_coleta",
       "dta_prevista"
     ],
     "conditions": [
       {
-        "column": "cod_exame",
-        "operator": "not_equals",
-        "value": "37"
+        "column": "nom_evento",
+        "operator": "not_contains",
+        "value": "Concluído - Laudo em Fotos"
       },
       {
-        "column": "cod_exame",
-        "operator": "in",
-        "value": "4,10,20,24,30,33,35"
-      },
-      {
-        "column": "dta_finalizacao",
-        "operator": "is_null",
-        "value": ""
+        "column": "nom_exame",
+        "operator": "contains",
+        "value": "IMUNO"
       },
       {
         "column": "cod_evento",
         "operator": "not_in",
-        "value": "11,56,1041"
-      },
-      {
-        "column": "nom_exame",
-        "operator": "not_in",
-        "value": "COLPOCITOLOGIA ONCÓTICA EM MEIO LÍQUIDO,BACTERIOSCOPIA,CITOLOGIA ONCÓTICA DE LÍQUIDOS"
+        "value": "56,1041"
       }
     ],
-    "createdAt": "2026-03-02T13:46:47.886Z",
-    "updatedAt": "2026-03-19T12:32:15.522Z",
+    "createdAt": "2026-03-06T14:41:39.928Z",
+    "updatedAt": "2026-03-19T12:32:15.520Z",
     "colorRules": [
       {
-        "id": "17724614190940.36787949209356696",
-        "name": "Regra 1",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Microscopia - Aguarda Liberação",
-        "backgroundColor": "#00f054",
-        "priority": 0,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17724619347420.11235748418454228",
-        "name": "Convênio",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#e8be64",
-        "priority": 1,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17724620412370.7272276896165059",
-        "name": "Regra 3",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Descrição do material recebido",
-        "backgroundColor": "#823ffd",
-        "priority": 2,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17724651743010.05473914560459414",
-        "name": "Atrasado",
+        "id": "17733165216350.5520487987428974",
+        "name": "Regra 2",
         "targetType": "cell",
         "conditionColumn": "dta_prevista",
         "operator": "is_past",
         "value": "",
         "backgroundColor": "#d50707",
-        "priority": 3,
+        "priority": 1,
         "targetColumn": "dta_prevista",
         "textColor": "#ffffff"
       },
       {
-        "id": "17734081269810.7093526927249655",
-        "name": "Regra 5",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_tomorrow",
-        "value": "",
-        "backgroundColor": "#00d5ff",
-        "priority": 4,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734081634840.5405090883573446",
-        "name": "Regra 6",
+        "id": "17734091532890.9017198348584059",
+        "name": "Regra 3",
         "targetType": "cell",
         "conditionColumn": "dta_prevista",
         "operator": "is_today",
         "value": "",
-        "backgroundColor": "#fbff00",
-        "priority": 5,
+        "backgroundColor": "#fff700",
+        "priority": 2,
         "targetColumn": "dta_prevista",
         "textColor": "#000000"
       },
       {
-        "id": "17734082239800.6306911990038325",
-        "name": "Revisão Aleatória",
+        "id": "17734091788560.993647266063612",
+        "name": "Regra 4",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_tomorrow",
+        "value": "",
+        "backgroundColor": "#00bfff",
+        "priority": 3,
+        "targetColumn": "dta_prevista",
+        "textColor": "#000000"
+      },
+      {
+        "id": "17734092187990.6979078515987307",
+        "name": "Regra 5",
         "targetType": "cell",
         "conditionColumn": "nom_evento",
         "operator": "equals",
-        "value": "Revisão Aleatória de Citologia",
-        "backgroundColor": "#cc01da",
-        "priority": 6,
+        "value": "Aguarda autorização do convênio",
+        "backgroundColor": "#ffdd00",
+        "priority": 4,
         "targetColumn": "nom_evento",
-        "textColor": "#ffffff"
+        "textColor": "#000000"
       },
       {
-        "id": "17738450852760.033051435780351524",
-        "name": "Regra 7",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Disponível para Coleta do LAB",
-        "backgroundColor": "#00ff1e",
-        "priority": 7,
-        "targetColumn": "nom_evento"
-      },
-      {
-        "id": "color_cito_dta3_evento_azul",
+        "id": "color_imuno_dta3_evento_azul",
         "name": "Prevista +3 dias / evento ativo",
         "targetType": "row",
         "conditions": [
@@ -714,353 +995,124 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Citologia - Coloração,Distribuição"
+            "value": "Admissão,Amostra Pendente de Envio ao Destino"
           }
         ],
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
-        "priority": 8
+        "priority": 4
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
+    "annotationColumns": [
+      {
+        "id": "17728186589600.5580783753230334",
+        "label": "Anotação",
+        "width": 180
+      }
     ],
-    "annotationColumns": []
+    "sortOrder": 6
   },
   {
-    "id": "imported_1773923535522_7b",
-    "name": "CITO (de líquido)",
+    "id": "imported_1773066497862_6",
+    "name": "IHQ",
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
-      "nom_evento",
-      "nom_local_origem",
-      "nom_patologista",
-      "dta_solicitacao",
-      "dta_prevista"
+      "dta_finalizacao",
+      "local_origem",
+      "patologista",
+      "patologista_aux",
+      "convenio"
     ],
     "conditions": [
       {
-        "column": "cod_exame",
-        "operator": "not_equals",
-        "value": "37"
-      },
-      {
-        "column": "cod_exame",
-        "operator": "in",
-        "value": "4,10,20,24,30,33,35"
-      },
-      {
         "column": "dta_finalizacao",
-        "operator": "is_null",
+        "operator": "is_not_null",
         "value": ""
       },
       {
-        "column": "cod_evento",
-        "operator": "not_in",
-        "value": "11,56,1041"
+        "column": "des_evento",
+        "operator": "equals",
+        "value": "Laudo Concluído (Definitivo)"
       },
       {
-        "column": "nom_exame",
-        "operator": "equals",
-        "value": "CITOLOGIA ONCÓTICA DE LÍQUIDOS"
+        "column": "laudo_micro",
+        "operator": "not_contains",
+        "value": "NEGATIVO PARA LESÃO INTRAEPITELIAL OU MALIGNIDADE NESTA AMOSTRA"
+      },
+      {
+        "column": "destaque",
+        "operator": "contains",
+        "value": "histoqu",
+        "orGroup": "ihq_histoqu"
+      },
+      {
+        "column": "laudo_micro",
+        "operator": "contains",
+        "value": "histoqu",
+        "orGroup": "ihq_histoqu"
+      },
+      {
+        "column": "des_topografia",
+        "operator": "contains",
+        "value": "histoqu",
+        "orGroup": "ihq_histoqu"
       }
     ],
-    "createdAt": "2026-04-14T00:00:00.000Z",
-    "updatedAt": "2026-04-14T00:00:00.000Z",
+    "createdAt": "2026-03-23T00:00:00.000Z",
+    "updatedAt": "2026-03-23T00:00:00.000Z",
     "colorRules": [
       {
-        "id": "17724614190940.36787949209356696",
-        "name": "Regra 1",
+        "id": "17743000000001.ihq_pendente",
+        "name": "IMUNO Pendente",
         "targetType": "cell",
-        "conditionColumn": "nom_evento",
+        "conditionColumn": "ihq_imuno_lookup",
         "operator": "equals",
-        "value": "Microscopia - Aguarda Liberação",
-        "backgroundColor": "#00f054",
-        "priority": 0,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17724619347420.11235748418454228",
-        "name": "Convênio",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#e8be64",
-        "priority": 1,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17724620412370.7272276896165059",
-        "name": "Regra 3",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Descrição do material recebido",
-        "backgroundColor": "#823ffd",
-        "priority": 2,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17724651743010.05473914560459414",
-        "name": "Atrasado",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_past",
-        "value": "",
+        "value": "PENDENTE VERIFICAÇÃO",
         "backgroundColor": "#d50707",
-        "priority": 3,
-        "targetColumn": "dta_prevista",
-        "textColor": "#ffffff"
-      },
-      {
-        "id": "17734081269810.7093526927249655",
-        "name": "Regra 5",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_tomorrow",
-        "value": "",
-        "backgroundColor": "#00d5ff",
-        "priority": 4,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734081634840.5405090883573446",
-        "name": "Regra 6",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_today",
-        "value": "",
-        "backgroundColor": "#fbff00",
-        "priority": 5,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734082239800.6306911990038325",
-        "name": "Revisão Aleatória",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Revisão Aleatória de Citologia",
-        "backgroundColor": "#cc01da",
-        "priority": 6,
-        "targetColumn": "nom_evento",
-        "textColor": "#ffffff"
-      },
-      {
-        "id": "17738450852760.033051435780351524",
-        "name": "Regra 7",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Disponível para Coleta do LAB",
-        "backgroundColor": "#00ff1e",
-        "priority": 7,
-        "targetColumn": "nom_evento"
-      },
-      {
-        "id": "color_cito_dta3_evento_azul_b",
-        "name": "Prevista +3 dias / evento ativo",
-        "targetType": "row",
-        "conditions": [
-          {
-            "conditionColumn": "dta_prevista",
-            "operator": "days_ahead_gte",
-            "value": "3"
-          },
-          {
-            "conditionColumn": "nom_evento",
-            "operator": "in",
-            "value": "Admissão,Citologia - Coloração,Distribuição"
-          }
-        ],
-        "backgroundColor": "#0969da",
         "textColor": "#ffffff",
-        "priority": 8
-      }
-    ],
-    "formulaColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
-    ],
-    "annotationColumns": []
-  },
-  {
-    "id": "imported_1773923535522_7a",
-    "name": "CITO (meio líquido)",
-    "selectedColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "nom_evento",
-      "nom_local_origem",
-      "nom_patologista",
-      "dta_solicitacao",
-      "dta_prevista"
-    ],
-    "conditions": [
+        "priority": 0,
+        "targetColumn": "ihq_imuno_lookup"
+      },
       {
-        "column": "cod_exame",
+        "id": "17743000000002.ihq_encontrado",
+        "name": "IMUNO Encontrado",
+        "targetType": "cell",
+        "conditionColumn": "ihq_imuno_lookup",
         "operator": "not_equals",
-        "value": "37"
-      },
-      {
-        "column": "cod_exame",
-        "operator": "in",
-        "value": "4,10,20,24,30,33,35"
-      },
-      {
-        "column": "dta_finalizacao",
-        "operator": "is_null",
-        "value": ""
-      },
-      {
-        "column": "cod_evento",
-        "operator": "not_in",
-        "value": "11,56,1041"
-      },
-      {
-        "column": "nom_exame",
-        "operator": "in",
-        "value": "COLPOCITOLOGIA ONCÓTICA EM MEIO LÍQUIDO,BACTERIOSCOPIA"
-      }
-    ],
-    "createdAt": "2026-03-02T13:46:47.886Z",
-    "updatedAt": "2026-03-19T12:32:15.522Z",
-    "colorRules": [
-      {
-        "id": "17724614190940.36787949209356696",
-        "name": "Regra 1",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Microscopia - Aguarda Liberação",
-        "backgroundColor": "#00f054",
-        "priority": 0,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17724619347420.11235748418454228",
-        "name": "Convênio",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#e8be64",
-        "priority": 1,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17724620412370.7272276896165059",
-        "name": "Regra 3",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Descrição do material recebido",
-        "backgroundColor": "#823ffd",
-        "priority": 2,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17724651743010.05473914560459414",
-        "name": "Atrasado",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_past",
-        "value": "",
-        "backgroundColor": "#d50707",
-        "priority": 3,
-        "targetColumn": "dta_prevista",
-        "textColor": "#ffffff"
-      },
-      {
-        "id": "17734081269810.7093526927249655",
-        "name": "Regra 5",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_tomorrow",
-        "value": "",
-        "backgroundColor": "#00d5ff",
-        "priority": 4,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734081634840.5405090883573446",
-        "name": "Regra 6",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_today",
-        "value": "",
-        "backgroundColor": "#fbff00",
-        "priority": 5,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734082239800.6306911990038325",
-        "name": "Revisão Aleatória",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Revisão Aleatória de Citologia",
-        "backgroundColor": "#cc01da",
-        "priority": 6,
-        "targetColumn": "nom_evento",
-        "textColor": "#ffffff"
-      },
-      {
-        "id": "17738450852760.033051435780351524",
-        "name": "Regra 7",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Disponível para Coleta do LAB",
-        "backgroundColor": "#00ff1e",
-        "priority": 7,
-        "targetColumn": "nom_evento"
-      },
-      {
-        "id": "color_cito_dta3_evento_azul",
-        "name": "Prevista +3 dias / evento ativo",
-        "targetType": "row",
-        "conditions": [
-          {
-            "conditionColumn": "dta_prevista",
-            "operator": "days_ahead_gte",
-            "value": "3"
-          },
-          {
-            "conditionColumn": "nom_evento",
-            "operator": "in",
-            "value": "Admissão,Citologia - Coloração,Distribuição"
-          }
-        ],
-        "backgroundColor": "#0969da",
+        "value": "PENDENTE VERIFICAÇÃO",
+        "backgroundColor": "#0066cc",
         "textColor": "#ffffff",
-        "priority": 8
+        "priority": 1,
+        "targetColumn": "ihq_imuno_lookup"
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
+    "annotationColumns": [],
+    "lookupColumns": [
+      {
+        "id": "ihq_imuno_lookup",
+        "label": "IMUNO Faturamento",
+        "keyColumn": "nom_paciente",
+        "matchConditions": [
+          {
+            "column": "nom_exame",
+            "operator": "contains",
+            "value": "IMUNO"
+          }
+        ],
+        "displayColumns": [
+          "cod_requisicao",
+          "cod_evento"
+        ],
+        "separator": " / ",
+        "limit": 2,
+        "fallback": "PENDENTE VERIFICAÇÃO",
+        "insertAfterColumn": "convenio"
+      }
     ],
-    "annotationColumns": []
+    "sortOrder": 7
   },
   {
     "id": "imported_1773923535520_2",
@@ -1275,7 +1327,8 @@
     "whatsappLinhasColumns": [
       "cod_requisicao",
       "nom_paciente"
-    ]
+    ],
+    "sortOrder": 8
   },
   {
     "id": "default_critico_positivo",
@@ -1367,101 +1420,63 @@
       "cod_requisicao",
       "nom_paciente"
     ],
-    "createdAt": "2026-04-08T00:00:00.000Z"
+    "createdAt": "2026-04-08T00:00:00.000Z",
+    "sortOrder": 9
   },
   {
-    "id": "imported_DN_filter_1",
-    "name": "DN",
+    "id": "imported_1773923535520_4",
+    "name": "RECEBIDO",
     "selectedColumns": [
       "cod_requisicao",
-      "convenio",
-      "sexo",
-      "dta_nascimento",
-      "cpf"
+      "nom_local_origem",
+      "nom_evento_fatur",
+      "cod_evento",
+      "dta_solicitacao"
     ],
     "conditions": [
       {
-        "column": "fonte_pagadora",
-        "operator": "is_not_null",
-        "value": ""
+        "column": "nom_evento_fatur",
+        "operator": "not_equals",
+        "value": "RECEBIDO"
       },
       {
-        "column": "nom_exame_tipo",
-        "operator": "is_not_null",
-        "value": ""
+        "column": "nom_local_origem",
+        "operator": "not_equals",
+        "value": "Medigest Centro de Medicina Digestiva"
       },
       {
-        "column": "cod_requisicao",
-        "operator": "is_not_null",
-        "value": ""
+        "column": "cod_evento",
+        "operator": "in",
+        "value": "11,16,1000,56,19,9"
       },
       {
-        "column": "sexo",
+        "column": "nom_fonte_pagadora",
+        "operator": "equals",
+        "value": "PARTICULAR"
+      },
+      {
+        "column": "cod_evento",
+        "operator": "not_in",
+        "value": "56,1041"
+      },
+      {
+        "column": "nfereq",
         "operator": "is_null",
-        "value": "",
-        "orGroup": "dn_missing_fields"
-      },
-      {
-        "column": "dta_nascimento",
-        "operator": "is_null",
-        "value": "",
-        "orGroup": "dn_missing_fields"
-      },
-      {
-        "column": "cpf",
-        "operator": "is_null",
-        "value": "",
-        "orGroup": "dn_missing_fields"
+        "value": ""
       }
     ],
-    "createdAt": "2026-04-01T00:00:00.000Z",
-    "updatedAt": "2026-04-01T00:00:00.000Z",
-    "colorRules": [
-      {
-        "id": "dn_color_sexo",
-        "name": "Sexo vazio",
-        "targetType": "cell",
-        "conditionColumn": "sexo",
-        "operator": "is_null",
-        "value": "",
-        "backgroundColor": "#d50707",
-        "textColor": "#ffffff",
-        "priority": 0,
-        "targetColumn": "sexo"
-      },
-      {
-        "id": "dn_color_dta_nascimento",
-        "name": "Data Nasc. vazia",
-        "targetType": "cell",
-        "conditionColumn": "dta_nascimento",
-        "operator": "is_null",
-        "value": "",
-        "backgroundColor": "#d50707",
-        "textColor": "#ffffff",
-        "priority": 1,
-        "targetColumn": "dta_nascimento"
-      },
-      {
-        "id": "dn_color_cpf",
-        "name": "CPF vazio",
-        "targetType": "cell",
-        "conditionColumn": "cpf",
-        "operator": "is_null",
-        "value": "",
-        "backgroundColor": "#d50707",
-        "textColor": "#ffffff",
-        "priority": 2,
-        "targetColumn": "cpf"
-      }
-    ],
+    "createdAt": "2026-03-06T11:53:25.870Z",
+    "updatedAt": "2026-03-31T00:00:00.000Z",
+    "colorRules": [],
     "formulaColumns": [],
     "annotationColumns": [
       {
-        "id": "dn_annotation_status",
-        "label": "Status",
+        "id": "17728069078720.8874528474932675",
+        "label": "ANOTACAO",
         "width": 180
       }
-    ]
+    ],
+    "sortOrder": 10
   },
   {
     "id": "default_erros_cadastro",
@@ -1711,270 +1726,102 @@
         "width": 180
       }
     ],
-    "createdAt": "2026-04-01T00:00:00.000Z"
+    "createdAt": "2026-04-01T00:00:00.000Z",
+    "sortOrder": 11
   },
   {
-    "id": "imported_1773066497862_6",
-    "name": "IHQ",
+    "id": "imported_DN_filter_1",
+    "name": "DN",
     "selectedColumns": [
       "cod_requisicao",
-      "nom_paciente",
-      "dta_finalizacao",
-      "local_origem",
-      "patologista",
-      "patologista_aux",
-      "convenio"
+      "convenio",
+      "sexo",
+      "dta_nascimento",
+      "cpf"
     ],
     "conditions": [
       {
-        "column": "dta_finalizacao",
+        "column": "fonte_pagadora",
         "operator": "is_not_null",
         "value": ""
       },
       {
-        "column": "des_evento",
-        "operator": "equals",
-        "value": "Laudo Concluído (Definitivo)"
+        "column": "nom_exame_tipo",
+        "operator": "is_not_null",
+        "value": ""
       },
       {
-        "column": "laudo_micro",
-        "operator": "not_contains",
-        "value": "NEGATIVO PARA LESÃO INTRAEPITELIAL OU MALIGNIDADE NESTA AMOSTRA"
+        "column": "cod_requisicao",
+        "operator": "is_not_null",
+        "value": ""
       },
       {
-        "column": "destaque",
-        "operator": "contains",
-        "value": "histoqu",
-        "orGroup": "ihq_histoqu"
+        "column": "sexo",
+        "operator": "is_null",
+        "value": "",
+        "orGroup": "dn_missing_fields"
       },
       {
-        "column": "laudo_micro",
-        "operator": "contains",
-        "value": "histoqu",
-        "orGroup": "ihq_histoqu"
+        "column": "dta_nascimento",
+        "operator": "is_null",
+        "value": "",
+        "orGroup": "dn_missing_fields"
       },
       {
-        "column": "des_topografia",
-        "operator": "contains",
-        "value": "histoqu",
-        "orGroup": "ihq_histoqu"
+        "column": "cpf",
+        "operator": "is_null",
+        "value": "",
+        "orGroup": "dn_missing_fields"
       }
     ],
-    "createdAt": "2026-03-23T00:00:00.000Z",
-    "updatedAt": "2026-03-23T00:00:00.000Z",
+    "createdAt": "2026-04-01T00:00:00.000Z",
+    "updatedAt": "2026-04-01T00:00:00.000Z",
     "colorRules": [
       {
-        "id": "17743000000001.ihq_pendente",
-        "name": "IMUNO Pendente",
+        "id": "dn_color_sexo",
+        "name": "Sexo vazio",
         "targetType": "cell",
-        "conditionColumn": "ihq_imuno_lookup",
-        "operator": "equals",
-        "value": "PENDENTE VERIFICAÇÃO",
+        "conditionColumn": "sexo",
+        "operator": "is_null",
+        "value": "",
         "backgroundColor": "#d50707",
         "textColor": "#ffffff",
         "priority": 0,
-        "targetColumn": "ihq_imuno_lookup"
+        "targetColumn": "sexo"
       },
       {
-        "id": "17743000000002.ihq_encontrado",
-        "name": "IMUNO Encontrado",
+        "id": "dn_color_dta_nascimento",
+        "name": "Data Nasc. vazia",
         "targetType": "cell",
-        "conditionColumn": "ihq_imuno_lookup",
-        "operator": "not_equals",
-        "value": "PENDENTE VERIFICAÇÃO",
-        "backgroundColor": "#0066cc",
-        "textColor": "#ffffff",
-        "priority": 1,
-        "targetColumn": "ihq_imuno_lookup"
-      }
-    ],
-    "formulaColumns": [],
-    "annotationColumns": [],
-    "lookupColumns": [
-      {
-        "id": "ihq_imuno_lookup",
-        "label": "IMUNO Faturamento",
-        "keyColumn": "nom_paciente",
-        "matchConditions": [
-          {
-            "column": "nom_exame",
-            "operator": "contains",
-            "value": "IMUNO"
-          }
-        ],
-        "displayColumns": [
-          "cod_requisicao",
-          "cod_evento"
-        ],
-        "separator": " / ",
-        "limit": 2,
-        "fallback": "PENDENTE VERIFICAÇÃO",
-        "insertAfterColumn": "convenio"
-      }
-    ]
-  },
-  {
-    "id": "imported_1773923535520_3",
-    "name": "IMUNO",
-    "selectedColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "nom_fonte_pagadora",
-      "nom_local_origem",
-      "nom_evento",
-      "dta_coleta",
-      "dta_prevista"
-    ],
-    "conditions": [
-      {
-        "column": "nom_evento",
-        "operator": "not_contains",
-        "value": "Concluído - Laudo em Fotos"
-      },
-      {
-        "column": "nom_exame",
-        "operator": "contains",
-        "value": "IMUNO"
-      },
-      {
-        "column": "cod_evento",
-        "operator": "not_in",
-        "value": "56,1041"
-      }
-    ],
-    "createdAt": "2026-03-06T14:41:39.928Z",
-    "updatedAt": "2026-03-19T12:32:15.520Z",
-    "colorRules": [
-      {
-        "id": "17733165216350.5520487987428974",
-        "name": "Regra 2",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_past",
+        "conditionColumn": "dta_nascimento",
+        "operator": "is_null",
         "value": "",
         "backgroundColor": "#d50707",
-        "priority": 1,
-        "targetColumn": "dta_prevista",
-        "textColor": "#ffffff"
-      },
-      {
-        "id": "17734091532890.9017198348584059",
-        "name": "Regra 3",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_today",
-        "value": "",
-        "backgroundColor": "#fff700",
-        "priority": 2,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734091788560.993647266063612",
-        "name": "Regra 4",
-        "targetType": "cell",
-        "conditionColumn": "dta_prevista",
-        "operator": "is_tomorrow",
-        "value": "",
-        "backgroundColor": "#00bfff",
-        "priority": 3,
-        "targetColumn": "dta_prevista",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17734092187990.6979078515987307",
-        "name": "Regra 5",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#ffdd00",
-        "priority": 4,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "color_imuno_dta3_evento_azul",
-        "name": "Prevista +3 dias / evento ativo",
-        "targetType": "row",
-        "conditions": [
-          {
-            "conditionColumn": "dta_prevista",
-            "operator": "days_ahead_gte",
-            "value": "3"
-          },
-          {
-            "conditionColumn": "nom_evento",
-            "operator": "in",
-            "value": "Admissão,Amostra Pendente de Envio ao Destino"
-          }
-        ],
-        "backgroundColor": "#0969da",
         "textColor": "#ffffff",
-        "priority": 4
-      }
-    ],
-    "formulaColumns": [],
-    "annotationColumns": [
-      {
-        "id": "17728186589600.5580783753230334",
-        "label": "Anotação",
-        "width": 180
-      }
-    ]
-  },
-  {
-    "id": "imported_1773923535520_4",
-    "name": "RECEBIDO",
-    "selectedColumns": [
-      "cod_requisicao",
-      "nom_local_origem",
-      "nom_evento_fatur",
-      "cod_evento",
-      "dta_solicitacao"
-    ],
-    "conditions": [
-      {
-        "column": "nom_evento_fatur",
-        "operator": "not_equals",
-        "value": "RECEBIDO"
+        "priority": 1,
+        "targetColumn": "dta_nascimento"
       },
       {
-        "column": "nom_local_origem",
-        "operator": "not_equals",
-        "value": "Medigest Centro de Medicina Digestiva"
-      },
-      {
-        "column": "cod_evento",
-        "operator": "in",
-        "value": "11,16,1000,56,19,9"
-      },
-      {
-        "column": "nom_fonte_pagadora",
-        "operator": "equals",
-        "value": "PARTICULAR"
-      },
-      {
-        "column": "cod_evento",
-        "operator": "not_in",
-        "value": "56,1041"
-      },
-      {
-        "column": "nfereq",
+        "id": "dn_color_cpf",
+        "name": "CPF vazio",
+        "targetType": "cell",
+        "conditionColumn": "cpf",
         "operator": "is_null",
-        "value": ""
+        "value": "",
+        "backgroundColor": "#d50707",
+        "textColor": "#ffffff",
+        "priority": 2,
+        "targetColumn": "cpf"
       }
     ],
-    "createdAt": "2026-03-06T11:53:25.870Z",
-    "updatedAt": "2026-03-31T00:00:00.000Z",
-    "colorRules": [],
     "formulaColumns": [],
     "annotationColumns": [
       {
-        "id": "17728069078720.8874528474932675",
-        "label": "ANOTACAO",
+        "id": "dn_annotation_status",
+        "label": "Status",
         "width": 180
       }
-    ]
+    ],
+    "sortOrder": 12
   }
 ]
