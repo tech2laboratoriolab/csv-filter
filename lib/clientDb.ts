@@ -46,6 +46,7 @@ export const COLUMNS: ColumnDef[] = [
   { name: "cpf", label: "CPF", type: "text" },
   { name: "fonte_pagadora", label: "FontePagadora", type: "text" },
   { name: "nom_exame_tipo", label: "NomExameTipo", type: "text" },
+  { name: "fatexametipo", label: "FatExameTipo", type: "text" },
   { name: "resultado", label: "Resultado", type: "text" },
   { name: "des_conclusao", label: "DesConclusao", type: "text" },
 ];
@@ -1028,7 +1029,7 @@ export async function getSavedFilters(): Promise<SavedFilter[]> {
   if (!idb) return [];
   await seedDefaultFilters(idb);
   const filters = await idb.getAll("filters");
-  return filters.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return filters.sort((a, b) => a.name.localeCompare(b.name, "pt", { sensitivity: "base" }));
 }
 
 export async function saveFilterToFile(filter: SavedFilter): Promise<void> {
