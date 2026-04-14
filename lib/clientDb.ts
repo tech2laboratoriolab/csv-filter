@@ -49,6 +49,7 @@ export const COLUMNS: ColumnDef[] = [
   { name: "fatexametipo", label: "FatExameTipo", type: "text" },
   { name: "resultado", label: "Resultado", type: "text" },
   { name: "des_conclusao", label: "DesConclusao", type: "text" },
+  { name: "qtdlam", label: "QtdLam", type: "number" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};

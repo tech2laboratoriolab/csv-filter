@@ -129,6 +129,7 @@
       "nom_local_origem",
       "nom_patologista",
       "dta_solicitacao",
+      "qtdlam",
       "dta_prevista"
     ],
     "conditions": [
@@ -274,11 +275,7 @@
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
-    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
     "annotationColumns": [],
     "sortOrder": 1
   },
@@ -292,6 +289,7 @@
       "nom_local_origem",
       "nom_patologista",
       "dta_solicitacao",
+      "qtdlam",
       "dta_prevista"
     ],
     "conditions": [
@@ -441,11 +439,7 @@
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
-    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
     "annotationColumns": [],
     "sortOrder": 2
   },
@@ -608,11 +602,7 @@
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
-    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
     "annotationColumns": [],
     "sortOrder": 3
   },
@@ -895,11 +885,7 @@
     ],
     "formulaColumns": [],
     "annotationColumns": [],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "dta_prevista"
-    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
     "sortOrder": 5
   },
   {
@@ -1102,10 +1088,7 @@
             "value": "IMUNO"
           }
         ],
-        "displayColumns": [
-          "cod_requisicao",
-          "cod_evento"
-        ],
+        "displayColumns": ["cod_requisicao", "cod_evento"],
         "separator": " / ",
         "limit": 2,
         "fallback": "PENDENTE VERIFICAÇÃO",
@@ -1324,10 +1307,7 @@
         "insertAfterColumn": "visualizacao"
       }
     ],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente"
-    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"],
     "sortOrder": 8
   },
   {
@@ -1416,10 +1396,7 @@
         "insertAfterColumn": "visualizacao"
       }
     ],
-    "whatsappLinhasColumns": [
-      "cod_requisicao",
-      "nom_paciente"
-    ],
+    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"],
     "createdAt": "2026-04-08T00:00:00.000Z",
     "sortOrder": 9
   },
@@ -1481,11 +1458,7 @@
   {
     "id": "default_erros_cadastro",
     "name": "ERROS CADASTRO",
-    "selectedColumns": [
-      "local_origem",
-      "nom_medico",
-      "cod_requisicao"
-    ],
+    "selectedColumns": ["local_origem", "nom_medico", "cod_requisicao"],
     "conditions": [
       {
         "column": "local_origem",
