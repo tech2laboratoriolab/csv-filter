@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  // No longer using better-sqlite3
-};
+const nextConfig = {};
 
 module.exports = nextConfig;

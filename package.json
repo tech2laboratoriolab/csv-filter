@@ -19,7 +19,6 @@
     "sql.js": "^1.14.1"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.0",
     "@types/node": "^20.0.0",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^18.3.0",
