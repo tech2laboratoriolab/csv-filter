@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useTrack } from "@/lib/useTrack";
 import {
   getSavedFilters,
   getSavedPathologists,
@@ -264,6 +265,7 @@ async function combineFilterData(
 }
 
 export default function WhatsAppPage() {
+  const { track } = useTrack();
   const [filters, setFilters] = useState<SavedFilter[]>([]);
   const [selectedFilterIds, setSelectedFilterIds] = useState<Set<string>>(
     new Set(),
@@ -962,6 +964,7 @@ export default function WhatsAppPage() {
       const data = await res.json();
       setSendResults(data.results ?? []);
       setSendProgress(100);
+      track("whatsapp_message_sent", { count: messagesToSend.length });
     } catch (err: any) {
       setSendResults([
         { nome: "Erro", telefone: "", success: false, error: err.message },

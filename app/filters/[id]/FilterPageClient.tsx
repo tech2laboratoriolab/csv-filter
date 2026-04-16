@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTrack } from '@/lib/useTrack';
 import type { SavedFilter, ColumnDef, FilterCondition, ColorRule, FormulaColumn, AnnotationColumn, LookupColumn } from '@/lib/clientDb';
 import ColumnPicker from '@/app/components/ColumnPicker';
 import ConditionEditor from '@/app/components/ConditionEditor';
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export default function FilterPageClient({ filterId }: Props) {
+  const { track } = useTrack();
   const [filter, setFilter] = useState<SavedFilter | null>(null);
   const [columns, setColumns] = useState<ColumnDef[]>(COLUMNS);
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
@@ -151,6 +153,7 @@ export default function FilterPageClient({ filterId }: Props) {
     setSaving(true);
     try {
       await saveFilterToFile({ ...filter, updatedAt: new Date().toISOString() });
+      track("filter_saved", { name: filter.name });
       setSaveOk(true);
       setTimeout(() => setSaveOk(false), 2000);
     } catch (e) {
@@ -169,6 +172,7 @@ export default function FilterPageClient({ filterId }: Props) {
     a.download = `${filter.name.replace(/\s+/g, '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    track("csv_exported", { rows: total, filter_name: filter.name });
   };
 
   const handleSort = (col: string) => {
@@ -262,7 +266,7 @@ export default function FilterPageClient({ filterId }: Props) {
           <button
             key={tab}
             className={`fp-tab ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => { setActiveTab(tab); track("filter_tab_changed", { tab }); }}
           >
             {label}
             {tab === 'color' && colorRules.length > 0 && (

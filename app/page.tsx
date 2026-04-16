@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useTrack } from "@/lib/useTrack";
 import Papa from "papaparse";
 import type {
   ColorRule,
@@ -60,6 +61,7 @@ const OPS_DATE = [
 ];
 
 export default function Home() {
+  const { track } = useTrack();
   const [columns, setColumns] = useState<ColumnDef[]>(COLUMNS);
   const [selectedCols, setSelectedCols] = useState<string[]>([]);
   const [conditions, setConditions] = useState<FilterCondition[]>([]);
@@ -284,6 +286,7 @@ export default function Home() {
               setPage(1);
               fetchData(colsToShow, [], 1);
 
+              track("csv_upload", { rows: rowCount, merged, skipped });
               let msg = "";
               if (rowCount > 0) msg += `${rowCount} linha(s) inserida(s). `;
               if (merged > 0) msg += `${merged} linha(s) mesclada(s). `;
@@ -341,11 +344,13 @@ export default function Home() {
     setConditions((p) => p.filter((_, j) => j !== i));
 
   const applyFilters = () => {
+    track("filter_applied", { conditions: conditions.length });
     setPage(1);
     fetchData(selectedCols, conditions, 1, sortCol, sortDir);
   };
 
   const clearFilters = () => {
+    track("filter_cleared");
     setConditions([]);
     setPage(1);
     fetchData(selectedCols, [], 1, sortCol, sortDir);
@@ -408,6 +413,7 @@ export default function Home() {
     await saveFilterToFile(f);
     const updatedFilters = await getSavedFilters();
     setSavedFilters(updatedFilters);
+    track("filter_saved", { name: trimmedName });
 
     setShowSave(false);
     setFilterName("");
@@ -415,6 +421,7 @@ export default function Home() {
   };
 
   const loadFilter = (f: SavedFilter) => {
+    track("filter_loaded", { name: f.name });
     setSelectedCols(f.selectedColumns);
     setConditions(f.conditions);
     setColorRules(f.colorRules ?? []);
@@ -440,6 +447,7 @@ export default function Home() {
     e.stopPropagation();
     await deleteFilterFile(id);
     setSavedFilters((p) => p.filter((f) => f.id !== id));
+    track("filter_deleted");
   };
 
   const handleReset = async () => {
@@ -451,6 +459,7 @@ export default function Home() {
       return;
 
     await resetAllData();
+    track("reset_all");
 
     // Reset all UI state
     setRows([]);
@@ -548,6 +557,7 @@ export default function Home() {
     a.download = "dados_filtrados.csv";
     a.click();
     URL.revokeObjectURL(url);
+    track("csv_exported", { rows: total });
   };
 
   const getOps = (col: string) => {

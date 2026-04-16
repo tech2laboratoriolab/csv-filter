@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { useTrack } from '@/lib/useTrack';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,7 @@ function normalizeSchedule(raw: Record<string, unknown>): PatologistaSchedule {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SemanaClient() {
+  const { track } = useTrack();
   const [patologistas, setPatologistas] = useState<Patologista[]>([]);
   const [semanas, setSemanas]           = useState<string[]>([]);
   const [currentWeek, setCurrentWeek]  = useState<string>('');
@@ -164,6 +166,7 @@ export default function SemanaClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...toSave, weekKey: weekKeyRef.current }),
       });
+      track("schedule_saved", { week: weekKeyRef.current });
       setSavedOk(true);
       setTimeout(() => setSavedOk(false), 2500);
       const sems: string[] = await fetch('/api/semanas?list=true').then(r => r.json());
@@ -176,7 +179,9 @@ export default function SemanaClient() {
   // ── Week navigation ────────────────────────────────────────────────────────
 
   function navigate(dir: -1 | 1) {
-    setCurrentWeek(toIso(addDays(parseDateLocal(currentWeek), dir * 7)));
+    const newWeek = toIso(addDays(parseDateLocal(currentWeek), dir * 7));
+    track("week_navigated", { direction: dir === 1 ? "next" : "prev", week: newWeek });
+    setCurrentWeek(newWeek);
   }
 
   function goToday() {
