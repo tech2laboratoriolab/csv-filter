@@ -16,8 +16,8 @@ export default function RootLayout({
       <head>
         <script
           defer
-          src="http://localhost:3000/script.js"
-          data-website-id="7450f8d1-e879-4eaf-992a-dcf595730746"
+          src="http://85.239.246.101:3000/script.js"
+          data-website-id="1a5f20c2-309f-4c7a-88f8-1d278966bbe2"
         ></script>
       </head>
       <body>{children}</body>
