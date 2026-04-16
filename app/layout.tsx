@@ -16,8 +16,8 @@ export default function RootLayout({
       <head>
         <script
           defer
-          src="http://85.239.246.101:3000/script.js"
-          data-website-id="1a5f20c2-309f-4c7a-88f8-1d278966bbe2"
+          src="https://umamilab.ngrok.dev/script.js"
+          data-website-id="0079c6e7-052d-4ced-abb0-ed0e81239a80"
         ></script>
       </head>
       <body>{children}</body>
