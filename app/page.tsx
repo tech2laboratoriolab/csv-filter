@@ -413,7 +413,7 @@ export default function Home() {
     await saveFilterToFile(f);
     const updatedFilters = await getSavedFilters();
     setSavedFilters(updatedFilters);
-    track("filter_saved", { name: trimmedName });
+    track("filter_created", { name: trimmedName });
 
     setShowSave(false);
     setFilterName("");
@@ -421,7 +421,6 @@ export default function Home() {
   };
 
   const loadFilter = (f: SavedFilter) => {
-    track("filter_loaded", { name: f.name });
     setSelectedCols(f.selectedColumns);
     setConditions(f.conditions);
     setColorRules(f.colorRules ?? []);
