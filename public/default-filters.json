@@ -1978,5 +1978,22 @@
       }
     ],
     "sortOrder": 12
+  },
+  {
+    "id": "1745366400000",
+    "name": "coleta lab",
+    "selectedColumns": ["cod_requisicao", "nom_paciente", "dta_solicitacao"],
+    "conditions": [
+      {
+        "column": "nom_evento",
+        "operator": "equals",
+        "value": "Disponível para Coleta do LAB"
+      }
+    ],
+    "colorRules": [],
+    "formulaColumns": [],
+    "annotationColumns": [],
+    "createdAt": "2026-04-22T12:00:00.000Z",
+    "sortOrder": 13
   }
 ]
