@@ -113,6 +113,32 @@
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
         "priority": 5
+      },
+      {
+        "id": "color_ac_status_atraso_2dias",
+        "name": "Status parado 2 dias",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Amostra Pendente de Envio ao Destino"
+          },
+          {
+            "conditionColumn": "nom_evento_status",
+            "operator": "equals",
+            "value": "nom_evento",
+            "valueIsColumn": true
+          },
+          {
+            "conditionColumn": "dta_status",
+            "operator": "days_ago_gte",
+            "value": "2"
+          }
+        ],
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "priority": 6
       }
     ],
     "formulaColumns": [],
@@ -272,6 +298,32 @@
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
         "priority": 8
+      },
+      {
+        "id": "color_biop_status_atraso_2dias",
+        "name": "Status parado 2 dias",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Distribuição,Histotécnica,Macroscopia"
+          },
+          {
+            "conditionColumn": "nom_evento_status",
+            "operator": "equals",
+            "value": "nom_evento",
+            "valueIsColumn": true
+          },
+          {
+            "conditionColumn": "dta_status",
+            "operator": "days_ago_gte",
+            "value": "2"
+          }
+        ],
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "priority": 9
       }
     ],
     "formulaColumns": [],
@@ -436,6 +488,32 @@
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
         "priority": 8
+      },
+      {
+        "id": "color_cito_liq_status_atraso_2dias",
+        "name": "Status parado 2 dias",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Citologia - Coloração,Distribuição"
+          },
+          {
+            "conditionColumn": "nom_evento_status",
+            "operator": "equals",
+            "value": "nom_evento",
+            "valueIsColumn": true
+          },
+          {
+            "conditionColumn": "dta_status",
+            "operator": "days_ago_gte",
+            "value": "2"
+          }
+        ],
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "priority": 9
       }
     ],
     "formulaColumns": [],
@@ -599,6 +677,32 @@
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
         "priority": 8
+      },
+      {
+        "id": "color_cito_ml_status_atraso_2dias",
+        "name": "Status parado 2 dias",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Citologia - Coloração,Distribuição"
+          },
+          {
+            "conditionColumn": "nom_evento_status",
+            "operator": "equals",
+            "value": "nom_evento",
+            "valueIsColumn": true
+          },
+          {
+            "conditionColumn": "dta_status",
+            "operator": "days_ago_gte",
+            "value": "2"
+          }
+        ],
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "priority": 9
       }
     ],
     "formulaColumns": [],
@@ -769,6 +873,32 @@
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
         "priority": 9
+      },
+      {
+        "id": "color_cap_status_atraso_2dias",
+        "name": "Status parado 2 dias",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,IPOG - Liberado"
+          },
+          {
+            "conditionColumn": "nom_evento_status",
+            "operator": "equals",
+            "value": "nom_evento",
+            "valueIsColumn": true
+          },
+          {
+            "conditionColumn": "dta_status",
+            "operator": "days_ago_gte",
+            "value": "2"
+          }
+        ],
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "priority": 10
       }
     ],
     "formulaColumns": [],
@@ -881,6 +1011,32 @@
         "priority": 4,
         "targetColumn": "dta_prevista",
         "textColor": "#ffffff"
+      },
+      {
+        "id": "color_capbio_status_atraso_2dias",
+        "name": "Status parado 2 dias",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Triagem de amostra - Recebida,Aguarda admissão"
+          },
+          {
+            "conditionColumn": "nom_evento_status",
+            "operator": "equals",
+            "value": "nom_evento",
+            "valueIsColumn": true
+          },
+          {
+            "conditionColumn": "dta_status",
+            "operator": "days_ago_gte",
+            "value": "2"
+          }
+        ],
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "priority": 5
       }
     ],
     "formulaColumns": [],
@@ -987,6 +1143,32 @@
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
         "priority": 4
+      },
+      {
+        "id": "color_imuno_status_atraso_2dias",
+        "name": "Status parado 2 dias",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Admissão,Amostra Pendente de Envio ao Destino"
+          },
+          {
+            "conditionColumn": "nom_evento_status",
+            "operator": "equals",
+            "value": "nom_evento",
+            "valueIsColumn": true
+          },
+          {
+            "conditionColumn": "dta_status",
+            "operator": "days_ago_gte",
+            "value": "2"
+          }
+        ],
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "priority": 5
       }
     ],
     "formulaColumns": [],
