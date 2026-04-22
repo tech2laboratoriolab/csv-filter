@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.103.0",
     "hyperformula": "^3.2.0",
     "idb": "^8.0.3",
+    "mysql2": "^3.22.2",
     "next": "^14.2.0",
     "papaparse": "^5.5.3",
     "react": "^18.3.0",

@@ -21,6 +21,7 @@ import {
   exportFilteredCSV,
   COLUMNS
 } from '@/lib/clientDb';
+import { colorRuleExtraColumns } from '@/lib/colorRules';
 
 type Tab = 'columns' | 'filters' | 'color' | 'formula' | 'annotation' | 'template';
 const PAGE_SIZE = 50;
@@ -40,6 +41,7 @@ export default function FilterPageClient({ filterId }: Props) {
   const [saving, setSaving] = useState(false);
   const [saveOk, setSaveOk] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('columns');
+  const [panelOpen, setPanelOpen] = useState(true);
   const [sortCol, setSortCol] = useState<string | undefined>();
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [formulaValues, setFormulaValues] = useState<string[][]>([]);
@@ -72,13 +74,16 @@ export default function FilterPageClient({ filterId }: Props) {
       if (!filter) return;
       setLoading(true);
       try {
+        const activeCols = selectedCols ?? filter.selectedColumns;
+        const extraCols = colorRuleExtraColumns(filter.colorRules ?? [], activeCols);
         const result = await queryFiltered(
-          selectedCols ?? filter.selectedColumns,
+          activeCols,
           conditions ?? filter.conditions,
           pg ?? page,
           PAGE_SIZE,
           sCol ?? sortCol,
-          sDir ?? sortDir
+          sDir ?? sortDir,
+          extraCols,
         );
         setRows(result.rows ?? []);
         setTotal(Number(result.total) ?? 0);
@@ -266,7 +271,15 @@ export default function FilterPageClient({ filterId }: Props) {
           <button
             key={tab}
             className={`fp-tab ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => { setActiveTab(tab); track("filter_tab_changed", { tab }); }}
+            onClick={() => {
+              if (activeTab === tab) {
+                setPanelOpen(o => !o);
+              } else {
+                setActiveTab(tab);
+                setPanelOpen(true);
+                track("filter_tab_changed", { tab });
+              }
+            }}
           >
             {label}
             {tab === 'color' && colorRules.length > 0 && (
@@ -286,7 +299,7 @@ export default function FilterPageClient({ filterId }: Props) {
       </div>
 
       {/* ── Tab panel ── */}
-      <div className="fp-panel">
+      {panelOpen && <div className="fp-panel">
         {activeTab === 'columns' && (
           <ColumnPicker
             columns={columns}
@@ -342,7 +355,7 @@ export default function FilterPageClient({ filterId }: Props) {
             onChange={tcs => updateFilter({ templateColumns: tcs })}
           />
         )}
-      </div>
+      </div>}
 
       {/* ── Info bar ── */}
       <div

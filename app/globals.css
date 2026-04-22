@@ -199,7 +199,10 @@ tr {
 
 .main-content {
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* ===== SECTION ===== */
@@ -551,7 +554,9 @@ tr {
 
 /* ===== TABLE ===== */
 .table-container {
-  overflow-x: auto;
+  flex: 1;
+  min-height: 0;
+  overflow: scroll;
 }
 
 table {
@@ -1183,7 +1188,10 @@ tbody tr:not(.colored-row):hover td {
 /* ── Table area ── */
 .fp-table-area {
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* ===== RULE CARDS (color rules + formula columns) ===== */

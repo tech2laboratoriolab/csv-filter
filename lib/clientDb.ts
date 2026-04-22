@@ -50,6 +50,8 @@ export const COLUMNS: ColumnDef[] = [
   { name: "resultado", label: "Resultado", type: "text" },
   { name: "des_conclusao", label: "DesConclusao", type: "text" },
   { name: "qtdlam", label: "QtdLam", type: "number" },
+  { name: "dta_status", label: "DtaStatus", type: "date" },
+  { name: "nom_evento_status", label: "NomEventoStatus", type: "text" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};
@@ -503,6 +505,7 @@ export interface ColorCondition {
   operator: string;
   value: string;
   value2?: string;
+  valueIsColumn?: boolean;
 }
 
 export interface ColorRule {
@@ -765,12 +768,32 @@ export async function queryFiltered(
   pageSize = 50,
   sortColumn?: string,
   sortDir: "asc" | "desc" = "asc",
+  extraColumns: string[] = [],
 ) {
   const db = await getDb();
   const hasSpecificCols = selectedColumns.length > 0;
-  const cols = hasSpecificCols
+
+  // Columns needed for color rules but not displayed (only relevant when using GROUP BY)
+  const additionalCols = hasSpecificCols
+    ? extraColumns.filter((c) => !selectedColumns.includes(c))
+    : [];
+
+  const baseCols = hasSpecificCols
     ? selectedColumns.map((c) => `"${c}"`).join(", ")
     : "*";
+
+  // For GROUP BY path: aggregate extra cols with MIN() to avoid breaking deduplication
+  const colsGroupBy =
+    additionalCols.length > 0
+      ? `${baseCols}, ${additionalCols.map((c) => `MIN("${c}") as "${c}"`).join(", ")}`
+      : baseCols;
+
+  // For CTE path (no GROUP BY): include extra cols directly
+  const colsDirect =
+    additionalCols.length > 0
+      ? `${baseCols}, ${additionalCols.map((c) => `"${c}"`).join(", ")}`
+      : baseCols;
+
   const offset = (page - 1) * pageSize;
 
   // Separate unique_combination conditions — handled via CTE window function
@@ -808,7 +831,7 @@ export async function queryFiltered(
     const total = resTotal.length > 0 ? resTotal[0].values[0][0] : 0;
 
     const resRows = db.exec(
-      `${ctePart} SELECT ${cols}, id as _row_id FROM _windowed WHERE _combo_count = 1 ${orderBy} LIMIT ? OFFSET ?`,
+      `${ctePart} SELECT ${colsDirect}, id as _row_id FROM _windowed WHERE _combo_count = 1 ${orderBy} LIMIT ? OFFSET ?`,
       [...params, pageSize, offset],
     );
     const rows = resultToObjects(resRows);
@@ -818,7 +841,7 @@ export async function queryFiltered(
   const rowIdExpr = hasSpecificCols
     ? ", MIN(id) as _row_id"
     : ", id as _row_id";
-  const groupBy = hasSpecificCols ? `GROUP BY ${cols}` : "";
+  const groupBy = hasSpecificCols ? `GROUP BY ${baseCols}` : "";
   const orderBy = sortColumn
     ? `ORDER BY "${sortColumn}" ${sortDir}`
     : hasSpecificCols
@@ -833,7 +856,7 @@ export async function queryFiltered(
   const total = resTotal.length > 0 ? resTotal[0].values[0][0] : 0;
 
   const resRows = db.exec(
-    `SELECT ${cols}${rowIdExpr} FROM csv_data ${where} ${groupBy} ${orderBy} LIMIT ? OFFSET ?`,
+    `SELECT ${colsGroupBy}${rowIdExpr} FROM csv_data ${where} ${groupBy} ${orderBy} LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
   const rows = resultToObjects(resRows);
@@ -1542,4 +1565,32 @@ export async function getBioMolecularRows(
       return obj;
     }),
   };
+}
+
+// --- MySQL Enrichment Import ---
+export async function importMysqlEnrichment(
+  data: { cod_requisicao: string; dta_status: string; nom_evento_status: string }[],
+): Promise<{ updated: number }> {
+  if (data.length === 0) return { updated: 0 };
+  const db = await getDb();
+
+  let updated = 0;
+  db.run("BEGIN TRANSACTION;");
+  const stmt = db.prepare(
+    `UPDATE csv_data SET "dta_status" = ?, "nom_evento_status" = ? WHERE "cod_requisicao" = ?`,
+  );
+  for (const { cod_requisicao, dta_status, nom_evento_status } of data) {
+    stmt.run([dta_status, nom_evento_status, cod_requisicao]);
+    updated++;
+  }
+  stmt.free();
+  db.run("COMMIT;");
+
+  const idb = await getIdb();
+  if (idb) {
+    const snapshot = db.export();
+    await idb.put("csv_database", snapshot, "snapshot");
+  }
+
+  return { updated };
 }

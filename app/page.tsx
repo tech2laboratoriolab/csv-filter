@@ -11,10 +11,12 @@ import type {
   TemplateColumn,
 } from "@/lib/clientDb";
 import DataTable from "@/app/components/DataTable";
+import { colorRuleExtraColumns } from "@/lib/colorRules";
 import {
   importCSV,
   importVisualizacaoCSV,
   importPatologiaMolecularCSV,
+  importMysqlEnrichment,
   getTableStats,
   getSavedFilters,
   getDistinctValues,
@@ -100,6 +102,7 @@ export default function Home() {
   const fetchedCols = useRef<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const filterFileRef = useRef<HTMLInputElement>(null);
+  const csvUploadCount = useRef(0);
   const PAGE_SIZE = 50;
 
   // Init: load stats and saved filters
@@ -155,8 +158,13 @@ export default function Home() {
 
   // Evaluate lookup columns when rows/lookupColumns change
   useEffect(() => {
-    if (!lookupColumns.length || !rows.length) { setLookupValues([]); return; }
-    evaluateLookupColumns(rows, lookupColumns).then(setLookupValues).catch(() => setLookupValues([]));
+    if (!lookupColumns.length || !rows.length) {
+      setLookupValues([]);
+      return;
+    }
+    evaluateLookupColumns(rows, lookupColumns)
+      .then(setLookupValues)
+      .catch(() => setLookupValues([]));
   }, [rows, lookupColumns]);
 
   // Fetch annotation values when rows/annotationColumns change
@@ -181,16 +189,21 @@ export default function Home() {
       pg?: number,
       sCol?: string,
       sDir?: "asc" | "desc",
+      rules?: ColorRule[],
     ) => {
       setLoading(true);
       try {
+        const activeCols = cols ?? selectedCols;
+        const activeRules = rules !== undefined ? rules : colorRules;
+        const extraCols = colorRuleExtraColumns(activeRules, activeCols);
         const result = await queryFiltered(
-          cols ?? selectedCols,
+          activeCols,
           conds ?? conditions,
           pg ?? page,
           PAGE_SIZE,
           sCol ?? sortCol,
           sDir ?? sortDir,
+          extraCols,
         );
         setRows(result.rows || []);
         setTotal(Number(result.total) || 0);
@@ -200,7 +213,7 @@ export default function Home() {
         setLoading(false);
       }
     },
-    [selectedCols, conditions, page, sortCol, sortDir],
+    [selectedCols, conditions, page, sortCol, sortDir, colorRules],
   );
 
   // Upload
@@ -291,7 +304,29 @@ export default function Home() {
               if (rowCount > 0) msg += `${rowCount} linha(s) inserida(s). `;
               if (merged > 0) msg += `${merged} linha(s) mesclada(s). `;
               if (skipped > 0) msg += `${skipped} ignorada(s). `;
+
               if (msg) alert(msg.trim());
+
+              // Trigger MySQL enrichment after every 3rd CSV upload
+              csvUploadCount.current += 1;
+              if (csvUploadCount.current >= 3) {
+                csvUploadCount.current = 0;
+                try {
+                  const mysqlRes = await fetch("/api/mysql-enrich");
+                  const mysqlData = await mysqlRes.json();
+                  if (!mysqlRes.ok) {
+                    console.error("[MySQL enrich] API error:", mysqlData?.error);
+                  } else if (Array.isArray(mysqlData)) {
+                    console.log(`[MySQL enrich] ${mysqlData.length} registro(s) retornados`);
+                    if (mysqlData.length > 0) {
+                      const { updated } = await importMysqlEnrichment(mysqlData);
+                      console.log(`[MySQL enrich] ${updated} linha(s) atualizadas no banco local`);
+                    }
+                  }
+                } catch (err) {
+                  console.error("[MySQL enrich] Falha:", err);
+                }
+              }
             }
           } catch (e: any) {
             alert("Erro no upload: " + e.message);
@@ -421,16 +456,17 @@ export default function Home() {
   };
 
   const loadFilter = (f: SavedFilter) => {
+    const newColorRules = f.colorRules ?? [];
     setSelectedCols(f.selectedColumns);
     setConditions(f.conditions);
-    setColorRules(f.colorRules ?? []);
+    setColorRules(newColorRules);
     setFormulaColumns(f.formulaColumns ?? []);
     setAnnotationColumns(f.annotationColumns ?? []);
     setLookupColumns(f.lookupColumns ?? []);
     setTemplateColumns(f.templateColumns ?? []);
     setAnnotationValues({});
     setPage(1);
-    fetchData(f.selectedColumns, f.conditions, 1);
+    fetchData(f.selectedColumns, f.conditions, 1, undefined, undefined, newColorRules);
   };
 
   const handleAnnotationChange = (

@@ -26,7 +26,9 @@ function getConditions(rule: ColorRule): ColorCondition[] {
 function matchesCondition(row: Record<string, unknown>, cond: ColorCondition): boolean {
   const rawValue = row[cond.conditionColumn];
   const value = rawValue == null ? '' : String(rawValue);
-  const ruleVal = cond.value || '';
+  const ruleVal = cond.valueIsColumn
+    ? (row[cond.value] == null ? '' : String(row[cond.value]))
+    : (cond.value || '');
   const ruleVal2 = cond.value2 || '';
 
   switch (cond.operator) {
@@ -140,6 +142,22 @@ function matchesCondition(row: Record<string, unknown>, cond: ColorCondition): b
 
 function matchesRule(row: Record<string, unknown>, rule: ColorRule): boolean {
   return getConditions(rule).every(cond => matchesCondition(row, cond));
+}
+
+export function colorRuleExtraColumns(colorRules: ColorRule[], selectedColumns: string[]): string[] {
+  const cols = new Set<string>();
+  for (const rule of colorRules) {
+    const conds = rule.conditions && rule.conditions.length > 0
+      ? rule.conditions
+      : rule.conditionColumn
+        ? [{ conditionColumn: rule.conditionColumn, operator: rule.operator ?? 'equals', value: rule.value ?? '', valueIsColumn: false }]
+        : [];
+    for (const c of conds) {
+      if (c.conditionColumn) cols.add(c.conditionColumn);
+      if (c.valueIsColumn && c.value) cols.add(c.value);
+    }
+  }
+  return Array.from(cols).filter(c => !selectedColumns.includes(c));
 }
 
 export function evaluateColorRules(

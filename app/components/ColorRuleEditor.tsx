@@ -197,15 +197,35 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                           <option key={o.v} value={o.v}>{o.l}</option>
                         ))}
                       </select>
+                      {!noValue && !isDaysOffset && (
+                        <button
+                          className="btn btn-sm btn-ghost"
+                          title={cond.valueIsColumn ? 'Mudar para valor literal' : 'Comparar com outra coluna'}
+                          onClick={() => updateCondition(i, ci, 'valueIsColumn', !cond.valueIsColumn)}
+                          style={{ fontSize: 10, padding: '2px 6px', minWidth: 30 }}
+                        >
+                          {cond.valueIsColumn ? 'col' : 'val'}
+                        </button>
+                      )}
                       {!noValue && (
-                        <input
-                          type={isDaysOffset ? 'number' : condCol?.type === 'date' ? 'date' : 'text'}
-                          placeholder={isDaysOffset ? 'Nº de dias' : cond.operator === 'in' || cond.operator === 'not_in' ? 'val1,val2' : 'Valor'}
-                          min={isDaysOffset ? '0' : undefined}
-                          value={cond.value}
-                          onChange={e => updateCondition(i, ci, 'value', e.target.value)}
-                          className="rule-value-input"
-                        />
+                        cond.valueIsColumn && !isDaysOffset ? (
+                          <select
+                            value={cond.value}
+                            onChange={e => updateCondition(i, ci, 'value', e.target.value)}
+                            className="rule-value-input"
+                          >
+                            {columnOptions}
+                          </select>
+                        ) : (
+                          <input
+                            type={isDaysOffset ? 'number' : condCol?.type === 'date' ? 'date' : 'text'}
+                            placeholder={isDaysOffset ? 'Nº de dias' : cond.operator === 'in' || cond.operator === 'not_in' ? 'val1,val2' : 'Valor'}
+                            min={isDaysOffset ? '0' : undefined}
+                            value={cond.value}
+                            onChange={e => updateCondition(i, ci, 'value', e.target.value)}
+                            className="rule-value-input"
+                          />
+                        )
                       )}
                       {isBetween && (
                         <input
