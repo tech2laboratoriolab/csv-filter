@@ -480,6 +480,11 @@
             "value": "3"
           },
           {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_lte",
+            "value": "3"
+          },
+          {
             "conditionColumn": "nom_evento",
             "operator": "in",
             "value": "Admissão,Citologia - Coloração,Distribuição"
@@ -666,6 +671,11 @@
           {
             "conditionColumn": "dta_prevista",
             "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_lte",
             "value": "3"
           },
           {
@@ -1059,8 +1069,8 @@
     "conditions": [
       {
         "column": "nom_evento",
-        "operator": "not_contains",
-        "value": "Concluído - Laudo em Fotos"
+        "operator": "not_in",
+        "value": "Concluído - Laudo em Fotos,Laudo Concluído (Definitivo)"
       },
       {
         "column": "nom_exame",
@@ -1981,8 +1991,13 @@
   },
   {
     "id": "1745366400000",
-    "name": "coleta lab",
-    "selectedColumns": ["cod_requisicao", "nom_paciente", "nom_local_origem", "dta_solicitacao"],
+    "name": "COLETA LAB",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "nom_local_origem",
+      "dta_solicitacao"
+    ],
     "conditions": [
       {
         "column": "nom_evento",
