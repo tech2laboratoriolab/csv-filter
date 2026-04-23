@@ -1982,7 +1982,7 @@
   {
     "id": "1745366400000",
     "name": "coleta lab",
-    "selectedColumns": ["cod_requisicao", "nom_paciente", "dta_solicitacao"],
+    "selectedColumns": ["cod_requisicao", "nom_paciente", "nom_local_origem", "dta_solicitacao"],
     "conditions": [
       {
         "column": "nom_evento",
