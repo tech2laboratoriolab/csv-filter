@@ -1134,8 +1134,7 @@ export async function resetAllData(): Promise<void> {
     await idb.delete("csv_database", "snapshot");
     // Clear all filters
     await idb.clear("filters");
-    // Clear all annotations
-    await idb.clear("annotations");
+    // Annotations are intentionally preserved across resets
   }
 
   // Remove seed keys so defaults get re-seeded

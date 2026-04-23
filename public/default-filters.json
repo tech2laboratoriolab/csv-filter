@@ -1267,7 +1267,13 @@
       }
     ],
     "formulaColumns": [],
-    "annotationColumns": [],
+    "annotationColumns": [
+      {
+        "id": "ihq_annotation_obs",
+        "label": "Observação",
+        "width": 200
+      }
+    ],
     "lookupColumns": [
       {
         "id": "ihq_imuno_lookup",
