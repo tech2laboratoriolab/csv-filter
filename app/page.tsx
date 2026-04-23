@@ -14,7 +14,7 @@ import DataTable from "@/app/components/DataTable";
 import { colorRuleExtraColumns } from "@/lib/colorRules";
 import {
   importCSV,
-  importVisualizacaoCSV,
+  importLaudoCSVAsRows,
   importPatologiaMolecularCSV,
   importMysqlEnrichment,
   getTableStats,
@@ -245,24 +245,32 @@ export default function Home() {
               .map((h) => HEADER_MAP[h.trim().toLowerCase()])
               .filter(Boolean);
             const isVisualizacaoCSV =
-              mappedCols.includes("visualizacao") &&
-              mappedCols.every((c) =>
-                ["cod_requisicao", "visualizacao"].includes(c),
-              );
+              mappedCols.includes("laudo_macro") &&
+              mappedCols.includes("cod_requisicao");
 
             const isPatologiaMolecularCSV =
-              mappedCols.includes("conclusao") &&
+              mappedCols.includes("des_conclusao") &&
               mappedCols.includes("cod_requisicao");
 
             if (isVisualizacaoCSV) {
-              const { updated, skipped } = await importVisualizacaoCSV(
-                headers,
-                dataRows,
-              );
+              const allFiltersLaudo = await getSavedFilters();
+              const allowedColsLaudo =
+                allFiltersLaudo.length > 0
+                  ? deriveColumnsFromFilters(allFiltersLaudo)
+                  : new Set(COLUMNS.map((c) => c.name));
+
+              const { rowCount: laudoRows, skipped: laudoSkipped } =
+                await importLaudoCSVAsRows(headers, dataRows, allowedColsLaudo);
               setProgress(100);
-              alert(
-                `${updated} registro(s) atualizados com visualização${skipped > 0 ? ` (${skipped} não encontrados)` : ""}`,
-              );
+
+              const stats = await getTableStats();
+              setRowCount(Number(stats.total) || 0);
+              setMinDate(stats.minDate ? String(stats.minDate) : "");
+              setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
+
+              let msg = `${laudoRows} linha(s) inserida(s) do laudo.`;
+              if (laudoSkipped > 0) msg += ` ${laudoSkipped} ignorada(s).`;
+              alert(msg);
             } else if (isPatologiaMolecularCSV) {
               const { updated, skipped } = await importPatologiaMolecularCSV(
                 headers,
@@ -315,12 +323,20 @@ export default function Home() {
                   const mysqlRes = await fetch("/api/mysql-enrich");
                   const mysqlData = await mysqlRes.json();
                   if (!mysqlRes.ok) {
-                    console.error("[MySQL enrich] API error:", mysqlData?.error);
+                    console.error(
+                      "[MySQL enrich] API error:",
+                      mysqlData?.error,
+                    );
                   } else if (Array.isArray(mysqlData)) {
-                    console.log(`[MySQL enrich] ${mysqlData.length} registro(s) retornados`);
+                    console.log(
+                      `[MySQL enrich] ${mysqlData.length} registro(s) retornados`,
+                    );
                     if (mysqlData.length > 0) {
-                      const { updated } = await importMysqlEnrichment(mysqlData);
-                      console.log(`[MySQL enrich] ${updated} linha(s) atualizadas no banco local`);
+                      const { updated } =
+                        await importMysqlEnrichment(mysqlData);
+                      console.log(
+                        `[MySQL enrich] ${updated} linha(s) atualizadas no banco local`,
+                      );
                     }
                   }
                 } catch (err) {
@@ -466,7 +482,14 @@ export default function Home() {
     setTemplateColumns(f.templateColumns ?? []);
     setAnnotationValues({});
     setPage(1);
-    fetchData(f.selectedColumns, f.conditions, 1, undefined, undefined, newColorRules);
+    fetchData(
+      f.selectedColumns,
+      f.conditions,
+      1,
+      undefined,
+      undefined,
+      newColorRules,
+    );
   };
 
   const handleAnnotationChange = (

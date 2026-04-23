@@ -280,26 +280,26 @@ export async function importCSV(
 
       const codReqVal = codReqIdx >= 0 ? parsedValues[codReqIdx] : null;
 
-      if (
-        codReqVal != null &&
-        codReqVal !== "" &&
-        existingMap.has(String(codReqVal))
-      ) {
-        // Merge: SET all columns (direct overwrite) for every matching row
-        const ids = existingMap.get(String(codReqVal))!;
+      const codReqKey =
+        codReqVal != null && codReqVal !== "" ? String(codReqVal) : null;
+      const availableIds = codReqKey ? existingMap.get(codReqKey) : undefined;
+
+      if (availableIds && availableIds.length > 0) {
+        // Consume the first available existing id for this cod_requisicao.
+        // Subsequent rows with the same cod_requisicao (e.g. different NumPeca)
+        // will have no available id and fall through to INSERT.
+        const idToUpdate = availableIds.shift()!;
         const setValues = updateCols.map(
           (m) => parsedValues[colMapping.indexOf(m)],
         );
-
-        for (const id of ids) {
-          db.run(`UPDATE csv_data SET ${updateSetClause} WHERE id = ?`, [
-            ...setValues,
-            id,
-          ] as (string | number | null)[]);
-          merged++;
-        }
+        db.run(`UPDATE csv_data SET ${updateSetClause} WHERE id = ?`, [
+          ...setValues,
+          idToUpdate,
+        ] as (string | number | null)[]);
+        if (availableIds.length === 0) existingMap.delete(codReqKey!);
+        merged++;
       } else {
-        // Insert new row
+        // New cod_requisicao or all existing ids already consumed → insert
         insertStmt.run(parsedValues as (string | number | null)[]);
         imported++;
       }
@@ -321,8 +321,8 @@ export async function importCSV(
   return { rowCount: imported, merged, skipped };
 }
 
-// --- Visualizacao CSV Import (secondary CSV enrichment) ---
-export async function importVisualizacaoCSV(
+// --- Laudo CSV Import (csvlaudo enrichment — never overwrites main CSV key columns) ---
+export async function importLaudoCSV(
   headers: string[],
   rows: string[][],
 ): Promise<{ updated: number; skipped: number }> {
@@ -331,33 +331,71 @@ export async function importVisualizacaoCSV(
   const codReqIdx = headers.findIndex(
     (h) => HEADER_MAP[h.trim().toLowerCase()] === "cod_requisicao",
   );
-  const vizIdx = headers.findIndex(
-    (h) => HEADER_MAP[h.trim().toLowerCase()] === "visualizacao",
-  );
 
-  if (codReqIdx < 0 || vizIdx < 0) {
+  if (codReqIdx < 0) {
+    throw new Error("CSV de laudo precisa ter a coluna CodRequisicao");
+  }
+
+  // Columns that come from the main CSV and must NOT be overwritten by csvlaudo
+  const LAUDO_EXCLUDED = new Set([
+    "cod_requisicao",
+    "dta_prevista", // critical: filters biop/cito check dta_prevista IS NULL
+    "dta_solicitacao",
+    "dta_coleta",
+    "nom_exame",
+    "cod_exame",
+    "cod_evento",
+    "nom_evento",
+    "nom_evento_fatur",
+    "nom_convenio",
+    "nom_fonte_pagadora",
+    "nom_local_origem",
+    "nom_medico",
+    "nom_patologista",
+    "nom_paciente",
+    "dta_nascimento",
+    "sexo",
+    "nfereq",
+    "id_convenio",
+  ]);
+
+  const colMapping: { csvIndex: number; dbCol: string }[] = [];
+  headers.forEach((h, i) => {
+    const dbCol = HEADER_MAP[h.trim().toLowerCase()];
+    if (dbCol && !LAUDO_EXCLUDED.has(dbCol)) {
+      colMapping.push({ csvIndex: i, dbCol });
+    }
+  });
+
+  if (colMapping.length === 0) {
     throw new Error(
-      "CSV de visualização precisa ter colunas CodRequisicao e Visualizacao",
+      "Nenhuma coluna do CSV de laudo corresponde ao schema esperado",
     );
   }
+
+  const setClauses = colMapping.map((m) => `"${m.dbCol}" = ?`).join(", ");
 
   let updated = 0;
   let skipped = 0;
 
   db.run("BEGIN TRANSACTION;");
   const stmt = db.prepare(
-    `UPDATE csv_data SET "visualizacao" = ? WHERE "cod_requisicao" = ?`,
+    `UPDATE csv_data SET ${setClauses} WHERE "cod_requisicao" = ?`,
   );
 
   for (const row of rows) {
     try {
       const codReq = (row[codReqIdx] || "").trim();
-      const viz = (row[vizIdx] || "").trim();
       if (!codReq) {
         skipped++;
         continue;
       }
-      stmt.run([viz || null, codReq]);
+      const values = colMapping.map((m) => {
+        const raw = (row[m.csvIndex] ?? "").trim();
+        return raw === "" ? null : raw;
+      });
+      values.push(codReq);
+      stmt.run(values);
       if (db.getRowsModified() > 0) updated++;
       else skipped++;
     } catch {
@@ -375,6 +413,73 @@ export async function importVisualizacaoCSV(
   }
 
   return { updated, skipped };
+}
+
+// --- Laudo CSV Import as new rows (csvlaudo — insert all rows, 1-to-many) ---
+export async function importLaudoCSVAsRows(
+  headers: string[],
+  rows: string[][],
+  allowedColumns?: Set<string>,
+): Promise<{ rowCount: number; skipped: number }> {
+  const db = await getDb();
+
+  const colMapping: { csvIndex: number; dbCol: string; colDef: ColumnDef }[] =
+    [];
+  headers.forEach((h, i) => {
+    const key = h.trim().toLowerCase();
+    const dbName = HEADER_MAP[key];
+    if (dbName && (!allowedColumns || allowedColumns.has(dbName))) {
+      const colDef = COLUMNS.find((c) => c.name === dbName)!;
+      colMapping.push({ csvIndex: i, dbCol: dbName, colDef });
+    }
+  });
+
+  if (colMapping.length === 0) {
+    throw new Error(
+      "Nenhuma coluna do CSV de laudo corresponde ao schema esperado",
+    );
+  }
+
+  const dbCols = colMapping.map((m) => `"${m.dbCol}"`).join(", ");
+  const placeholders = colMapping.map(() => "?").join(", ");
+
+  let rowCount = 0;
+  let skipped = 0;
+
+  db.run("BEGIN TRANSACTION;");
+  const insertStmt = db.prepare(
+    `INSERT INTO csv_data (${dbCols}) VALUES (${placeholders})`,
+  );
+
+  for (const row of rows) {
+    try {
+      const parsedValues = colMapping.map((m) => {
+        const raw = (row[m.csvIndex] || "").trim();
+        if (!raw) return null;
+        if (m.colDef.type === "number") {
+          const num = parseFloat(raw.replace(",", "."));
+          return isNaN(num) ? null : num;
+        }
+        if (m.colDef.type === "date") return normalizeDateString(raw);
+        return raw;
+      });
+      insertStmt.run(parsedValues as (string | number | null)[]);
+      rowCount++;
+    } catch {
+      skipped++;
+    }
+  }
+
+  insertStmt.free();
+  db.run("COMMIT;");
+
+  const idb = await getIdb();
+  if (idb) {
+    const snapshot = db.export();
+    await idb.put("csv_database", snapshot, "snapshot");
+  }
+
+  return { rowCount, skipped };
 }
 
 // --- Patologia Molecular CSV Import (secondary CSV enrichment) ---
@@ -425,7 +530,10 @@ export async function importPatologiaMolecularCSV(
     );
   }
 
-  const setClauses = colMapping.map((m) => `"${m.dbCol}" = ?`).join(", ");
+  // Only fill in columns that are currently NULL — never overwrite existing values
+  const setClauses = colMapping
+    .map((m) => `"${m.dbCol}" = COALESCE("${m.dbCol}", ?)`)
+    .join(", ");
 
   let updated = 0;
   let skipped = 0;
@@ -591,7 +699,9 @@ export function deriveColumnsFromFilters(filters: SavedFilter[]): Set<string> {
     f.colorRules?.forEach((r) => {
       const conds = r.conditions?.length
         ? r.conditions
-        : r.conditionColumn ? [{ conditionColumn: r.conditionColumn }] : [];
+        : r.conditionColumn
+          ? [{ conditionColumn: r.conditionColumn }]
+          : [];
       conds.forEach((c) => {
         if (validNames.has(c.conditionColumn)) needed.add(c.conditionColumn);
       });
@@ -1569,7 +1679,11 @@ export async function getBioMolecularRows(
 
 // --- MySQL Enrichment Import ---
 export async function importMysqlEnrichment(
-  data: { cod_requisicao: string; dta_status: string; nom_evento_status: string }[],
+  data: {
+    cod_requisicao: string;
+    dta_status: string;
+    nom_evento_status: string;
+  }[],
 ): Promise<{ updated: number }> {
   if (data.length === 0) return { updated: 0 };
   const db = await getDb();
