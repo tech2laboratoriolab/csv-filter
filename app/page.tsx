@@ -102,7 +102,11 @@ export default function Home() {
   const fetchedCols = useRef<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const filterFileRef = useRef<HTMLInputElement>(null);
-  const csvUploadCount = useRef(0);
+  const [enrichToast, setEnrichToast] = useState<{
+    type: "loading" | "success" | "error";
+    msg: string;
+  } | null>(null);
+  const enrichToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const PAGE_SIZE = 50;
 
   // Init: load stats and saved filters
@@ -216,149 +220,179 @@ export default function Home() {
     [selectedCols, conditions, page, sortCol, sortDir, colorRules],
   );
 
-  // Upload
-  const handleUpload = useCallback(
-    (file: File) => {
-      setUploading(true);
-      setProgress(0);
-      const iv = setInterval(
-        () => setProgress((p) => Math.min(p + 3, 90)),
-        150,
-      );
+  // Always keep ref to latest fetchData to avoid stale closure in async handlers
+  const fetchDataRef = useRef<typeof fetchData>(fetchData);
+  useEffect(() => {
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
 
-      Papa.parse<string[]>(file, {
-        skipEmptyLines: true,
-        complete: async (results) => {
-          clearInterval(iv);
-          setProgress(95);
-          if (results.data.length < 2) {
-            setUploading(false);
-            alert("CSV precisa ter cabeçalho + dados");
-            return;
+  // Upload
+  const handleUpload = useCallback((file: File) => {
+    setUploading(true);
+    setProgress(0);
+    const iv = setInterval(() => setProgress((p) => Math.min(p + 3, 90)), 150);
+
+    Papa.parse<string[]>(file, {
+      skipEmptyLines: true,
+      complete: async (results) => {
+        clearInterval(iv);
+        setProgress(95);
+        if (results.data.length < 2) {
+          setUploading(false);
+          alert("CSV precisa ter cabeçalho + dados");
+          return;
+        }
+
+        try {
+          const headers = results.data[0];
+          const dataRows = results.data.slice(1);
+
+          const mappedCols = headers
+            .map((h) => HEADER_MAP[h.trim().toLowerCase()])
+            .filter(Boolean);
+          const isVisualizacaoCSV =
+            mappedCols.includes("laudo_macro") &&
+            mappedCols.includes("cod_requisicao");
+
+          const isPatologiaMolecularCSV =
+            mappedCols.includes("des_conclusao") &&
+            mappedCols.includes("cod_requisicao");
+
+          if (isVisualizacaoCSV) {
+            const allFiltersLaudo = await getSavedFilters();
+            const allowedColsLaudo =
+              allFiltersLaudo.length > 0
+                ? deriveColumnsFromFilters(allFiltersLaudo)
+                : new Set(COLUMNS.map((c) => c.name));
+
+            const { rowCount: laudoRows, skipped: laudoSkipped } =
+              await importLaudoCSVAsRows(headers, dataRows, allowedColsLaudo);
+            setProgress(100);
+
+            const stats = await getTableStats();
+            setRowCount(Number(stats.total) || 0);
+            setMinDate(stats.minDate ? String(stats.minDate) : "");
+            setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
+
+            await fetchDataRef.current();
+            let msg = `${laudoRows} linha(s) inserida(s) do laudo.`;
+            if (laudoSkipped > 0) msg += ` ${laudoSkipped} ignorada(s).`;
+            alert(msg);
+          } else if (isPatologiaMolecularCSV) {
+            const { updated, skipped } = await importPatologiaMolecularCSV(
+              headers,
+              dataRows,
+            );
+            setProgress(100);
+
+            const statsPatologia = await getTableStats();
+            setRowCount(Number(statsPatologia.total) || 0);
+            setMinDate(
+              statsPatologia.minDate ? String(statsPatologia.minDate) : "",
+            );
+            setMaxDate(
+              statsPatologia.maxDate ? String(statsPatologia.maxDate) : "",
+            );
+
+            await fetchDataRef.current();
+            alert(
+              `${updated} registro(s) atualizados com dados moleculares${skipped > 0 ? ` (${skipped} não encontrados)` : ""}`,
+            );
+          } else {
+            const allFilters = await getSavedFilters();
+            const allowedCols =
+              allFilters.length > 0
+                ? deriveColumnsFromFilters(allFilters)
+                : new Set(COLUMNS.map((c) => c.name));
+
+            const { rowCount, merged, skipped } = await importCSV(
+              headers,
+              dataRows,
+              allowedCols,
+            );
+
+            setSavedFilters(allFilters);
+            setProgress(100);
+
+            const stats = await getTableStats();
+            setRowCount(Number(stats.total) || 0);
+            setMinDate(stats.minDate ? String(stats.minDate) : "");
+            setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
+
+            const colsToShow = Array.from(allowedCols);
+            setSelectedCols(colsToShow);
+            setConditions([]);
+            setPage(1);
+            await fetchDataRef.current(colsToShow, [], 1);
+
+            track("csv_upload", { rows: rowCount, merged, skipped });
+            let msg = "";
+            if (rowCount > 0) msg += `${rowCount} linha(s) inserida(s). `;
+            if (merged > 0) msg += `${merged} linha(s) mesclada(s). `;
+            if (skipped > 0) msg += `${skipped} ignorada(s). `;
+
+            if (msg) alert(msg.trim());
           }
 
+          // Trigger MySQL enrichment on every CSV upload
+          const showToast = (
+            type: "loading" | "success" | "error",
+            msg: string,
+            autoDismiss = false,
+          ) => {
+            if (enrichToastTimer.current)
+              clearTimeout(enrichToastTimer.current);
+            setEnrichToast({ type, msg });
+            if (autoDismiss) {
+              enrichToastTimer.current = setTimeout(
+                () => setEnrichToast(null),
+                4000,
+              );
+            }
+          };
+          showToast("loading", "Sincronizando com banco remoto...");
           try {
-            const headers = results.data[0];
-            const dataRows = results.data.slice(1);
-
-            const mappedCols = headers
-              .map((h) => HEADER_MAP[h.trim().toLowerCase()])
-              .filter(Boolean);
-            const isVisualizacaoCSV =
-              mappedCols.includes("laudo_macro") &&
-              mappedCols.includes("cod_requisicao");
-
-            const isPatologiaMolecularCSV =
-              mappedCols.includes("des_conclusao") &&
-              mappedCols.includes("cod_requisicao");
-
-            if (isVisualizacaoCSV) {
-              const allFiltersLaudo = await getSavedFilters();
-              const allowedColsLaudo =
-                allFiltersLaudo.length > 0
-                  ? deriveColumnsFromFilters(allFiltersLaudo)
-                  : new Set(COLUMNS.map((c) => c.name));
-
-              const { rowCount: laudoRows, skipped: laudoSkipped } =
-                await importLaudoCSVAsRows(headers, dataRows, allowedColsLaudo);
-              setProgress(100);
-
-              const stats = await getTableStats();
-              setRowCount(Number(stats.total) || 0);
-              setMinDate(stats.minDate ? String(stats.minDate) : "");
-              setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
-
-              let msg = `${laudoRows} linha(s) inserida(s) do laudo.`;
-              if (laudoSkipped > 0) msg += ` ${laudoSkipped} ignorada(s).`;
-              alert(msg);
-            } else if (isPatologiaMolecularCSV) {
-              const { updated, skipped } = await importPatologiaMolecularCSV(
-                headers,
-                dataRows,
+            const mysqlRes = await fetch("/api/mysql-enrich");
+            const mysqlData = await mysqlRes.json();
+            if (!mysqlRes.ok) {
+              console.error("[MySQL enrich] API error:", mysqlData?.error);
+              showToast("error", "Falha ao sincronizar com banco remoto", true);
+            } else if (Array.isArray(mysqlData)) {
+              console.log(
+                `[MySQL enrich] ${mysqlData.length} registro(s) retornados`,
               );
-              setProgress(100);
-              alert(
-                `${updated} registro(s) atualizados com dados moleculares${skipped > 0 ? ` (${skipped} não encontrados)` : ""}`,
-              );
-            } else {
-              const allFilters = await getSavedFilters();
-              const allowedCols =
-                allFilters.length > 0
-                  ? deriveColumnsFromFilters(allFilters)
-                  : new Set(COLUMNS.map((c) => c.name));
-
-              const { rowCount, merged, skipped } = await importCSV(
-                headers,
-                dataRows,
-                allowedCols,
-              );
-
-              setSavedFilters(allFilters);
-              setProgress(100);
-
-              const stats = await getTableStats();
-              setRowCount(Number(stats.total) || 0);
-              setMinDate(stats.minDate ? String(stats.minDate) : "");
-              setMaxDate(stats.maxDate ? String(stats.maxDate) : "");
-
-              const colsToShow = Array.from(allowedCols);
-              setSelectedCols(colsToShow);
-              setConditions([]);
-              setPage(1);
-              fetchData(colsToShow, [], 1);
-
-              track("csv_upload", { rows: rowCount, merged, skipped });
-              let msg = "";
-              if (rowCount > 0) msg += `${rowCount} linha(s) inserida(s). `;
-              if (merged > 0) msg += `${merged} linha(s) mesclada(s). `;
-              if (skipped > 0) msg += `${skipped} ignorada(s). `;
-
-              if (msg) alert(msg.trim());
-
-              // Trigger MySQL enrichment after every 3rd CSV upload
-              csvUploadCount.current += 1;
-              if (csvUploadCount.current >= 3) {
-                csvUploadCount.current = 0;
-                try {
-                  const mysqlRes = await fetch("/api/mysql-enrich");
-                  const mysqlData = await mysqlRes.json();
-                  if (!mysqlRes.ok) {
-                    console.error(
-                      "[MySQL enrich] API error:",
-                      mysqlData?.error,
-                    );
-                  } else if (Array.isArray(mysqlData)) {
-                    console.log(
-                      `[MySQL enrich] ${mysqlData.length} registro(s) retornados`,
-                    );
-                    if (mysqlData.length > 0) {
-                      const { updated } =
-                        await importMysqlEnrichment(mysqlData);
-                      console.log(
-                        `[MySQL enrich] ${updated} linha(s) atualizadas no banco local`,
-                      );
-                    }
-                  }
-                } catch (err) {
-                  console.error("[MySQL enrich] Falha:", err);
-                }
+              if (mysqlData.length > 0) {
+                const { updated } = await importMysqlEnrichment(mysqlData);
+                console.log(
+                  `[MySQL enrich] ${updated} linha(s) atualizadas no banco local`,
+                );
+                await fetchDataRef.current();
+                showToast(
+                  "success",
+                  `${updated} registro(s) sincronizados do banco remoto`,
+                  true,
+                );
+              } else {
+                showToast("success", "Banco remoto sem atualizações", true);
               }
             }
-          } catch (e: any) {
-            alert("Erro no upload: " + e.message);
-          } finally {
-            setUploading(false);
+          } catch (err) {
+            console.error("[MySQL enrich] Falha:", err);
+            showToast("error", "Falha ao sincronizar com banco remoto", true);
           }
-        },
-        error: (err) => {
-          clearInterval(iv);
-          alert("Erro ao ler arquivo: " + err.message);
+        } catch (e: any) {
+          alert("Erro no upload: " + e.message);
+        } finally {
           setUploading(false);
-        },
-      });
-    },
-    [fetchData],
-  );
+        }
+      },
+      error: (err) => {
+        clearInterval(iv);
+        alert("Erro ao ler arquivo: " + err.message);
+        setUploading(false);
+      },
+    });
+  }, []);
 
   // Column toggle
   const toggleCol = (name: string) => {
@@ -635,6 +669,24 @@ export default function Home() {
 
   return (
     <div className="app">
+      {enrichToast && (
+        <div className={`enrich-toast enrich-toast--${enrichToast.type}`}>
+          <span className="enrich-toast__icon">
+            {enrichToast.type === "loading"
+              ? "🔄"
+              : enrichToast.type === "success"
+                ? "✅"
+                : "⚠️"}
+          </span>
+          <span className="enrich-toast__msg">{enrichToast.msg}</span>
+          <button
+            className="enrich-toast__close"
+            onClick={() => setEnrichToast(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
       {/* ===== SIDEBAR ===== */}
       <div className="sidebar">
         <div className="sidebar-header">
