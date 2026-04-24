@@ -324,6 +324,17 @@
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
         "priority": 9
+      },
+      {
+        "id": "color_biop_cod_evento_58",
+        "name": "Evento 58",
+        "targetType": "row",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "58",
+        "backgroundColor": "#39ff14",
+        "textColor": "#000000",
+        "priority": 10
       }
     ],
     "formulaColumns": [],
@@ -519,6 +530,17 @@
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
         "priority": 9
+      },
+      {
+        "id": "color_cito_liq_cod_evento_58",
+        "name": "Evento 58",
+        "targetType": "row",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "58",
+        "backgroundColor": "#39ff14",
+        "textColor": "#000000",
+        "priority": 10
       }
     ],
     "formulaColumns": [],
@@ -713,6 +735,17 @@
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
         "priority": 9
+      },
+      {
+        "id": "color_cito_ml_cod_evento_58",
+        "name": "Evento 58",
+        "targetType": "row",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "58",
+        "backgroundColor": "#39ff14",
+        "textColor": "#000000",
+        "priority": 10
       }
     ],
     "formulaColumns": [],
@@ -909,6 +942,17 @@
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
         "priority": 10
+      },
+      {
+        "id": "color_cap_cod_evento_58",
+        "name": "Evento 58",
+        "targetType": "row",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "58",
+        "backgroundColor": "#39ff14",
+        "textColor": "#000000",
+        "priority": 11
       }
     ],
     "formulaColumns": [],
@@ -1179,6 +1223,17 @@
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
         "priority": 5
+      },
+      {
+        "id": "color_imuno_cod_evento_58",
+        "name": "Evento 58",
+        "targetType": "row",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "58",
+        "backgroundColor": "#39ff14",
+        "textColor": "#000000",
+        "priority": 6
       }
     ],
     "formulaColumns": [],
