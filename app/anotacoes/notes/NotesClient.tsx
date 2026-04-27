@@ -110,7 +110,7 @@ export default function NotesClient() {
         boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
         flexShrink: 0,
       }}>
-        <Link href="/" style={{ color: 'var(--text-3)', textDecoration: 'none', fontSize: 13 }}>
+        <Link href="/anotacoes" style={{ color: 'var(--text-3)', textDecoration: 'none', fontSize: 13 }}>
           ← Voltar
         </Link>
         <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-0)' }}>

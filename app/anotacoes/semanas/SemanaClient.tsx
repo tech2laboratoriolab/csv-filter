@@ -247,7 +247,7 @@ export default function SemanaClient() {
         flexWrap: 'wrap',
       }}>
         {/* Left: back + title */}
-        <Link href="/" style={{ color: 'var(--text-3)', textDecoration: 'none', fontSize: 13 }}>
+        <Link href="/anotacoes" style={{ color: 'var(--text-3)', textDecoration: 'none', fontSize: 13 }}>
           ← Voltar
         </Link>
         <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-0)' }}>
