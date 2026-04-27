@@ -52,6 +52,7 @@ export const COLUMNS: ColumnDef[] = [
   { name: "qtdlam", label: "QtdLam", type: "number" },
   { name: "dta_status", label: "DtaStatus", type: "date" },
   { name: "nom_evento_status", label: "NomEventoStatus", type: "text" },
+  { name: "cod_prioridade", label: "CodPrioridade", type: "text" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};
@@ -1136,7 +1137,7 @@ export async function exportFilteredCSV(
 }
 
 // --- IndexedDB: Filters ---
-const SEED_KEY = "csv-filter-defaults-seeded-v9";
+const SEED_KEY = "csv-filter-defaults-seeded-v10";
 
 // --- Reset All Data ---
 export async function resetAllData(): Promise<void> {
@@ -1707,6 +1708,7 @@ export async function importMysqlEnrichment(
     cod_requisicao: string;
     dta_status: string;
     nom_evento_status: string;
+    cod_prioridade: string;
   }[],
 ): Promise<{ updated: number }> {
   if (data.length === 0) return { updated: 0 };
@@ -1715,10 +1717,10 @@ export async function importMysqlEnrichment(
   let updated = 0;
   db.run("BEGIN TRANSACTION;");
   const stmt = db.prepare(
-    `UPDATE csv_data SET "dta_status" = ?, "nom_evento_status" = ? WHERE "cod_requisicao" = ?`,
+    `UPDATE csv_data SET "dta_status" = ?, "nom_evento_status" = ?, "cod_prioridade" = ? WHERE "cod_requisicao" = ?`,
   );
-  for (const { cod_requisicao, dta_status, nom_evento_status } of data) {
-    stmt.run([dta_status, nom_evento_status, cod_requisicao]);
+  for (const { cod_requisicao, dta_status, nom_evento_status, cod_prioridade } of data) {
+    stmt.run([dta_status, nom_evento_status, cod_prioridade, cod_requisicao]);
     updated++;
   }
   stmt.free();

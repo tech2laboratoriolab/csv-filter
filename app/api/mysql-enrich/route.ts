@@ -25,6 +25,7 @@ SELECT * FROM (
         TRIM(SUBSTRING(u.Evento, LOCATE('Para:', u.Evento) + 5)) AS evento,
         r.CodRequisicao,
         r.DtaSolicitacao,
+        r.CodPrioridade,
         ROW_NUMBER() OVER (
             PARTITION BY r.CodRequisicao
             ORDER BY r.DtaSolicitacao DESC, u.NumEvento DESC
@@ -69,12 +70,13 @@ export async function GET() {
     // Keep only the last row per CodRequisicao (query is ordered ASC, so last = most recent)
     const dedupMap = new Map<
       string,
-      { dta_status: string; nom_evento_status: string }
+      { dta_status: string; nom_evento_status: string; cod_prioridade: string }
     >();
     for (const row of rows as {
       evento: string;
       CodRequisicao: string;
       DtaSolicitacao: string | Date;
+      CodPrioridade?: string | number;
     }[]) {
       if (row.CodRequisicao && row.DtaSolicitacao) {
         const raw = row.DtaSolicitacao;
@@ -85,6 +87,7 @@ export async function GET() {
         dedupMap.set(String(row.CodRequisicao), {
           dta_status: iso,
           nom_evento_status: row.evento ?? "",
+          cod_prioridade: String(row.CodPrioridade ?? ""),
         });
       }
     }
@@ -94,6 +97,7 @@ export async function GET() {
         cod_requisicao,
         dta_status: v.dta_status,
         nom_evento_status: v.nom_evento_status,
+        cod_prioridade: v.cod_prioridade,
       }),
     );
 

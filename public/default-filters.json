@@ -37,6 +37,18 @@
     "updatedAt": "2026-03-19T12:32:15.518Z",
     "colorRules": [
       {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
+      {
         "id": "17733162881470.13836697637247597",
         "name": "Regra 1",
         "targetType": "cell",
@@ -183,6 +195,18 @@
     "createdAt": "2026-03-04T18:40:10.696Z",
     "updatedAt": "2026-03-19T12:32:15.521Z",
     "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
       {
         "id": "17726525839140.2616239091910396",
         "name": "Regra 2",
@@ -385,6 +409,18 @@
     "createdAt": "2026-04-14T00:00:00.000Z",
     "updatedAt": "2026-04-14T00:00:00.000Z",
     "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
       {
         "id": "17724614190940.36787949209356696",
         "name": "Regra 1",
@@ -591,6 +627,18 @@
     "updatedAt": "2026-03-19T12:32:15.522Z",
     "colorRules": [
       {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
+      {
         "id": "17724614190940.36787949209356696",
         "name": "Regra 1",
         "targetType": "cell",
@@ -790,6 +838,18 @@
     "createdAt": "2026-03-05T12:37:57.920Z",
     "updatedAt": "2026-03-19T12:32:15.521Z",
     "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
       {
         "id": "17727443239420.20981534229568677",
         "name": "Regra 1",
@@ -1007,6 +1067,18 @@
     "updatedAt": "2026-03-19T12:32:15.519Z",
     "colorRules": [
       {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
+      {
         "id": "17731630034800.5860937796585116",
         "name": "Regra 1",
         "targetType": "cell",
@@ -1130,6 +1202,18 @@
     "createdAt": "2026-03-06T14:41:39.928Z",
     "updatedAt": "2026-03-19T12:32:15.520Z",
     "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
       {
         "id": "17733165216350.5520487987428974",
         "name": "Regra 2",
@@ -1296,6 +1380,18 @@
     "createdAt": "2026-03-23T00:00:00.000Z",
     "updatedAt": "2026-03-23T00:00:00.000Z",
     "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
       {
         "id": "17743000000001.ihq_pendente",
         "name": "IMUNO Pendente",
@@ -1496,6 +1592,18 @@
     "updatedAt": "2026-03-19T12:32:15.520Z",
     "colorRules": [
       {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
+      {
         "id": "17730820643320.2973617643266665",
         "name": "Foi enviado",
         "targetType": "cell",
@@ -1595,6 +1703,18 @@
       }
     ],
     "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
       {
         "id": "molpos_color_1",
         "name": "Regra 1",
@@ -1697,7 +1817,20 @@
     ],
     "createdAt": "2026-03-06T11:53:25.870Z",
     "updatedAt": "2026-03-31T00:00:00.000Z",
-    "colorRules": [],
+    "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      }
+    ],
     "formulaColumns": [],
     "annotationColumns": [
       {
@@ -1945,6 +2078,20 @@
         "value": "nom_medico"
       }
     ],
+    "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      }
+    ],
     "annotationColumns": [
       {
         "id": "default_erros_cadastro_ann_historico",
@@ -2003,6 +2150,18 @@
     "createdAt": "2026-04-01T00:00:00.000Z",
     "updatedAt": "2026-04-01T00:00:00.000Z",
     "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
       {
         "id": "dn_color_sexo",
         "name": "Sexo vazio",
@@ -2066,7 +2225,20 @@
         "value": "Disponível para Coleta do LAB"
       }
     ],
-    "colorRules": [],
+    "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ffb6c1",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      }
+    ],
     "formulaColumns": [],
     "annotationColumns": [
       {
