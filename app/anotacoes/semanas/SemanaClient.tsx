@@ -100,7 +100,7 @@ export default function SemanaClient() {
   useEffect(() => {
     Promise.all([
       fetch('/api/patologistas').then(r => r.json()),
-      fetch('/api/semanas?list=true').then(r => r.json()),
+      fetch('/api/anotacoes/semanas?list=true').then(r => r.json()),
     ]).then(([pats, sems]: [Patologista[], string[]]) => {
       setPatologistas(pats);
       setSemanas(sems);
@@ -113,7 +113,7 @@ export default function SemanaClient() {
   const loadWeek = useCallback(async (wk: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/semanas?week=${wk}`);
+      const res = await fetch(`/api/anotacoes/semanas?week=${wk}`);
       const raw = await res.json();
       const normalized: SemanaData = {
         weekKey: raw.weekKey,
@@ -161,7 +161,7 @@ export default function SemanaClient() {
     if (!toSave) return;
     setSaving(true);
     try {
-      await fetch('/api/semanas', {
+      await fetch('/api/anotacoes/semanas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...toSave, weekKey: weekKeyRef.current }),
@@ -169,7 +169,7 @@ export default function SemanaClient() {
       track("schedule_saved", { week: weekKeyRef.current });
       setSavedOk(true);
       setTimeout(() => setSavedOk(false), 2500);
-      const sems: string[] = await fetch('/api/semanas?list=true').then(r => r.json());
+      const sems: string[] = await fetch('/api/anotacoes/semanas?list=true').then(r => r.json());
       setSemanas(sems);
     } finally {
       setSaving(false);

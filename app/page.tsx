@@ -690,9 +690,11 @@ export default function Home() {
       {/* ===== SIDEBAR ===== */}
       <div className="sidebar">
         <div className="sidebar-header">
-          <div className="logo">LAB SHEETS</div>
+          <div className="logo" style={{ textAlign: "center" }}>
+            LAB SHEETS
+          </div>
           <a
-            href="/semanas"
+            href="/anotacoes"
             style={{
               display: "flex",
               alignItems: "center",
@@ -709,7 +711,7 @@ export default function Home() {
               whiteSpace: "nowrap",
             }}
           >
-            🗓 Escala
+            📋 Anotações
           </a>
           <a
             href="/whatsapp"
