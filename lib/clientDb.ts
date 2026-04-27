@@ -871,6 +871,13 @@ function buildWhereClause(conditions: FilterCondition[]): {
   return { sql: `WHERE ${andClauses.join(" AND ")}`, params };
 }
 
+// Columns that should fall back to an alternative column when NULL.
+// Used in SELECT/GROUP BY to transparently show the fallback value.
+const COLUMN_FALLBACKS: Record<string, string> = {
+  local_origem: "nom_local_origem",
+  patologista: "nom_patologista",
+};
+
 export async function queryFiltered(
   selectedColumns: string[],
   conditions: FilterCondition[],
@@ -888,21 +895,39 @@ export async function queryFiltered(
     ? extraColumns.filter((c) => !selectedColumns.includes(c))
     : [];
 
-  const baseCols = hasSpecificCols
-    ? selectedColumns.map((c) => `"${c}"`).join(", ")
+  // GROUP BY expressions: use COALESCE for columns with a fallback (no alias needed)
+  const baseColsGroupBy = hasSpecificCols
+    ? selectedColumns
+        .map((c) =>
+          COLUMN_FALLBACKS[c] && !selectedColumns.includes(COLUMN_FALLBACKS[c])
+            ? `COALESCE("${c}", "${COLUMN_FALLBACKS[c]}")`
+            : `"${c}"`,
+        )
+        .join(", ")
+    : "";
+
+  // SELECT expressions: COALESCE with alias so the result column keeps its original name
+  const baseColsSelect = hasSpecificCols
+    ? selectedColumns
+        .map((c) =>
+          COLUMN_FALLBACKS[c] && !selectedColumns.includes(COLUMN_FALLBACKS[c])
+            ? `COALESCE("${c}", "${COLUMN_FALLBACKS[c]}") as "${c}"`
+            : `"${c}"`,
+        )
+        .join(", ")
     : "*";
 
   // For GROUP BY path: aggregate extra cols with MIN() to avoid breaking deduplication
   const colsGroupBy =
     additionalCols.length > 0
-      ? `${baseCols}, ${additionalCols.map((c) => `MIN("${c}") as "${c}"`).join(", ")}`
-      : baseCols;
+      ? `${baseColsSelect}, ${additionalCols.map((c) => `MIN("${c}") as "${c}"`).join(", ")}`
+      : baseColsSelect;
 
   // For CTE path (no GROUP BY): include extra cols directly
   const colsDirect =
     additionalCols.length > 0
-      ? `${baseCols}, ${additionalCols.map((c) => `"${c}"`).join(", ")}`
-      : baseCols;
+      ? `${baseColsSelect}, ${additionalCols.map((c) => `"${c}"`).join(", ")}`
+      : baseColsSelect;
 
   const offset = (page - 1) * pageSize;
 
@@ -951,7 +976,7 @@ export async function queryFiltered(
   const rowIdExpr = hasSpecificCols
     ? ", MIN(id) as _row_id"
     : ", id as _row_id";
-  const groupBy = hasSpecificCols ? `GROUP BY ${baseCols}` : "";
+  const groupBy = hasSpecificCols ? `GROUP BY ${baseColsGroupBy}` : "";
   const orderBy = sortColumn
     ? `ORDER BY "${sortColumn}" ${sortDir}`
     : hasSpecificCols
