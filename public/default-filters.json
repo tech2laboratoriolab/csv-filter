@@ -368,7 +368,7 @@
   },
   {
     "id": "imported_1773923535522_7b",
-    "name": "CITO (de líquido)",
+    "name": "Citologia de liquidos",
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
@@ -586,7 +586,7 @@
   },
   {
     "id": "imported_1773923535522_7a",
-    "name": "CITO (meio líquido)",
+    "name": "Citologia Oncótica em meio líquido",
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
@@ -803,7 +803,7 @@
   },
   {
     "id": "imported_1773923535521_5",
-    "name": "CAP",
+    "name": "Biologia Molecular",
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
@@ -1021,7 +1021,7 @@
   },
   {
     "id": "imported_1773923535519_1",
-    "name": "CAP (Biologia Molecular)",
+    "name": "Biologia Molecular - exames específicos",
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
