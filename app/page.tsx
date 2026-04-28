@@ -80,6 +80,7 @@ export default function Home() {
   const [minDate, setMinDate] = useState("");
   const [maxDate, setMaxDate] = useState("");
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
+  const [activeFilterId, setActiveFilterId] = useState<string | null>(null);
   const [showSave, setShowSave] = useState(false);
   const [filterName, setFilterName] = useState("");
   const [filterDesc, setFilterDesc] = useState("");
@@ -259,14 +260,12 @@ export default function Home() {
             mappedCols.includes("cod_requisicao");
 
           if (isVisualizacaoCSV) {
-            const allFiltersLaudo = await getSavedFilters();
-            const allowedColsLaudo =
-              allFiltersLaudo.length > 0
-                ? deriveColumnsFromFilters(allFiltersLaudo)
-                : new Set(COLUMNS.map((c) => c.name));
-
+            // Import all recognized csvlaudo columns unconditionally.
+            // Restricting by allowedCols would silently drop columns (e.g.
+            // fonte_pagadora) when the corresponding filter wasn't seeded yet,
+            // causing filters like DN to return zero results.
             const { rowCount: laudoRows, skipped: laudoSkipped } =
-              await importLaudoCSVAsRows(headers, dataRows, allowedColsLaudo);
+              await importLaudoCSVAsRows(headers, dataRows);
             setProgress(100);
 
             const stats = await getTableStats();
@@ -436,6 +435,7 @@ export default function Home() {
 
   const clearFilters = () => {
     track("filter_cleared");
+    setActiveFilterId(null);
     setConditions([]);
     setPage(1);
     fetchData(selectedCols, [], 1, sortCol, sortDir);
@@ -506,6 +506,7 @@ export default function Home() {
   };
 
   const loadFilter = (f: SavedFilter) => {
+    setActiveFilterId(f.id);
     const newColorRules = f.colorRules ?? [];
     setSelectedCols(f.selectedColumns);
     setConditions(f.conditions);
@@ -567,6 +568,7 @@ export default function Home() {
     setAnnotationColumns([]);
     setTemplateColumns([]);
     setAnnotationValues({});
+    setActiveFilterId(null);
     setPage(1);
     setSortCol(undefined);
     setSortDir("asc");
@@ -1033,7 +1035,7 @@ export default function Home() {
                   {savedFilters.map((f) => (
                     <div
                       key={f.id}
-                      className="saved-item"
+                      className={`saved-item${activeFilterId === f.id ? " saved-item--active" : ""}`}
                       onClick={() => loadFilter(f)}
                     >
                       <div>
