@@ -333,7 +333,7 @@ export default function Home() {
             if (msg) alert(msg.trim());
           }
 
-          // Trigger MySQL enrichment on every CSV upload
+          // Trigger MySQL enrichment only for patologia_molecular files
           const showToast = (
             type: "loading" | "success" | "error",
             msg: string,
@@ -349,35 +349,41 @@ export default function Home() {
               );
             }
           };
-          showToast("loading", "Sincronizando com banco remoto...");
-          try {
-            const mysqlRes = await fetch("/api/mysql-enrich");
-            const mysqlData = await mysqlRes.json();
-            if (!mysqlRes.ok) {
-              console.error("[MySQL enrich] API error:", mysqlData?.error);
-              showToast("error", "Falha ao sincronizar com banco remoto", true);
-            } else if (Array.isArray(mysqlData)) {
-              console.log(
-                `[MySQL enrich] ${mysqlData.length} registro(s) retornados`,
-              );
-              if (mysqlData.length > 0) {
-                const { updated } = await importMysqlEnrichment(mysqlData);
-                console.log(
-                  `[MySQL enrich] ${updated} linha(s) atualizadas no banco local`,
-                );
-                await fetchDataRef.current();
+          if (file.name.startsWith("patologia_molecular")) {
+            showToast("loading", "Sincronizando com banco remoto...");
+            try {
+              const mysqlRes = await fetch("/api/mysql-enrich");
+              const mysqlData = await mysqlRes.json();
+              if (!mysqlRes.ok) {
+                console.error("[MySQL enrich] API error:", mysqlData?.error);
                 showToast(
-                  "success",
-                  `${updated} registro(s) sincronizados do banco remoto`,
+                  "error",
+                  "Falha ao sincronizar com banco remoto",
                   true,
                 );
-              } else {
-                showToast("success", "Banco remoto sem atualizações", true);
+              } else if (Array.isArray(mysqlData)) {
+                console.log(
+                  `[MySQL enrich] ${mysqlData.length} registro(s) retornados`,
+                );
+                if (mysqlData.length > 0) {
+                  const { updated } = await importMysqlEnrichment(mysqlData);
+                  console.log(
+                    `[MySQL enrich] ${updated} linha(s) atualizadas no banco local`,
+                  );
+                  await fetchDataRef.current();
+                  showToast(
+                    "success",
+                    `${updated} registro(s) sincronizados do banco remoto`,
+                    true,
+                  );
+                } else {
+                  showToast("success", "Banco remoto sem atualizações", true);
+                }
               }
+            } catch (err) {
+              console.error("[MySQL enrich] Falha:", err);
+              showToast("error", "Falha ao sincronizar com banco remoto", true);
             }
-          } catch (err) {
-            console.error("[MySQL enrich] Falha:", err);
-            showToast("error", "Falha ao sincronizar com banco remoto", true);
           }
         } catch (e: any) {
           alert("Erro no upload: " + e.message);
