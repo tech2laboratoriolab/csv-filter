@@ -2435,6 +2435,6 @@
     "formulaColumns": [],
     "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
     "annotationColumns": [],
-    "sortOrder": 14
+    "sortOrder": 2.5
   }
 ]
