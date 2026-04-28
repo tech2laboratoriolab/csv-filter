@@ -121,3 +121,168 @@ filtros: E=DtaFinalizacao, I=DesEvento, AV=LaudoMicro, AT=Destaque, AL=DesTopogr
 critico (positivo) (fonte: csvlaudoPositivo):
 select: B=CodRequisicao, H=NomPaciente, E=DtaFinalizacao, L=NomLocalOrigem, W=DesConclusao, U=Resultado, AI=Visualizado
 filtros: E=DtaFinalizacao, L=NomLocalOrigem, W=DesConclusao
+
+valores do banco
+CodExame:
+1 BIÓPSIA SOE
+2 PEÇA CIRÚRGICA SIMPLES
+3 EXAME PER-OPERATÓRIO POR CONGELAÇÃO
+4 CITOLOGIA ONCÓTICA DE LÍQUIDOS
+6 IMUNOISTOQUÍMICA INTERNA
+10 REVISÃO DE LÂMINA INTERNA
+11 REVISÃO DE LÂMINA EXTERNO (BLOCO)
+12 IMUNOISTOQUÍMICA EXTERNA (BLOCO)
+13 IMUNOISTOQUÍMICA EXTERNA (BLOCO+LÂMINA)
+14 PEÇA CIRÚRGICA COMPLEXA
+15 REVISÃO DE LÂMINA EXTERNO (BLOCO + LÂMINA)
+17 PUNÇÃO BIOPSIA ASPIRATIVA
+18 INTEGRAÇÃO
+19 FAT. EXT. PAINEL
+20 COLPOCITOLOGIA ONCÓTICA CONVENCIONAL
+21 CITOLOGIA HORMONAL ISOLADA
+22 CAPTURA HÍBRIDA
+23 BIOPSIA SIMPLES
+24 COLPOCITOLOGIA ONCÓTICA EM MEIO LÍQUIDO
+25 REDE - MICROSCOPIA
+26 REDE - HISTOTÉCNICA
+27 REDE - MACROSCOPIA
+28 REDE - IHQ
+29 REDE - PAT. CLINICA
+30 REDE - CITOPATOLOGIA
+31 REDE - HIBRIDIZAÇÃO IN SITU
+32 FAT. EXT. CAPTURA
+33 CITOLOGIA ANAL CONVENCIONAL
+34 CITOLOGIA ANAL EM MEIO LIQUIDO
+35 CITOLOGIA EM MEIO LÍQUIDO URINÁRIO
+36 PAAF - Procedimento Lâmina de PAAF até 5 Lâminas.
+37 FAT. EXT. CONV.
+38 BIOPSIA GASTRICA
+39 REVISÃO DE LÂMINA INTERNA - CITOLOGIA
+40 BIOPSIA DE MÚLTIPLOS FRAGMENTOS
+41 REDE - IHQ + TECNICA
+42 REDE - IHQ + TECNICA + MICRO
+43 NECRÓPSIA DE FETO
+45 FAT. EXT. CONV. + HORMONAL
+46 FAT. EXT. CITO.
+47 SULA - FAT - <b> Exame liberado na requisição de <i>CAPTURA HÍBRIDA</i> </b>
+48 CAMPANHA - PROCEDIMENTO DIAGNÓSTICO COLPOCITOLÓGICO CONVENCIONAL
+49 MEDICINA LABORATORIAL
+50 BACTERIOSCOPIA
+51 PCR
+52 PCR EM TEMPO REAL DE HPV BAIXO/ALTO RISCO
+
+CodEvento:
+1 Admissão
+2 Amostra Pendente de Envio ao Destino
+3 Corte - Coloração Esp. / Novos Cortes
+4 Descalcificação
+5 Distribuição
+6 Distribuição - Seleção de Anticorpo
+7 Entrega Eletrônica
+8 Exame Cancelado
+9 Histotécnica
+10 Laudo com Mensageiro
+11 Laudo Concluído (Definitivo)
+12 Laudo Entregue ao Cliente
+13 Laudo Impresso
+14 Macroscopia
+15 Material Entregue ao Cliente
+16 Microscopia
+17 Citologia - Microscopia
+18 Microscopia - Seleção de Anticorpo
+19 Envio material parceiro
+20 Triagem de Amostra - Recebida
+21 Ampliação Imuno
+22 Repetição Imuno
+23 Arquivo Interno
+24 Corte histológico
+25 Distribuição
+26 Imunoistoquímica
+27 Processador de Tecidos
+28 Coloração Especial
+29 Inclusora
+31 Aguarda Blocos e Lâminas do Arquivo
+34 Aguarda Máquina IHQ
+35 Reação IHQ
+36 Citologia - Descrição
+37 Citologia - Coloração
+38 Laudo incluído na fila de envio por e-mail
+42 Exportação Siscolo
+43 Laudo Visualizado na Web
+44 Exportação Patho Control
+45 Importação Patho Control
+46 Revisão Aleatória de Citologia
+47 Micro/Citologia
+48 Integração - Recebido
+49 Integração - Laudo Enviado
+50 Aguarda Admissão
+51 Exportação DX Network
+52 Material com Mensageiro (status utilizado em expedição)
+53 Laudo Assinado Digitalmente
+54 Retificação de laudo
+55 Enviado para laboratório parceiro
+56 Concluído - Laudo em Fotos
+57 Aguarda autorização do convênio
+58 Aguarda resolução de não conformidade
+59 Microscopia
+61 Coloração Especial - Reação
+62 HE - Novos Cortes Aguarda
+63 Reclivar
+64 Amostra DEVOLVIDA
+65 Descrição do material recebido
+68 Reação Imunofluorescência
+69 Consulta Externa
+70 Aguarda Fixação
+71 Aguarda orientação médica
+72 Processamento de amostra
+73 Aguarda processamento
+74 Em processamento
+1000 Microscopia - Aguarda Liberação
+1001 Descrição de material PUNÇÃO
+1002 Rede - Amostra Pendente de Envio
+1004 Consenso Citologia
+1005 Laudo - Entrar em contato com parceiro
+1006 Saida de amostra com mensageiro
+1007 Distribuição_citologia
+1008 FATURAMENTO ENCERRADO
+1009 Citologia - Coloração Esp.
+1010 1-Corte histológico
+1011 2-Reação IHQ
+1012 3-Distribuição
+1013 Imuno - Início Reação
+1014 Imuno - Término Reação
+1015 Amostra Aguardando Retirada pelo Paciente
+1016 Exame Laudado no SISLAB
+1017 REDE - AMOSTRA NÃO RECEBIDA
+1018 Rede - Aguarda Aprovação
+1019 Saída de Amostra - Recebimento
+1020 Aguardando DEVOLUÇÃO / RETIRADA
+1021 Amostra Pendente de PGTO.
+1022 FAT. EXTERNO
+1023 Material Encaminhado p/ Descarte Definitivo
+1024 Exame Suspenso
+1025 Laudo Visualizado em Exame Anterior
+1026 Disponível para Coleta do LAB
+1027 Aguarda assinatura
+1028 Aguarda requisição correlacionada
+1029 IPOG - Liberado
+1030 Concluído IPOG
+1031 Inclusão de tecidos
+1032 Protocolo enviado por e-mail
+1033 GUIA SEM Assinatura - Contatar Paciente
+1034 AGUARDANDO DESCARTE
+1035 Aguardando coleta
+1036 Autorização para o Laboratório LAP
+1037 AMOSTRA ENCAMINHADA P DESCARTE/SEM CONTATO COM PACIENTE
+1038 Remarcação enviada por e-mail
+1039 APENAS PARA FATURAMENTO DA SULAMERICA
+1040 Requsição para pagamento no particular
+1041 Requisição criada para faturamento
+1042 Exame adicional
+1043 Extração/Preparo
+1044 Reação (PCR em tempo real)
+1045 Análise/Conclusão
+1046 Aliquotagem
+1047 Pat. Molecular
+1048 Re-teste
+1049 Requisição criada para o faturamento
