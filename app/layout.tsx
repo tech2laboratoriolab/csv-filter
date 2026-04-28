@@ -15,9 +15,22 @@ export default function RootLayout({
     <html lang="pt-BR">
       <head>
         <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              function umamiBeforeSend(event) {
+                if (event.type === 'pageview' && event.payload && event.payload.url) {
+                  event.payload.url = event.payload.url.replace(/\\/filters\\/[^?#]+/, '/filters');
+                }
+                return event;
+              }
+            `,
+          }}
+        />
+        <script
           defer
           src="https://umamilab.ngrok.dev/script.js"
           data-website-id="0079c6e7-052d-4ced-abb0-ed0e81239a80"
+          data-before-send="umamiBeforeSend"
         ></script>
       </head>
       <body>{children}</body>
