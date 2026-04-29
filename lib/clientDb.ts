@@ -682,6 +682,7 @@ export interface SavedFilter {
   lookupColumns?: LookupColumn[];
   templateColumns?: TemplateColumn[];
   whatsappLinhasColumns?: string[];
+  deduplicationColumns?: string[];
   createdAt: string;
   updatedAt?: string;
   sortOrder?: number;
@@ -887,6 +888,7 @@ export async function queryFiltered(
   sortColumn?: string,
   sortDir: "asc" | "desc" = "asc",
   extraColumns: string[] = [],
+  deduplicationColumns: string[] = [],
 ) {
   const db = await getDb();
   const hasSpecificCols = selectedColumns.length > 0;
@@ -974,10 +976,57 @@ export async function queryFiltered(
     return { rows, total };
   }
 
+  // Determine effective GROUP BY columns:
+  // - if deduplicationColumns is specified, group only by those (aggregate the rest with MAX)
+  // - otherwise, group by all selected columns (original behaviour)
+  const hasDedup =
+    deduplicationColumns.length > 0 &&
+    deduplicationColumns.every((c) => selectedColumns.includes(c));
+
+  let effectiveGroupByExpr: string;
+  let effectiveSelectExpr: string;
+
+  if (hasDedup && hasSpecificCols) {
+    // Deduplication key columns in GROUP BY, non-key columns aggregated with MAX
+    const keySet = new Set(deduplicationColumns);
+    const keyGroupBy = deduplicationColumns
+      .map((c) =>
+        COLUMN_FALLBACKS[c] && !selectedColumns.includes(COLUMN_FALLBACKS[c])
+          ? `COALESCE("${c}", "${COLUMN_FALLBACKS[c]}")`
+          : `"${c}"`,
+      )
+      .join(", ");
+    const keySelect = deduplicationColumns
+      .map((c) =>
+        COLUMN_FALLBACKS[c] && !selectedColumns.includes(COLUMN_FALLBACKS[c])
+          ? `COALESCE("${c}", "${COLUMN_FALLBACKS[c]}") as "${c}"`
+          : `"${c}"`,
+      )
+      .join(", ");
+    const nonKeySelect = selectedColumns
+      .filter((c) => !keySet.has(c))
+      .map((c) =>
+        COLUMN_FALLBACKS[c] && !selectedColumns.includes(COLUMN_FALLBACKS[c])
+          ? `MAX(COALESCE("${c}", "${COLUMN_FALLBACKS[c]}")) as "${c}"`
+          : `MAX("${c}") as "${c}"`,
+      )
+      .join(", ");
+    const extraAggSelect =
+      additionalCols.length > 0
+        ? additionalCols.map((c) => `MAX("${c}") as "${c}"`).join(", ")
+        : "";
+    effectiveGroupByExpr = `GROUP BY ${keyGroupBy}`;
+    effectiveSelectExpr = [keySelect, nonKeySelect, extraAggSelect]
+      .filter(Boolean)
+      .join(", ");
+  } else {
+    effectiveGroupByExpr = hasSpecificCols ? `GROUP BY ${baseColsGroupBy}` : "";
+    effectiveSelectExpr = colsGroupBy;
+  }
+
   const rowIdExpr = hasSpecificCols
     ? ", MIN(id) as _row_id"
     : ", id as _row_id";
-  const groupBy = hasSpecificCols ? `GROUP BY ${baseColsGroupBy}` : "";
   const orderBy = sortColumn
     ? `ORDER BY "${sortColumn}" ${sortDir}`
     : hasSpecificCols
@@ -985,14 +1034,14 @@ export async function queryFiltered(
       : "ORDER BY id";
 
   const countSql = hasSpecificCols
-    ? `SELECT COUNT(*) as total FROM (SELECT 1 FROM csv_data ${where} ${groupBy})`
+    ? `SELECT COUNT(*) as total FROM (SELECT 1 FROM csv_data ${where} ${effectiveGroupByExpr})`
     : `SELECT COUNT(*) as total FROM csv_data ${where}`;
 
   const resTotal = db.exec(countSql, params);
   const total = resTotal.length > 0 ? resTotal[0].values[0][0] : 0;
 
   const resRows = db.exec(
-    `SELECT ${colsGroupBy}${rowIdExpr} FROM csv_data ${where} ${groupBy} ${orderBy} LIMIT ? OFFSET ?`,
+    `SELECT ${effectiveSelectExpr}${rowIdExpr} FROM csv_data ${where} ${effectiveGroupByExpr} ${orderBy} LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
   const rows = resultToObjects(resRows);
@@ -1100,17 +1149,40 @@ export async function getTableStats() {
 export async function exportFilteredCSV(
   selectedColumns: string[],
   conditions: FilterCondition[],
+  deduplicationColumns: string[] = [],
 ): Promise<string> {
   const db = await getDb();
-  const cols = selectedColumns.length
-    ? selectedColumns.map((c) => `"${c}"`).join(", ")
-    : "*";
-  const { sql: where, params } = buildWhereClause(conditions);
   const hasSpecificCols = selectedColumns.length > 0;
-  const groupBy = hasSpecificCols ? `GROUP BY ${cols}` : "";
+  const { sql: where, params } = buildWhereClause(conditions);
+
+  const hasDedup =
+    deduplicationColumns.length > 0 &&
+    deduplicationColumns.every((c) => selectedColumns.includes(c));
+
+  let selectExpr: string;
+  let groupByExpr: string;
+
+  if (hasDedup && hasSpecificCols) {
+    const keySet = new Set(deduplicationColumns);
+    const keySelect = deduplicationColumns.map((c) => `"${c}"`).join(", ");
+    const nonKeySelect = selectedColumns
+      .filter((c) => !keySet.has(c))
+      .map((c) => `MAX("${c}") as "${c}"`)
+      .join(", ");
+    selectExpr = [keySelect, nonKeySelect].filter(Boolean).join(", ");
+    groupByExpr = `GROUP BY ${keySelect}`;
+  } else if (hasSpecificCols) {
+    const cols = selectedColumns.map((c) => `"${c}"`).join(", ");
+    selectExpr = cols;
+    groupByExpr = `GROUP BY ${cols}`;
+  } else {
+    selectExpr = "*";
+    groupByExpr = "";
+  }
+
   const orderBy = hasSpecificCols ? "ORDER BY MIN(id)" : "ORDER BY id";
   const res = db.exec(
-    `SELECT ${cols} FROM csv_data ${where} ${groupBy} ${orderBy}`,
+    `SELECT ${selectExpr} FROM csv_data ${where} ${groupByExpr} ${orderBy}`,
     params,
   );
   const rows = resultToObjects(res);

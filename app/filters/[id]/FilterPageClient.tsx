@@ -105,6 +105,7 @@ export default function FilterPageClient({ filterId }: Props) {
           sCol ?? sortCol,
           sDir ?? sortDir,
           extraCols,
+          filter.deduplicationColumns ?? [],
         );
         setRows(result.rows ?? []);
         setTotal(Number(result.total) ?? 0);
@@ -214,6 +215,7 @@ export default function FilterPageClient({ filterId }: Props) {
     const csvContent = await exportFilteredCSV(
       filter.selectedColumns,
       filter.conditions,
+      filter.deduplicationColumns ?? [],
     );
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -365,13 +367,86 @@ export default function FilterPageClient({ filterId }: Props) {
           )}
 
           {activeTab === "filters" && (
-            <ConditionEditor
-              columns={columns}
-              conditions={filter.conditions}
-              onChange={(conds) => updateFilter({ conditions: conds })}
-              onApply={() => applyFilters()}
-              loading={loading}
-            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <ConditionEditor
+                columns={columns}
+                conditions={filter.conditions}
+                onChange={(conds) => updateFilter({ conditions: conds })}
+                onApply={() => applyFilters()}
+                loading={loading}
+              />
+
+              {/* Deduplication section */}
+              <div
+                style={{
+                  borderTop: "1px solid var(--border)",
+                  paddingTop: 12,
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontSize: 13,
+                    marginBottom: 8,
+                    color: "var(--text-2)",
+                  }}
+                >
+                  Deduplicação
+                </div>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-3)",
+                    marginBottom: 8,
+                  }}
+                >
+                  Marque as colunas que formam a chave de deduplicação. Quando
+                  configurado, apenas 1 linha por combinação única dessas
+                  colunas será exibida — as demais colunas mostram o valor
+                  não-nulo encontrado.
+                </p>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
+                  {filter.selectedColumns.map((col) => {
+                    const colDef = columns.find((c) => c.name === col);
+                    const checked = (
+                      filter.deduplicationColumns ?? []
+                    ).includes(col);
+                    return (
+                      <label
+                        key={col}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          fontSize: 13,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            const prev = filter.deduplicationColumns ?? [];
+                            const next = e.target.checked
+                              ? [...prev, col]
+                              : prev.filter((c) => c !== col);
+                            updateFilter({ deduplicationColumns: next });
+                          }}
+                        />
+                        {colDef?.label ?? col}
+                      </label>
+                    );
+                  })}
+                  {filter.selectedColumns.length === 0 && (
+                    <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+                      Selecione colunas na aba &quot;Colunas&quot; primeiro.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
 
           {activeTab === "color" && (
