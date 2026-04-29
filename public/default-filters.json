@@ -1765,26 +1765,16 @@
       {
         "column": "cod_evento",
         "operator": "in",
-        "value": "11,16,1000,19,9"
+        "value": "11,16,1000,56,19,9"
       },
       {
         "column": "nom_fonte_pagadora",
         "operator": "equals",
         "value": "PARTICULAR"
-      },
-      {
-        "column": "cod_evento",
-        "operator": "not_in",
-        "value": "56,1041"
-      },
-      {
-        "column": "nfereq",
-        "operator": "is_null",
-        "value": ""
       }
     ],
     "createdAt": "2026-03-06T11:53:25.870Z",
-    "updatedAt": "2026-03-31T00:00:00.000Z",
+    "updatedAt": "2026-04-29T00:00:00.000Z",
     "colorRules": [
       {
         "id": "color_prioridade_2_rosa",
