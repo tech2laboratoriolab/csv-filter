@@ -1771,6 +1771,11 @@
         "column": "nom_fonte_pagadora",
         "operator": "equals",
         "value": "PARTICULAR"
+      },
+      {
+        "column": "nfereq",
+        "operator": "is_null",
+        "value": ""
       }
     ],
     "createdAt": "2026-03-06T11:53:25.870Z",
