@@ -619,18 +619,6 @@
         "targetColumn": "cod_requisicao"
       },
       {
-        "id": "17724614190940.36787949209356696",
-        "name": "Regra 1",
-        "targetType": "cell",
-        "conditionColumn": "nom_evento",
-        "operator": "equals",
-        "value": "Microscopia - Aguarda Liberação",
-        "backgroundColor": "#00f054",
-        "priority": 0,
-        "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
         "id": "17724619347420.11235748418454228",
         "name": "Convênio",
         "targetType": "cell",
@@ -1647,6 +1635,7 @@
       }
     ],
     "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"],
+    "deduplicationColumns": ["cod_requisicao"],
     "sortOrder": 8
   },
   {
@@ -1748,6 +1737,7 @@
       }
     ],
     "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"],
+    "deduplicationColumns": ["cod_requisicao"],
     "createdAt": "2026-04-08T00:00:00.000Z",
     "sortOrder": 9
   },
