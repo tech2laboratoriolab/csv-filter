@@ -304,10 +304,12 @@ export default function Home() {
                 ? deriveColumnsFromFilters(allFilters)
                 : new Set(COLUMNS.map((c) => c.name));
 
+            // Import all recognized columns unconditionally so that columns
+            // not referenced in any filter (e.g. nfereq) are never silently
+            // dropped — same approach as the csvlaudo import path.
             const { rowCount, merged, skipped } = await importCSV(
               headers,
               dataRows,
-              allowedCols,
             );
 
             setSavedFilters(allFilters);
