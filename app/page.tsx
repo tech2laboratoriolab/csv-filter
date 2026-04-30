@@ -11,6 +11,7 @@ import type {
   TemplateColumn,
 } from "@/lib/clientDb";
 import DataTable from "@/app/components/DataTable";
+import TarefaModal from "@/app/components/TarefaModal";
 import { colorRuleExtraColumns } from "@/lib/colorRules";
 import {
   importCSV,
@@ -99,6 +100,7 @@ export default function Home() {
   const [annotationValues, setAnnotationValues] = useState<
     Record<string, string>
   >({});
+  const [tarefaRequisicao, setTarefaRequisicao] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [distinctValues, setDistinctValues] = useState<
     Record<string, string[]>
@@ -1175,6 +1177,7 @@ export default function Home() {
                   sortDir={sortDir}
                   onSort={handleSort}
                   templateColumns={templateColumns}
+                  onTarefaClick={setTarefaRequisicao}
                 />
               )}
             </div>
@@ -1242,6 +1245,14 @@ export default function Home() {
           </>
         )}
       </div>
+
+      {/* ===== TAREFA MODAL ===== */}
+      {tarefaRequisicao && (
+        <TarefaModal
+          codRequisicao={tarefaRequisicao}
+          onClose={() => setTarefaRequisicao(null)}
+        />
+      )}
 
       {/* ===== SAVE MODAL ===== */}
       {showSave && (

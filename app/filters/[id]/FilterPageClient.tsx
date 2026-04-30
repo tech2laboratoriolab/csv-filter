@@ -18,6 +18,7 @@ import ColorRuleEditor from "@/app/components/ColorRuleEditor";
 import FormulaColumnEditor from "@/app/components/FormulaColumnEditor";
 import AnnotationColumnEditor from "@/app/components/AnnotationColumnEditor";
 import TemplateColumnEditor from "@/app/components/TemplateColumnEditor";
+import TarefaModal from "@/app/components/TarefaModal";
 import {
   getTableStats,
   queryFiltered,
@@ -65,6 +66,7 @@ export default function FilterPageClient({ filterId }: Props) {
   >({});
   const [editingName, setEditingName] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [tarefaCod, setTarefaCod] = useState<string | null>(null);
 
   // Initial load
   useEffect(() => {
@@ -569,6 +571,7 @@ export default function FilterPageClient({ filterId }: Props) {
             sortCol={sortCol}
             sortDir={sortDir}
             onSort={handleSort}
+            onTarefaClick={(cod) => setTarefaCod(cod)}
           />
         )}
       </div>
@@ -620,6 +623,12 @@ export default function FilterPageClient({ filterId }: Props) {
             </button>
           </div>
         </div>
+      )}
+      {tarefaCod && (
+        <TarefaModal
+          codRequisicao={tarefaCod}
+          onClose={() => setTarefaCod(null)}
+        />
       )}
     </div>
   );

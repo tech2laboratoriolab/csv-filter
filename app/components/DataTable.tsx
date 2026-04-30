@@ -27,6 +27,7 @@ interface DataTableProps {
   sortCol?: string;
   sortDir: "asc" | "desc";
   onSort: (col: string) => void;
+  onTarefaClick?: (codRequisicao: string) => void;
 }
 
 type DisplayCol =
@@ -110,6 +111,7 @@ export default function DataTable({
   sortCol,
   sortDir,
   onSort,
+  onTarefaClick,
 }: DataTableProps) {
   const getLabel = (name: string) =>
     columns.find((c) => c.name === name)?.label ?? name;
@@ -161,6 +163,7 @@ export default function DataTable({
       <table>
         <thead>
           <tr>
+            {onTarefaClick && <th style={{ width: 36, padding: "4px 6px" }} />}
             {displayCols.map((col) => {
               if (col.type === "formula") {
                 return (
@@ -286,6 +289,30 @@ export default function DataTable({
                       : undefined
                   }
                 >
+                  {onTarefaClick && (
+                    <td
+                      style={{
+                        width: 36,
+                        padding: "2px 4px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {row["cod_requisicao"] ? (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm btn-icon"
+                          style={{ fontSize: 13, padding: "2px 5px" }}
+                          onClick={() =>
+                            onTarefaClick(String(row["cod_requisicao"]))
+                          }
+                          title="Ver tarefas"
+                          aria-label="Ver tarefas"
+                        >
+                          💬
+                        </button>
+                      ) : null}
+                    </td>
+                  )}
                   {displayCols.map((col) => {
                     if (col.type === "formula") {
                       const val = formulaValues[ri]?.[col.fcIdx] ?? "";
