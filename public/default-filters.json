@@ -117,6 +117,11 @@
             "value": "3"
           },
           {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_lte",
+            "value": "3"
+          },
+          {
             "conditionColumn": "nom_evento",
             "operator": "in",
             "value": "Admissão,Amostra Pendente de Envio ao Destino"
@@ -331,6 +336,11 @@
           {
             "conditionColumn": "dta_prevista",
             "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_lte",
             "value": "3"
           },
           {
@@ -1015,6 +1025,11 @@
             "value": "3"
           },
           {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_lte",
+            "value": "3"
+          },
+          {
             "conditionColumn": "nom_evento",
             "operator": "in",
             "value": "Admissão,IPOG - Liberado"
@@ -1356,6 +1371,11 @@
           {
             "conditionColumn": "dta_prevista",
             "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_lte",
             "value": "3"
           },
           {
