@@ -86,6 +86,9 @@ export default function Home() {
   const [filterDesc, setFilterDesc] = useState("");
   const [colSearch, setColSearch] = useState("");
   const [colorRules, setColorRules] = useState<ColorRule[]>([]);
+  const [deduplicationColumns, setDeduplicationColumns] = useState<string[]>(
+    [],
+  );
   const [formulaColumns, setFormulaColumns] = useState<FormulaColumn[]>([]);
   const [formulaValues, setFormulaValues] = useState<string[][]>([]);
   const [lookupColumns, setLookupColumns] = useState<LookupColumn[]>([]);
@@ -195,11 +198,13 @@ export default function Home() {
       sCol?: string,
       sDir?: "asc" | "desc",
       rules?: ColorRule[],
+      dedup?: string[],
     ) => {
       setLoading(true);
       try {
         const activeCols = cols ?? selectedCols;
         const activeRules = rules !== undefined ? rules : colorRules;
+        const activeDedup = dedup !== undefined ? dedup : deduplicationColumns;
         const extraCols = colorRuleExtraColumns(activeRules, activeCols);
         const result = await queryFiltered(
           activeCols,
@@ -209,6 +214,7 @@ export default function Home() {
           sCol ?? sortCol,
           sDir ?? sortDir,
           extraCols,
+          activeDedup,
         );
         setRows(result.rows || []);
         setTotal(Number(result.total) || 0);
@@ -218,7 +224,15 @@ export default function Home() {
         setLoading(false);
       }
     },
-    [selectedCols, conditions, page, sortCol, sortDir, colorRules],
+    [
+      selectedCols,
+      conditions,
+      page,
+      sortCol,
+      sortDir,
+      colorRules,
+      deduplicationColumns,
+    ],
   );
 
   // Always keep ref to latest fetchData to avoid stale closure in async handlers
@@ -445,8 +459,9 @@ export default function Home() {
     track("filter_cleared");
     setActiveFilterId(null);
     setConditions([]);
+    setDeduplicationColumns([]);
     setPage(1);
-    fetchData(selectedCols, [], 1, sortCol, sortDir);
+    fetchData(selectedCols, [], 1, sortCol, sortDir, colorRules, []);
   };
 
   // Sort
@@ -516,9 +531,11 @@ export default function Home() {
   const loadFilter = (f: SavedFilter) => {
     setActiveFilterId(f.id);
     const newColorRules = f.colorRules ?? [];
+    const newDedup = f.deduplicationColumns ?? [];
     setSelectedCols(f.selectedColumns);
     setConditions(f.conditions);
     setColorRules(newColorRules);
+    setDeduplicationColumns(newDedup);
     setFormulaColumns(f.formulaColumns ?? []);
     setAnnotationColumns(f.annotationColumns ?? []);
     setLookupColumns(f.lookupColumns ?? []);
@@ -532,6 +549,7 @@ export default function Home() {
       undefined,
       undefined,
       newColorRules,
+      newDedup,
     );
   };
 
@@ -571,6 +589,7 @@ export default function Home() {
     setSelectedCols([]);
     setConditions([]);
     setColorRules([]);
+    setDeduplicationColumns([]);
     setFormulaColumns([]);
     setFormulaValues([]);
     setAnnotationColumns([]);
@@ -651,7 +670,11 @@ export default function Home() {
 
   // Export CSV
   const exportCSV = async () => {
-    const csvContent = await exportFilteredCSV(selectedCols, conditions);
+    const csvContent = await exportFilteredCSV(
+      selectedCols,
+      conditions,
+      deduplicationColumns,
+    );
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
