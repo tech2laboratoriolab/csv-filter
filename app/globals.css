@@ -8,8 +8,8 @@
   /* slate-50  – cards / sections */
   --bg-3: #f1f5f9;
   /* slate-100 – inputs / inner surfaces */
-  --bg-hover: #eff6ff;
-  /* blue-50   – hover state */
+  --bg-hover: #dbeafe;
+  /* blue-100  – hover state */
   --border: #e2e8f0;
   /* slate-200 */
   --border-focus: #3b82f6;
@@ -696,7 +696,7 @@ thead th {
 
 thead th:hover {
   color: var(--text-1);
-  background: var(--bg-hover);
+  background: #bfdbfe;
 }
 
 thead th.sorted {
@@ -714,7 +714,7 @@ tbody td {
 }
 
 tbody tr:not(.colored-row):hover td {
-  background: var(--bg-hover);
+  background: #bfdbfe;
   color: var(--text-0);
 }
 
@@ -785,8 +785,8 @@ tbody tr:not(.colored-row):hover td {
 }
 
 .saved-item:hover {
-  background: var(--bg-hover);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: #dbeafe;
+  border-color: rgba(59, 130, 246, 0.4);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
