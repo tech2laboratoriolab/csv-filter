@@ -1053,17 +1053,6 @@
         "textColor": "#000000"
       },
       {
-        "id": "17727446213500.1451302308656247",
-        "name": "Regra 5",
-        "targetType": "row",
-        "conditionColumn": "nom_convenio",
-        "operator": "equals",
-        "value": "CASSI",
-        "backgroundColor": "#fc1d1d",
-        "priority": 4,
-        "textColor": "#000000"
-      },
-      {
         "id": "17733165633950.3021651730442467",
         "name": "Regra 6",
         "targetType": "cell",
@@ -1314,17 +1303,6 @@
         "backgroundColor": "#ffff00",
         "priority": 2,
         "targetColumn": "nom_evento",
-        "textColor": "#000000"
-      },
-      {
-        "id": "17731631848810.6899498141852572",
-        "name": "Regra 4",
-        "targetType": "row",
-        "conditionColumn": "nom_convenio",
-        "operator": "equals",
-        "value": "CASSI",
-        "backgroundColor": "#ff2929",
-        "priority": 3,
         "textColor": "#000000"
       },
       {
