@@ -43,10 +43,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17733162881470.13836697637247597",
@@ -105,6 +117,18 @@
         "priority": 4,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
+      },
+      {
+        "id": "color_ac_disponivel_coleta",
+        "name": "Disponível para Coleta do LAB",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Disponível para Coleta do LAB",
+        "backgroundColor": "#00ff1e",
+        "textColor": "#000000",
+        "priority": 5,
+        "targetColumn": "nom_evento"
       },
       {
         "id": "color_ac_dta3_evento_azul",
@@ -227,10 +251,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17726525839140.2616239091910396",
@@ -275,7 +311,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#f5d224",
+        "backgroundColor": "#ffff00",
         "priority": 3,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -346,7 +382,7 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Distribuição,Histotécnica,Macroscopia"
+            "value": "Macroscopia,Histotécnica,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           }
         ],
         "backgroundColor": "#0969da",
@@ -361,7 +397,7 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Distribuição,Histotécnica,Macroscopia"
+            "value": "Macroscopia,Histotécnica,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           },
           {
             "conditionColumn": "nom_evento_status",
@@ -456,10 +492,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17724614190940.36787949209356696",
@@ -480,7 +528,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#e8be64",
+        "backgroundColor": "#ffff00",
         "priority": 1,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -492,7 +540,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Descrição do material recebido",
-        "backgroundColor": "#823ffd",
+        "backgroundColor": "#ff9500",
         "priority": 2,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -540,10 +588,10 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Revisão Aleatória de Citologia",
-        "backgroundColor": "#cc01da",
+        "backgroundColor": "#ff69b4",
         "priority": 6,
         "targetColumn": "nom_evento",
-        "textColor": "#ffffff"
+        "textColor": "#000000"
       },
       {
         "id": "17738450852760.033051435780351524",
@@ -554,6 +602,18 @@
         "value": "Disponível para Coleta do LAB",
         "backgroundColor": "#00ff1e",
         "priority": 7,
+        "targetColumn": "nom_evento"
+      },
+      {
+        "id": "color_cito_liq_aguarda_assinatura",
+        "name": "Aguarda assinatura",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Aguarda assinatura",
+        "backgroundColor": "#006400",
+        "textColor": "#ffffff",
+        "priority": 8,
         "targetColumn": "nom_evento"
       },
       {
@@ -574,12 +634,12 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Citologia - Coloração,Distribuição"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           }
         ],
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
-        "priority": 8
+        "priority": 9
       },
       {
         "id": "color_cito_liq_status_atraso_2dias",
@@ -589,7 +649,7 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Citologia - Coloração,Distribuição"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           },
           {
             "conditionColumn": "nom_evento_status",
@@ -605,7 +665,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 9
+        "priority": 10
       },
       {
         "id": "color_cito_liq_cod_evento_58",
@@ -616,7 +676,7 @@
         "value": "58",
         "backgroundColor": "#39ff14",
         "textColor": "#000000",
-        "priority": 10
+        "priority": 11
       },
       {
         "id": "color_cito_liq_saiu_autorizacao",
@@ -636,7 +696,7 @@
         ],
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
-        "priority": 11
+        "priority": 12
       }
     ],
     "formulaColumns": [],
@@ -683,10 +743,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17724619347420.11235748418454228",
@@ -695,7 +767,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#e8be64",
+        "backgroundColor": "#ffff00",
         "priority": 1,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -707,7 +779,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Descrição do material recebido",
-        "backgroundColor": "#823ffd",
+        "backgroundColor": "#ff9500",
         "priority": 2,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -755,10 +827,10 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Revisão Aleatória de Citologia",
-        "backgroundColor": "#cc01da",
+        "backgroundColor": "#ff69b4",
         "priority": 6,
         "targetColumn": "nom_evento",
-        "textColor": "#ffffff"
+        "textColor": "#000000"
       },
       {
         "id": "17738450852760.033051435780351524",
@@ -769,6 +841,18 @@
         "value": "Disponível para Coleta do LAB",
         "backgroundColor": "#00ff1e",
         "priority": 7,
+        "targetColumn": "nom_evento"
+      },
+      {
+        "id": "color_cito_ml_aguarda_assinatura",
+        "name": "Aguarda assinatura",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Aguarda assinatura",
+        "backgroundColor": "#006400",
+        "textColor": "#ffffff",
+        "priority": 8,
         "targetColumn": "nom_evento"
       },
       {
@@ -789,12 +873,12 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Citologia - Coloração,Distribuição"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           }
         ],
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
-        "priority": 8
+        "priority": 9
       },
       {
         "id": "color_cito_ml_status_atraso_2dias",
@@ -804,7 +888,7 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Citologia - Coloração,Distribuição"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           },
           {
             "conditionColumn": "nom_evento_status",
@@ -820,7 +904,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 9
+        "priority": 10
       },
       {
         "id": "color_cito_ml_cod_evento_58",
@@ -831,7 +915,7 @@
         "value": "58",
         "backgroundColor": "#39ff14",
         "textColor": "#000000",
-        "priority": 10
+        "priority": 11
       },
       {
         "id": "color_cito_ml_saiu_autorizacao",
@@ -851,7 +935,7 @@
         ],
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
-        "priority": 11
+        "priority": 12
       }
     ],
     "formulaColumns": [],
@@ -903,10 +987,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17727443239420.20981534229568677",
@@ -939,7 +1035,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#f79308",
+        "backgroundColor": "#ffff00",
         "priority": 2,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -1032,7 +1128,7 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,IPOG - Liberado"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           }
         ],
         "backgroundColor": "#0969da",
@@ -1047,7 +1143,7 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,IPOG - Liberado"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           },
           {
             "conditionColumn": "nom_evento_status",
@@ -1064,6 +1160,18 @@
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
         "priority": 10
+      },
+      {
+        "id": "color_biomol_disponivel_coleta",
+        "name": "Disponível para Coleta do LAB",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Disponível para Coleta do LAB",
+        "backgroundColor": "#00ff1e",
+        "textColor": "#000000",
+        "priority": 10,
+        "targetColumn": "nom_evento"
       },
       {
         "id": "color_cap_cod_evento_58",
@@ -1155,10 +1263,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17731630034800.5860937796585116",
@@ -1191,7 +1311,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#ff8800",
+        "backgroundColor": "#ffff00",
         "priority": 2,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -1246,6 +1366,43 @@
         "priority": 5
       },
       {
+        "id": "color_biomol_esp_disponivel_coleta",
+        "name": "Disponível para Coleta do LAB",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Disponível para Coleta do LAB",
+        "backgroundColor": "#00ff1e",
+        "textColor": "#000000",
+        "priority": 6,
+        "targetColumn": "nom_evento"
+      },
+      {
+        "id": "color_biomol_esp_dta3_evento_azul",
+        "name": "Prevista +3 dias / evento ativo",
+        "targetType": "row",
+        "conditions": [
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_gte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "dta_prevista",
+            "operator": "days_ahead_lte",
+            "value": "3"
+          },
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
+          }
+        ],
+        "backgroundColor": "#0969da",
+        "textColor": "#ffffff",
+        "priority": 7
+      },
+      {
         "id": "color_biomol_esp_saiu_autorizacao",
         "name": "Saiu da autorização",
         "targetType": "row",
@@ -1263,7 +1420,7 @@
         ],
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
-        "priority": 6
+        "priority": 8
       }
     ],
     "formulaColumns": [],
@@ -1310,10 +1467,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17733165216350.5520487987428974",
@@ -1364,6 +1533,18 @@
         "textColor": "#000000"
       },
       {
+        "id": "color_imuno_disponivel_coleta",
+        "name": "Disponível para Coleta do LAB",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Disponível para Coleta do LAB",
+        "backgroundColor": "#00ff1e",
+        "textColor": "#000000",
+        "priority": 5,
+        "targetColumn": "nom_evento"
+      },
+      {
         "id": "color_imuno_dta3_evento_azul",
         "name": "Prevista +3 dias / evento ativo",
         "targetType": "row",
@@ -1381,12 +1562,12 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Amostra Pendente de Envio ao Destino"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           }
         ],
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
-        "priority": 4
+        "priority": 6
       },
       {
         "id": "color_imuno_status_atraso_2dias",
@@ -1396,7 +1577,7 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Amostra Pendente de Envio ao Destino"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           },
           {
             "conditionColumn": "nom_evento_status",
@@ -1412,7 +1593,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 5
+        "priority": 7
       },
       {
         "id": "color_imuno_cod_evento_58",
@@ -1423,7 +1604,7 @@
         "value": "58",
         "backgroundColor": "#39ff14",
         "textColor": "#000000",
-        "priority": 6
+        "priority": 8
       },
       {
         "id": "color_imuno_saiu_autorizacao",
@@ -1443,7 +1624,7 @@
         ],
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
-        "priority": 7
+        "priority": 9
       }
     ],
     "formulaColumns": [],
@@ -1513,10 +1694,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17743000000001.ihq_pendente",
@@ -1744,10 +1937,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17730820643320.2973617643266665",
@@ -1877,10 +2082,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "molpos_color_1",
@@ -2008,10 +2225,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "color_recebido_saiu_autorizacao",
@@ -2289,10 +2518,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "color_erros_saiu_autorizacao",
@@ -2380,10 +2621,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "dn_color_sexo",
@@ -2476,10 +2729,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "color_coleta_lab_saiu_autorizacao",
@@ -2554,10 +2819,22 @@
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
-        "backgroundColor": "#ffb6c1",
-        "textColor": "#000000",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
         "priority": -1,
         "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#ffffff",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
       },
       {
         "id": "17724614190940.36787949209356696",
@@ -2578,7 +2855,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Aguarda autorização do convênio",
-        "backgroundColor": "#e8be64",
+        "backgroundColor": "#ffff00",
         "priority": 1,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -2590,7 +2867,7 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Descrição do material recebido",
-        "backgroundColor": "#823ffd",
+        "backgroundColor": "#ff9500",
         "priority": 2,
         "targetColumn": "nom_evento",
         "textColor": "#000000"
@@ -2638,10 +2915,10 @@
         "conditionColumn": "nom_evento",
         "operator": "equals",
         "value": "Revisão Aleatória de Citologia",
-        "backgroundColor": "#cc01da",
+        "backgroundColor": "#ff69b4",
         "priority": 6,
         "targetColumn": "nom_evento",
-        "textColor": "#ffffff"
+        "textColor": "#000000"
       },
       {
         "id": "17738450852760.033051435780351524",
@@ -2652,6 +2929,18 @@
         "value": "Disponível para Coleta do LAB",
         "backgroundColor": "#00ff1e",
         "priority": 7,
+        "targetColumn": "nom_evento"
+      },
+      {
+        "id": "color_paaf_aguarda_assinatura",
+        "name": "Aguarda assinatura",
+        "targetType": "cell",
+        "conditionColumn": "nom_evento",
+        "operator": "equals",
+        "value": "Aguarda assinatura",
+        "backgroundColor": "#006400",
+        "textColor": "#ffffff",
+        "priority": 8,
         "targetColumn": "nom_evento"
       },
       {
@@ -2672,12 +2961,12 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Citologia - Coloração,Distribuição"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           }
         ],
         "backgroundColor": "#0969da",
         "textColor": "#ffffff",
-        "priority": 8
+        "priority": 9
       },
       {
         "id": "color_cito_liq_status_atraso_2dias",
@@ -2687,7 +2976,7 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Admissão,Citologia - Coloração,Distribuição"
+            "value": "Citologia - Coloração,Distribuição,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           },
           {
             "conditionColumn": "nom_evento_status",
@@ -2703,7 +2992,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 9
+        "priority": 10
       },
       {
         "id": "color_cito_liq_cod_evento_58",
@@ -2714,7 +3003,7 @@
         "value": "58",
         "backgroundColor": "#39ff14",
         "textColor": "#000000",
-        "priority": 10
+        "priority": 11
       },
       {
         "id": "color_cito_liq2_saiu_autorizacao",
@@ -2734,7 +3023,7 @@
         ],
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
-        "priority": 11
+        "priority": 12
       }
     ],
     "formulaColumns": [],

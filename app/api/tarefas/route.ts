@@ -17,7 +17,7 @@ INNER JOIN requisicao AS r ON r.IdRequisicao = t.IdRequisicao
 INNER JOIN autusuario AS ar ON ar.IdUsuario = t.IdRemetente
 INNER JOIN autusuario AS ad ON ad.IdUsuario = t.IdDestinatario
 WHERE TRIM(r.CodRequisicao) = ?
-ORDER BY t.DtaInclusao ASC
+ORDER BY t.DtaInclusao DESC
 `;
 
 export async function GET(req: NextRequest) {
