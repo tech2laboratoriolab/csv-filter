@@ -17,11 +17,11 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              function umamiBeforeSend(event) {
-                if (event.type === 'pageview' && event.payload && event.payload.url) {
-                  event.payload.url = event.payload.url.replace(/\\/filters\\/[^?#]+/, '/filters');
+              function umamiBeforeSend(type, data) {
+                if (type === 'pageview' && data && data.url) {
+                  data.url = data.url.replace(/\/filters\/[^?#]+/, '/filters');
                 }
-                return event;
+                return data;
               }
             `,
           }}
