@@ -728,46 +728,50 @@ export default function Home() {
           <div className="logo" style={{ textAlign: "center" }}>
             LAB SHEETS
           </div>
-          <a
-            href="/anotacoes"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              padding: "6px 10px",
-              background: "rgba(99,102,241,0.12)",
-              border: "1px solid rgba(99,102,241,0.3)",
-              borderRadius: 6,
-              color: "#6366f1",
-              textDecoration: "none",
-              fontSize: 12,
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-            }}
-          >
-            📋 Anotações
-          </a>
-          <a
-            href="/whatsapp"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              padding: "6px 10px",
-              background: "rgba(34,197,94,0.12)",
-              border: "1px solid rgba(34,197,94,0.3)",
-              borderRadius: 6,
-              color: "#22c55e",
-              textDecoration: "none",
-              fontSize: 12,
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-            }}
-          >
-            📱 WhatsApp
-          </a>
+          {hasData && (
+            <a
+              href="/anotacoes"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: "6px 10px",
+                background: "rgba(99,102,241,0.12)",
+                border: "1px solid rgba(99,102,241,0.3)",
+                borderRadius: 6,
+                color: "#6366f1",
+                textDecoration: "none",
+                fontSize: 12,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              📋 Anotações
+            </a>
+          )}
+          {hasData && (
+            <a
+              href="/whatsapp"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: "6px 10px",
+                background: "rgba(34,197,94,0.12)",
+                border: "1px solid rgba(34,197,94,0.3)",
+                borderRadius: 6,
+                color: "#22c55e",
+                textDecoration: "none",
+                fontSize: 12,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              📱 WhatsApp
+            </a>
+          )}
         </div>
 
         <div className="sidebar-scroll">
