@@ -18,7 +18,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               function umamiBeforeSend(type, data) {
-                if (type === 'pageview' && data && data.url) {
+                if (data && data.url) {
                   data.url = data.url.replace(/\/filters\/[^?#]+/, '/filters');
                 }
                 return data;
