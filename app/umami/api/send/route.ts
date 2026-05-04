@@ -11,7 +11,11 @@ export async function POST(request: NextRequest) {
 
   const response = await fetch(`${UMAMI_ORIGIN}/api/send`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'user-agent': request.headers.get('user-agent') ?? '',
+      'x-forwarded-for': request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? '',
+    },
     body: JSON.stringify(body),
   });
 
