@@ -44,7 +44,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -56,7 +56,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -200,6 +200,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 7
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -252,7 +276,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -264,7 +288,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -445,6 +469,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 11
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -493,7 +541,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -505,7 +553,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -697,6 +745,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 12
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -744,7 +816,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -756,7 +828,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -936,6 +1008,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 12
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -975,6 +1071,11 @@
         "column": "cod_evento",
         "operator": "not_in",
         "value": "56,1041"
+      },
+      {
+        "column": "nom_exame",
+        "operator": "not_contains",
+        "value": "PAAF"
       }
     ],
     "createdAt": "2026-03-05T12:37:57.920Z",
@@ -988,7 +1089,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -1000,7 +1101,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -1192,6 +1293,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 12
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -1240,6 +1365,11 @@
         "column": "cod_evento",
         "operator": "not_in",
         "value": "56,1041"
+      },
+      {
+        "column": "nom_exame",
+        "operator": "not_contains",
+        "value": "PAAF"
       }
     ],
     "createdAt": "2026-03-10T17:16:19.107Z",
@@ -1253,7 +1383,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -1265,7 +1395,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -1399,6 +1529,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 8
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -1446,7 +1600,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -1458,7 +1612,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -1603,6 +1757,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 9
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -1673,7 +1851,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -1685,7 +1863,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -1732,6 +1910,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 2
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -1916,7 +2118,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -1928,7 +2130,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -1998,6 +2200,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 4
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -2061,7 +2287,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -2073,7 +2299,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -2132,6 +2358,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 4
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -2191,10 +2441,15 @@
         "column": "nfereq",
         "operator": "is_null",
         "value": ""
+      },
+      {
+        "column": "vlr_recibo",
+        "operator": "is_null",
+        "value": ""
       }
     ],
     "createdAt": "2026-03-06T11:53:25.870Z",
-    "updatedAt": "2026-04-29T00:00:00.000Z",
+    "updatedAt": "2026-05-05T00:00:00.000Z",
     "colorRules": [
       {
         "id": "color_prioridade_2_rosa",
@@ -2204,7 +2459,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -2216,7 +2471,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -2239,6 +2494,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 0
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -2497,7 +2776,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -2509,7 +2788,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -2532,6 +2811,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 0
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "annotationColumns": [
@@ -2600,7 +2903,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -2612,7 +2915,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -2671,6 +2974,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 3
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -2708,7 +3035,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -2720,7 +3047,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -2743,6 +3070,30 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 0
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
@@ -2798,7 +3149,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "cod_requisicao"
       },
@@ -2810,7 +3161,7 @@
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
-        "textColor": "#ffffff",
+        "textColor": "#000000",
         "priority": -1,
         "targetColumn": "nom_paciente"
       },
@@ -3002,11 +3353,133 @@
         "backgroundColor": "#7c3aed",
         "textColor": "#ffffff",
         "priority": 12
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],
     "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
     "annotationColumns": [],
     "sortOrder": 2.5
+  },
+  {
+    "id": "nao_conformidade_filter_1746403200000",
+    "name": "Não Conformidade",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "nom_evento",
+      "nom_exame",
+      "nom_local_origem",
+      "nom_patologista",
+      "dta_solicitacao",
+      "dta_prevista"
+    ],
+    "conditions": [
+      {
+        "column": "cod_evento",
+        "operator": "equals",
+        "value": "58"
+      },
+      {
+        "column": "dta_finalizacao",
+        "operator": "is_null",
+        "value": ""
+      },
+      {
+        "column": "nom_evento_status",
+        "operator": "equals",
+        "value": "nom_evento",
+        "valueIsColumn": true
+      }
+    ],
+    "createdAt": "2026-05-05T00:00:00.000Z",
+    "updatedAt": "2026-05-05T12:00:00.000Z",
+    "colorRules": [
+      {
+        "id": "color_prioridade_2_rosa",
+        "name": "Prioridade 2",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "cod_requisicao"
+      },
+      {
+        "id": "color_prioridade_2_rosa_paciente",
+        "name": "Prioridade 2 (Paciente)",
+        "targetType": "cell",
+        "conditionColumn": "cod_prioridade",
+        "operator": "equals",
+        "value": "2",
+        "backgroundColor": "#ff0000",
+        "textColor": "#000000",
+        "priority": -1,
+        "targetColumn": "nom_paciente"
+      },
+      {
+        "id": "color_nc_evento_58",
+        "name": "Não Conformidade",
+        "targetType": "row",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "58",
+        "backgroundColor": "#39ff14",
+        "textColor": "#000000",
+        "priority": 0
+      },
+      {
+        "id": "color_clinica_mulher_nom_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_clinica_mulher_local_origem",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 0,
+        "targetColumn": "local_origem"
+      }
+    ],
+    "formulaColumns": [],
+    "annotationColumns": [],
+    "sortOrder": 14
   }
 ]

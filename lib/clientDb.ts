@@ -53,6 +53,13 @@ export const COLUMNS: ColumnDef[] = [
   { name: "dta_status", label: "DtaStatus", type: "date" },
   { name: "nom_evento_status", label: "NomEventoStatus", type: "text" },
   { name: "cod_prioridade", label: "CodPrioridade", type: "text" },
+  { name: "dta_recibo", label: "DtaRecibo", type: "date" },
+  { name: "vlr_recibo", label: "VlrRecibo", type: "number" },
+  { name: "nota_fiscal_recibo", label: "NotaFiscalRecibo", type: "text" },
+  { name: "nom_recibo", label: "NomRecibo", type: "text" },
+  { name: "dta_cancel_recibo", label: "DtaCancelRecibo", type: "date" },
+  { name: "id_usuario_cancel", label: "IdUsuarioCancel", type: "text" },
+  { name: "proveniencia", label: "Proveniencia", type: "text" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};
@@ -607,6 +614,7 @@ export interface FilterCondition {
   value: string | number;
   value2?: string | number;
   orGroup?: string;
+  valueIsColumn?: boolean;
 }
 
 export interface ColorCondition {
@@ -724,7 +732,9 @@ function conditionToSQL(c: FilterCondition): { clause: string; params: any[] } {
 
   switch (c.operator) {
     case "equals":
-      if (c.value === "" || c.value == null) {
+      if (c.valueIsColumn) {
+        clause = `(${col} IS NOT NULL AND ${col} = "${c.value}")`;
+      } else if (c.value === "" || c.value == null) {
         clause = `(${col} IS NULL OR ${col} = '')`;
       } else {
         clause = `${col} = ?`;
@@ -732,7 +742,9 @@ function conditionToSQL(c: FilterCondition): { clause: string; params: any[] } {
       }
       break;
     case "not_equals":
-      if (c.value === "" || c.value == null) {
+      if (c.valueIsColumn) {
+        clause = `(${col} IS NOT NULL AND ${col} != "${c.value}")`;
+      } else if (c.value === "" || c.value == null) {
         clause = `(${col} IS NOT NULL AND ${col} != '')`;
       } else {
         clause = `${col} != ?`;
@@ -1798,6 +1810,55 @@ export async function importMysqlEnrichment(
     cod_prioridade,
   } of data) {
     stmt.run([dta_status, nom_evento_status, cod_prioridade, cod_requisicao]);
+    updated++;
+  }
+  stmt.free();
+  db.run("COMMIT;");
+
+  const idb = await getIdb();
+  if (idb) {
+    const snapshot = db.export();
+    await idb.put("csv_database", snapshot, "snapshot");
+  }
+
+  return { updated };
+}
+
+export async function importReciboEnrichment(
+  data: {
+    cod_requisicao: string;
+    dta_recibo: string | null;
+    vlr_recibo: number | null;
+    nota_fiscal_recibo: string | null;
+    nom_recibo: string | null;
+    dta_cancel_recibo: string | null;
+    id_usuario_cancel: string | null;
+    proveniencia: string | null;
+  }[],
+): Promise<{ updated: number }> {
+  if (data.length === 0) return { updated: 0 };
+  const db = await getDb();
+
+  let updated = 0;
+  db.run("BEGIN TRANSACTION;");
+  const stmt = db.prepare(
+    `UPDATE csv_data SET
+      "dta_recibo" = ?, "vlr_recibo" = ?, "nota_fiscal_recibo" = ?,
+      "nom_recibo" = ?, "dta_cancel_recibo" = ?,
+      "id_usuario_cancel" = ?, "proveniencia" = ?
+     WHERE "cod_requisicao" = ?`,
+  );
+  for (const r of data) {
+    stmt.run([
+      r.dta_recibo,
+      r.vlr_recibo,
+      r.nota_fiscal_recibo,
+      r.nom_recibo,
+      r.dta_cancel_recibo,
+      r.id_usuario_cancel,
+      r.proveniencia,
+      r.cod_requisicao,
+    ]);
     updated++;
   }
   stmt.free();

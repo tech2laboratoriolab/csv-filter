@@ -18,6 +18,7 @@ import {
   importLaudoCSVAsRows,
   importPatologiaMolecularCSV,
   importMysqlEnrichment,
+  importReciboEnrichment,
   getTableStats,
   getSavedFilters,
   getDistinctValues,
@@ -383,15 +384,33 @@ export default function Home() {
                 console.log(
                   `[MySQL enrich] ${mysqlData.length} registro(s) retornados`,
                 );
+                let mysqlUpdated = 0;
                 if (mysqlData.length > 0) {
                   const { updated } = await importMysqlEnrichment(mysqlData);
+                  mysqlUpdated = updated;
                   console.log(
-                    `[MySQL enrich] ${updated} linha(s) atualizadas no banco local`,
+                    `[MySQL enrich] ${mysqlUpdated} linha(s) atualizadas no banco local`,
                   );
-                  await fetchDataRef.current();
+                }
+
+                let reciboUpdated = 0;
+                try {
+                  const reciboRes = await fetch("/api/recibo-enrich");
+                  const reciboData = await reciboRes.json();
+                  if (reciboRes.ok && Array.isArray(reciboData) && reciboData.length > 0) {
+                    const { updated } = await importReciboEnrichment(reciboData);
+                    reciboUpdated = updated;
+                    console.log(`[Recibo enrich] ${reciboUpdated} linha(s) atualizadas`);
+                  }
+                } catch (reciboErr) {
+                  console.error("[Recibo enrich] Falha:", reciboErr);
+                }
+
+                await fetchDataRef.current();
+                if (mysqlUpdated > 0 || reciboUpdated > 0) {
                   showToast(
                     "success",
-                    `${updated} registro(s) sincronizados do banco remoto`,
+                    `${mysqlUpdated} status + ${reciboUpdated} recibo(s) sincronizados`,
                     true,
                   );
                 } else {
