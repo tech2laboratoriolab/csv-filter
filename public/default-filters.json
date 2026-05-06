@@ -2896,30 +2896,6 @@
     "updatedAt": "2026-04-01T00:00:00.000Z",
     "colorRules": [
       {
-        "id": "color_prioridade_2_rosa",
-        "name": "Prioridade 2",
-        "targetType": "cell",
-        "conditionColumn": "cod_prioridade",
-        "operator": "equals",
-        "value": "2",
-        "backgroundColor": "#ff0000",
-        "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
-      },
-      {
-        "id": "color_prioridade_2_rosa_paciente",
-        "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
-        "conditionColumn": "cod_prioridade",
-        "operator": "equals",
-        "value": "2",
-        "backgroundColor": "#ff0000",
-        "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
-      },
-      {
         "id": "dn_color_sexo",
         "name": "Sexo vazio",
         "targetType": "cell",
@@ -2954,50 +2930,6 @@
         "textColor": "#ffffff",
         "priority": 2,
         "targetColumn": "cpf"
-      },
-      {
-        "id": "color_dn_saiu_autorizacao",
-        "name": "Saiu da autorização",
-        "targetType": "row",
-        "conditions": [
-          {
-            "conditionColumn": "nom_evento_status",
-            "operator": "equals",
-            "value": "Aguarda autorização do convênio"
-          },
-          {
-            "conditionColumn": "nom_evento",
-            "operator": "not_equals",
-            "value": "Aguarda autorização do convênio"
-          }
-        ],
-        "backgroundColor": "#7c3aed",
-        "textColor": "#ffffff",
-        "priority": 3
-      },
-      {
-        "id": "color_clinica_mulher_nom_local_origem",
-        "name": "Clínica da Mulher",
-        "targetType": "cell",
-        "conditionColumn": "nom_local_origem",
-        "operator": "contains",
-        "value": "clinica da mulher - asa sul",
-        "backgroundColor": "#ad1457",
-        "textColor": "#ffffff",
-        "priority": 0,
-        "targetColumn": "nom_local_origem"
-      },
-      {
-        "id": "color_clinica_mulher_local_origem",
-        "name": "Clínica da Mulher",
-        "targetType": "cell",
-        "conditionColumn": "local_origem",
-        "operator": "contains",
-        "value": "clinica da mulher - asa sul",
-        "backgroundColor": "#ad1457",
-        "textColor": "#ffffff",
-        "priority": 0,
-        "targetColumn": "local_origem"
       }
     ],
     "formulaColumns": [],

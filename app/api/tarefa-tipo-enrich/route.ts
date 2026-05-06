@@ -11,6 +11,12 @@ FROM tarefa AS t
 INNER JOIN requisicao AS r ON r.IdRequisicao = t.IdRequisicao
 WHERE t.CodTarefaTipo = 10
 AND t.DtaInclusao >= CURDATE() - INTERVAL 30 DAY
+AND t.DtaInclusao = (
+  SELECT MAX(t2.DtaInclusao)
+  FROM tarefa t2
+  WHERE t2.IdRequisicao = t.IdRequisicao
+  AND t2.DtaInclusao >= CURDATE() - INTERVAL 30 DAY
+)
 ORDER BY r.CodRequisicao
 `;
 
