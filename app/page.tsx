@@ -19,6 +19,7 @@ import {
   importPatologiaMolecularCSV,
   importMysqlEnrichment,
   importReciboEnrichment,
+  importTarefaTipoEnrichment,
   getTableStats,
   getSavedFilters,
   getDistinctValues,
@@ -397,20 +398,51 @@ export default function Home() {
                 try {
                   const reciboRes = await fetch("/api/recibo-enrich");
                   const reciboData = await reciboRes.json();
-                  if (reciboRes.ok && Array.isArray(reciboData) && reciboData.length > 0) {
-                    const { updated } = await importReciboEnrichment(reciboData);
+                  if (
+                    reciboRes.ok &&
+                    Array.isArray(reciboData) &&
+                    reciboData.length > 0
+                  ) {
+                    const { updated } =
+                      await importReciboEnrichment(reciboData);
                     reciboUpdated = updated;
-                    console.log(`[Recibo enrich] ${reciboUpdated} linha(s) atualizadas`);
+                    console.log(
+                      `[Recibo enrich] ${reciboUpdated} linha(s) atualizadas`,
+                    );
                   }
                 } catch (reciboErr) {
                   console.error("[Recibo enrich] Falha:", reciboErr);
                 }
 
+                let tarefaTipoUpdated = 0;
+                try {
+                  const tarefaTipoRes = await fetch("/api/tarefa-tipo-enrich");
+                  const tarefaTipoData = await tarefaTipoRes.json();
+                  if (
+                    tarefaTipoRes.ok &&
+                    Array.isArray(tarefaTipoData) &&
+                    tarefaTipoData.length > 0
+                  ) {
+                    const { updated } =
+                      await importTarefaTipoEnrichment(tarefaTipoData);
+                    tarefaTipoUpdated = updated;
+                    console.log(
+                      `[TarefaTipo enrich] ${tarefaTipoUpdated} linha(s) atualizadas`,
+                    );
+                  }
+                } catch (tarefaTipoErr) {
+                  console.error("[TarefaTipo enrich] Falha:", tarefaTipoErr);
+                }
+
                 await fetchDataRef.current();
-                if (mysqlUpdated > 0 || reciboUpdated > 0) {
+                if (
+                  mysqlUpdated > 0 ||
+                  reciboUpdated > 0 ||
+                  tarefaTipoUpdated > 0
+                ) {
                   showToast(
                     "success",
-                    `${mysqlUpdated} status + ${reciboUpdated} recibo(s) sincronizados`,
+                    `${mysqlUpdated} status + ${reciboUpdated} recibo(s) + ${tarefaTipoUpdated} tarefa(s) sincronizados`,
                     true,
                   );
                 } else {

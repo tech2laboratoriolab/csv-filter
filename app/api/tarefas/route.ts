@@ -7,6 +7,7 @@ const QUERY = `
 SELECT
   r.CodRequisicao,
   t.CodTarefa,
+  tt.DesTarefaTipo,
   t.DtaLimite,
   t.DtaInclusao,
   t.MsgTarefa,
@@ -16,6 +17,7 @@ FROM tarefa AS t
 INNER JOIN requisicao AS r ON r.IdRequisicao = t.IdRequisicao
 INNER JOIN autusuario AS ar ON ar.IdUsuario = t.IdRemetente
 INNER JOIN autusuario AS ad ON ad.IdUsuario = t.IdDestinatario
+LEFT JOIN tarefatipo AS tt ON tt.CodTarefaTipo = t.CodTarefaTipo
 WHERE TRIM(r.CodRequisicao) = ?
 ORDER BY t.DtaInclusao DESC
 `;
@@ -48,6 +50,7 @@ export async function GET(req: NextRequest) {
       rows as {
         CodRequisicao: string;
         CodTarefa: number;
+        DesTarefaTipo: string | null;
         DtaLimite: string | Date | null;
         DtaInclusao: string | Date | null;
         MsgTarefa: string | null;
@@ -57,6 +60,7 @@ export async function GET(req: NextRequest) {
     ).map((r) => ({
       codRequisicao: r.CodRequisicao,
       codTarefa: r.CodTarefa,
+      codTarefaTipo: r.DesTarefaTipo ?? null,
       dtaLimite: r.DtaLimite ? String(r.DtaLimite) : null,
       dtaInclusao: r.DtaInclusao ? String(r.DtaInclusao) : null,
       msgTarefa: r.MsgTarefa ?? "",

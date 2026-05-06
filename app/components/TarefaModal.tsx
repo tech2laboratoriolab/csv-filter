@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 interface Tarefa {
   codRequisicao: string;
   codTarefa: number;
+  codTarefaTipo: string | null;
   dtaLimite: string | null;
   dtaInclusao: string | null;
   msgTarefa: string;
@@ -301,19 +302,45 @@ export default function TarefaModal({
                         {t.destinatario}
                       </span>
                     </div>
-                    <span
-                      style={{
-                        color: "var(--text-1)",
-                        fontSize: 12,
-                        fontVariantNumeric: "tabular-nums",
-                        background: "var(--bg-3)",
-                        padding: "2px 8px",
-                        borderRadius: 4,
-                        whiteSpace: "nowrap",
-                      }}
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >
-                      {formatDateTime(t.dtaInclusao)}
-                    </span>
+                      {t.codTarefaTipo && (
+                        <span
+                          style={{
+                            color: "var(--text-2)",
+                            fontSize: 11,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          tipo/classificação:{" "}
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color: "var(--text-1)",
+                              background: "var(--bg-3)",
+                              padding: "2px 7px",
+                              borderRadius: 4,
+                            }}
+                          >
+                            {t.codTarefaTipo}
+                          </span>
+                        </span>
+                      )}
+                      <span
+                        style={{
+                          color: "var(--text-1)",
+                          fontSize: 12,
+                          fontVariantNumeric: "tabular-nums",
+                          background: "var(--bg-3)",
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {formatDateTime(t.dtaInclusao)}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Divider */}

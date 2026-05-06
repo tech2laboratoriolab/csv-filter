@@ -60,6 +60,7 @@ export const COLUMNS: ColumnDef[] = [
   { name: "dta_cancel_recibo", label: "DtaCancelRecibo", type: "date" },
   { name: "id_usuario_cancel", label: "IdUsuarioCancel", type: "text" },
   { name: "proveniencia", label: "Proveniencia", type: "text" },
+  { name: "cod_tarefa_tipo", label: "CodTarefaTipo", type: "number" },
 ];
 
 export const HEADER_MAP: Record<string, string> = {};
@@ -1810,6 +1811,33 @@ export async function importMysqlEnrichment(
     cod_prioridade,
   } of data) {
     stmt.run([dta_status, nom_evento_status, cod_prioridade, cod_requisicao]);
+    updated++;
+  }
+  stmt.free();
+  db.run("COMMIT;");
+
+  const idb = await getIdb();
+  if (idb) {
+    const snapshot = db.export();
+    await idb.put("csv_database", snapshot, "snapshot");
+  }
+
+  return { updated };
+}
+
+export async function importTarefaTipoEnrichment(
+  data: { cod_requisicao: string; cod_tarefa_tipo: number | null }[],
+): Promise<{ updated: number }> {
+  if (data.length === 0) return { updated: 0 };
+  const db = await getDb();
+
+  let updated = 0;
+  db.run("BEGIN TRANSACTION;");
+  const stmt = db.prepare(
+    `UPDATE csv_data SET "cod_tarefa_tipo" = ? WHERE "cod_requisicao" = ?`,
+  );
+  for (const { cod_requisicao, cod_tarefa_tipo } of data) {
+    stmt.run([cod_tarefa_tipo, cod_requisicao]);
     updated++;
   }
   stmt.free();

@@ -3481,5 +3481,36 @@
     "formulaColumns": [],
     "annotationColumns": [],
     "sortOrder": 14
+  },
+  {
+    "id": "imported_1746585600000_consenso",
+    "name": "CONSENSO",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "nom_evento",
+      "nom_local_origem",
+      "nom_patologista",
+      "dta_solicitacao",
+      "dta_prevista"
+    ],
+    "conditions": [
+      {
+        "column": "laudo_micro",
+        "operator": "is_null",
+        "value": ""
+      },
+      {
+        "column": "cod_tarefa_tipo",
+        "operator": "equals",
+        "value": "10"
+      }
+    ],
+    "createdAt": "2026-05-06T00:00:00.000Z",
+    "updatedAt": "2026-05-06T00:00:00.000Z",
+    "colorRules": [],
+    "formulaColumns": [],
+    "annotationColumns": [],
+    "sortOrder": 15
   }
 ]
