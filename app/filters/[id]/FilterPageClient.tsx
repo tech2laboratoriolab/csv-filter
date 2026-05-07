@@ -31,6 +31,8 @@ import {
   COLUMNS,
 } from "@/lib/clientDb";
 import { colorRuleExtraColumns } from "@/lib/colorRules";
+import { getVipMode, setVipMode, getVipFilterCondition } from "@/lib/vip";
+import VipModal from "@/app/components/VipModal";
 
 type Tab =
   | "columns"
@@ -67,6 +69,15 @@ export default function FilterPageClient({ filterId }: Props) {
   const [editingName, setEditingName] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [tarefaCod, setTarefaCod] = useState<string | null>(null);
+  const [vipMode, setVipModeState] = useState(false);
+  const [showVipModal, setShowVipModal] = useState(false);
+
+  // VIP mode init
+  useEffect(() => {
+    const active = getVipMode();
+    setVipModeState(active);
+    if (active) document.documentElement.classList.add("vip-active");
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -99,9 +110,12 @@ export default function FilterPageClient({ filterId }: Props) {
           activeCols,
           COLUMNS.map((c) => c.name),
         );
+        const baseConds = conditions ?? filter.conditions;
+        const vipCond = getVipFilterCondition();
+        const effectiveConds = vipCond ? [vipCond, ...baseConds] : baseConds;
         const result = await queryFiltered(
           activeCols,
-          conditions ?? filter.conditions,
+          effectiveConds,
           pg ?? page,
           PAGE_SIZE,
           sCol ?? sortCol,
@@ -194,6 +208,15 @@ export default function FilterPageClient({ filterId }: Props) {
       sCol,
       sDir,
     );
+  };
+
+  const handleVipToggle = () => {
+    const next = !vipMode;
+    setVipMode(next);
+    setVipModeState(next);
+    if (next) document.documentElement.classList.add("vip-active");
+    else document.documentElement.classList.remove("vip-active");
+    applyFilters();
   };
 
   const handleSave = async () => {
@@ -305,8 +328,20 @@ export default function FilterPageClient({ filterId }: Props) {
         )}
 
         <div className="btn-group" style={{ flexShrink: 0 }}>
-          <button className="btn btn-ghost btn-sm" onClick={handleExportCSV}>
-            📥 Exportar CSV
+          <button
+            className={`btn btn-sm btn-vip ${vipMode ? "active" : ""}`}
+            onClick={handleVipToggle}
+            title={vipMode ? "Desativar Modo VIP" : "Ativar Modo VIP"}
+          >
+            {vipMode ? "★ VIP ativo" : "☆ VIP"}
+          </button>
+          <button
+            className="btn btn-sm btn-vip"
+            onClick={() => setShowVipModal(true)}
+            title="Gerenciar clínicas parceiras"
+            style={{ padding: "4px 6px" }}
+          >
+            ⚙
           </button>
           <button
             className={`btn btn-sm ${saveOk ? "btn-green" : "btn-primary"}`}
@@ -514,14 +549,22 @@ export default function FilterPageClient({ filterId }: Props) {
           {annotationColumns.length > 0 &&
             ` · ${annotationColumns.length} anotação(ões)`}
         </span>
-        <button
-          className="btn btn-sm btn-primary"
-          style={{ marginLeft: "auto" }}
-          onClick={() => applyFilters()}
-          disabled={loading}
-        >
-          {loading ? <span className="spinner" /> : "🔍"} Aplicar filtros
-        </button>
+        <div className="btn-group" style={{ marginLeft: "auto" }}>
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={handleExportCSV}
+            title="Exportar CSV"
+          >
+            📥 Exportar
+          </button>
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={() => applyFilters()}
+            disabled={loading}
+          >
+            {loading ? <span className="spinner" /> : "🔍"} Aplicar filtros
+          </button>
+        </div>
       </div>
 
       {/* ── Fetch error banner ── */}
@@ -628,6 +671,15 @@ export default function FilterPageClient({ filterId }: Props) {
         <TarefaModal
           codRequisicao={tarefaCod}
           onClose={() => setTarefaCod(null)}
+        />
+      )}
+      {showVipModal && (
+        <VipModal
+          onClose={() => setShowVipModal(false)}
+          onSave={() => {
+            setShowVipModal(false);
+            applyFilters();
+          }}
         />
       )}
     </div>

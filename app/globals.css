@@ -1531,3 +1531,151 @@ tbody tr:not(.colored-row):hover td {
   width: 14px;
   height: 14px;
 }
+
+/* ===== VIP MODE THEME — MIDNIGHT BLUE ===== */
+html.vip-active {
+  /* Backgrounds */
+  --bg-0:         #0f172a;
+  --bg-1:         #1e293b;
+  --bg-2:         #1e293b;
+  --bg-3:         #334155;
+  --bg-hover:     rgba(59, 130, 246, 0.20);
+
+  /* Borders */
+  --border:        #334155;
+  --border-focus:  #60a5fa;
+
+  /* Text */
+  --text-0:  #f1f5f9;
+  --text-1:  #cbd5e1;
+  --text-2:  #94a3b8;
+  --text-3:  #64748b;
+
+  /* Blues (clarificados para fundo escuro) */
+  --blue:      #60a5fa;
+  --blue-dark: #3b82f6;
+  --blue-900:  #1e3a8a;
+  --indigo:    #818cf8;
+  --blue-bg:   rgba(96, 165, 250, 0.12);
+
+  /* Status colors (clarificados para fundo escuro) */
+  --green:      #4ade80;
+  --green-bg:   rgba(74, 222, 128, 0.12);
+  --red:        #f87171;
+  --red-bg:     rgba(248, 113, 113, 0.12);
+  --orange:     #fbbf24;
+  --orange-bg:  rgba(251, 191, 36, 0.12);
+  --purple:     #a78bfa;
+
+  /* Shadows (mais fortes em fundo escuro) */
+  --shadow-sm:   0 1px 3px 0 rgba(0, 0, 0, 0.40), 0 1px 2px -1px rgba(0, 0, 0, 0.40);
+  --shadow-md:   0 4px 6px -1px rgba(0, 0, 0, 0.50), 0 2px 4px -2px rgba(0, 0, 0, 0.40);
+  --shadow-lg:   0 10px 15px -3px rgba(0, 0, 0, 0.60), 0 4px 6px -4px rgba(0, 0, 0, 0.50);
+  --shadow-blue: 0 4px 14px -2px rgba(96, 165, 250, 0.35);
+}
+
+/* Scrollbar */
+html.vip-active ::-webkit-scrollbar-track { background: #1e293b; }
+html.vip-active ::-webkit-scrollbar-thumb { background: #475569; }
+html.vip-active ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* Table body — fundo das linhas padrão igual ao modo sem VIP */
+html.vip-active tbody tr:not(.colored-row) td {
+  background: #ffffff;
+  color: #64748b;
+  border-bottom-color: #e2e8f0;
+}
+html.vip-active tbody tr:not(.colored-row):hover td {
+  background: #bfdbfe;
+  color: #1e293b;
+}
+
+/* Table header hover */
+html.vip-active thead th:hover {
+  background: rgba(59, 130, 246, 0.20);
+  color: var(--text-0);
+}
+
+/* Gradientes de seção com cores hardcoded */
+html.vip-active .fp-toolbar {
+  background: var(--bg-1);
+}
+html.vip-active .rule-card-header {
+  background: linear-gradient(to right, #1e293b, #1a2744);
+}
+html.vip-active .fp-title-input {
+  background: rgba(30, 41, 59, 0.90);
+}
+html.vip-active .rule-name-input:focus {
+  background: rgba(30, 41, 59, 0.90);
+}
+
+/* Modal */
+html.vip-active .modal {
+  background: rgba(15, 23, 42, 0.97);
+  border-color: rgba(51, 65, 85, 0.70);
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.60), 0 0 0 1px rgba(96, 165, 250, 0.10);
+}
+
+/* Shimmer loading */
+html.vip-active .animate-shimmer {
+  background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+}
+
+/* Cores de botão hardcoded */
+html.vip-active .btn-green  { color: var(--green);  }
+html.vip-active .btn-red    { color: var(--red);    }
+html.vip-active .btn-yellow { color: var(--orange); }
+html.vip-active .btn-vip.active { color: #93c5fd; }
+
+/* Headers — gradiente dark */
+html.vip-active .sidebar-header {
+  background: linear-gradient(to right, #0f172a, #1e3a8a, #1d4ed8);
+}
+
+html.vip-active .sidebar-header .logo {
+  background: linear-gradient(to right, #93c5fd, #bfdbfe, #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+html.vip-active .fp-header {
+  background: linear-gradient(to right, #0f172a, #1e3a8a, #1d4ed8);
+}
+
+.vip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #1e3a8a, #1d4ed8, #1e3a8a);
+  background-size: 200% auto;
+  color: #bfdbfe;
+  animation: vip-shine 2.5s linear infinite;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.3);
+}
+
+@keyframes vip-shine {
+  to { background-position: 200% center; }
+}
+
+.btn-vip {
+  background: rgba(29, 78, 216, 0.08);
+  color: #1d4ed8;
+  border-color: rgba(29, 78, 216, 0.25);
+}
+
+.btn-vip:hover, .btn-vip.active {
+  background: rgba(29, 78, 216, 0.15);
+  border-color: rgba(29, 78, 216, 0.50);
+  box-shadow: 0 4px 14px -2px rgba(29, 78, 216, 0.25);
+}
+
+.btn-vip.active { color: #1e3a8a; font-weight: 600; }
