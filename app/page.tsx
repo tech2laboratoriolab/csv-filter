@@ -12,6 +12,8 @@ import type {
 } from "@/lib/clientDb";
 import DataTable from "@/app/components/DataTable";
 import TarefaModal from "@/app/components/TarefaModal";
+import VipModal from "@/app/components/VipModal";
+import { getVipMode, setVipMode, getVipFilterCondition } from "@/lib/vip";
 import { colorRuleExtraColumns } from "@/lib/colorRules";
 import {
   importCSV,
@@ -103,6 +105,8 @@ export default function Home() {
     Record<string, string>
   >({});
   const [tarefaRequisicao, setTarefaRequisicao] = useState<string | null>(null);
+  const [vipMode, setVipModeState] = useState(false);
+  const [showVipModal, setShowVipModal] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [distinctValues, setDistinctValues] = useState<
     Record<string, string[]>
@@ -138,6 +142,13 @@ export default function Home() {
       }
     };
     init();
+  }, []);
+
+  // VIP mode init from localStorage
+  useEffect(() => {
+    const active = getVipMode();
+    setVipModeState(active);
+    if (active) document.documentElement.classList.add("vip-active");
   }, []);
 
   // Fetch distinct values for SELECT_COLUMNS when those columns appear in conditions
@@ -210,9 +221,12 @@ export default function Home() {
         const activeRules = rules !== undefined ? rules : colorRules;
         const activeDedup = dedup !== undefined ? dedup : deduplicationColumns;
         const extraCols = colorRuleExtraColumns(activeRules, activeCols);
+        const baseConds = conds ?? conditions;
+        const vipCond = getVipFilterCondition();
+        const effectiveConds = vipCond ? [vipCond, ...baseConds] : baseConds;
         const result = await queryFiltered(
           activeCols,
-          conds ?? conditions,
+          effectiveConds,
           pg ?? page,
           PAGE_SIZE,
           sCol ?? sortCol,
@@ -477,6 +491,15 @@ export default function Home() {
 
   const selectAllCols = () => setSelectedCols(columns.map((c) => c.name));
   const deselectAllCols = () => setSelectedCols([]);
+
+  const handleVipToggle = () => {
+    const next = !vipMode;
+    setVipMode(next);
+    setVipModeState(next);
+    if (next) document.documentElement.classList.add("vip-active");
+    else document.documentElement.classList.remove("vip-active");
+    fetchData(selectedCols, conditions, 1, sortCol, sortDir);
+  };
 
   // Filters
   const addCondition = () => {
@@ -896,6 +919,52 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Saved Filters — list only */}
+              <div className="section" style={{ paddingBottom: 0 }}>
+                <div style={{ padding: "0 4px" }}>
+                  {savedFilters.map((f) => (
+                    <div
+                      key={f.id}
+                      className={`saved-item${activeFilterId === f.id ? " saved-item--active" : ""}`}
+                      onClick={() => loadFilter(f)}
+                    >
+                      <div>
+                        <div className="saved-name">{f.name}</div>
+                        <div className="saved-meta">
+                          {f.conditions.length} filtro(s) •{" "}
+                          {f.selectedColumns.length} col(s)
+                          {f.description && ` • ${f.description}`}
+                        </div>
+                      </div>
+                      <div className="saved-actions">
+                        <a
+                          href={`/filters/${f.id}`}
+                          className="btn btn-sm btn-icon btn-blue"
+                          title="Abrir página do filtro"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          ↗
+                        </a>
+                        <button
+                          className="btn btn-sm btn-icon btn-ghost"
+                          onClick={(e) => exportFilter(f, e)}
+                          title="Exportar"
+                        >
+                          📤
+                        </button>
+                        <button
+                          className="btn btn-sm btn-icon btn-red"
+                          onClick={(e) => deleteFilter(f.id, e)}
+                          title="Excluir"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Columns */}
               <div className="section">
                 <div className="section-title">
@@ -1056,14 +1125,14 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
-                  <div className="btn-group" style={{ marginTop: 8 }}>
-                    <button
-                      className="btn btn-primary btn-full"
-                      onClick={applyFilters}
-                    >
-                      {loading ? <span className="spinner" /> : "🔍"} Aplicar
-                    </button>
-                  </div>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    onClick={applyFilters}
+                  >
+                    {loading ? <span className="spinner" /> : "🔍"} Aplicar
+                  </button>
+
                   {conditions.length > 0 && (
                     <button
                       className="link-btn"
@@ -1081,7 +1150,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Saved Filters */}
+              {/* Saved Filters — header + actions */}
               <div className="section">
                 <div className="section-title">
                   Filtros Salvos ({savedFilters.length})
@@ -1108,6 +1177,12 @@ export default function Home() {
                         📤 Exportar Todos
                       </button>
                     )}
+                    <button
+                      className="btn btn-sm btn-ghost"
+                      onClick={exportCSV}
+                    >
+                      📥 Exportar CSV
+                    </button>
                   </div>
                   <input
                     ref={filterFileRef}
@@ -1119,47 +1194,6 @@ export default function Home() {
                       if (f) importFilters(f);
                     }}
                   />
-
-                  {savedFilters.map((f) => (
-                    <div
-                      key={f.id}
-                      className={`saved-item${activeFilterId === f.id ? " saved-item--active" : ""}`}
-                      onClick={() => loadFilter(f)}
-                    >
-                      <div>
-                        <div className="saved-name">{f.name}</div>
-                        <div className="saved-meta">
-                          {f.conditions.length} filtro(s) •{" "}
-                          {f.selectedColumns.length} col(s)
-                          {f.description && ` • ${f.description}`}
-                        </div>
-                      </div>
-                      <div className="saved-actions">
-                        <a
-                          href={`/filters/${f.id}`}
-                          className="btn btn-sm btn-icon btn-blue"
-                          title="Abrir página do filtro"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          ↗
-                        </a>
-                        <button
-                          className="btn btn-sm btn-icon btn-ghost"
-                          onClick={(e) => exportFilter(f, e)}
-                          title="Exportar"
-                        >
-                          📤
-                        </button>
-                        <button
-                          className="btn btn-sm btn-icon btn-red"
-                          onClick={(e) => deleteFilter(f.id, e)}
-                          title="Excluir"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </div>
             </>
@@ -1199,8 +1233,20 @@ export default function Home() {
                 </span>
               </div>
               <div className="btn-group">
-                <button className="btn btn-sm btn-ghost" onClick={exportCSV}>
-                  📥 Exportar CSV
+                <button
+                  className={`btn btn-sm btn-vip ${vipMode ? "active" : ""}`}
+                  onClick={handleVipToggle}
+                  title={vipMode ? "Desativar Modo VIP" : "Ativar Modo VIP"}
+                >
+                  {vipMode ? "★ VIP ativo" : "☆ VIP"}
+                </button>
+                <button
+                  className="btn btn-sm btn-vip"
+                  onClick={() => setShowVipModal(true)}
+                  title="Gerenciar clínicas parceiras"
+                  style={{ padding: "4px 6px" }}
+                >
+                  ⚙
                 </button>
               </div>
             </div>
@@ -1306,6 +1352,17 @@ export default function Home() {
         <TarefaModal
           codRequisicao={tarefaRequisicao}
           onClose={() => setTarefaRequisicao(null)}
+        />
+      )}
+
+      {/* ===== VIP MODAL ===== */}
+      {showVipModal && (
+        <VipModal
+          onClose={() => setShowVipModal(false)}
+          onSave={() => {
+            setShowVipModal(false);
+            fetchData(selectedCols, conditions, 1, sortCol, sortDir);
+          }}
         />
       )}
 
