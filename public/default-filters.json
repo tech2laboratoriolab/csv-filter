@@ -174,7 +174,7 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "2"
+            "value": "3"
           }
         ],
         "backgroundColor": "#000000",
@@ -432,7 +432,7 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "2"
+            "value": "3"
           }
         ],
         "backgroundColor": "#000000",
@@ -708,7 +708,7 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "2"
+            "value": "3"
           }
         ],
         "backgroundColor": "#000000",
@@ -971,7 +971,7 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "2"
+            "value": "3"
           }
         ],
         "backgroundColor": "#000000",
@@ -1244,7 +1244,7 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "2"
+            "value": "3"
           }
         ],
         "backgroundColor": "#000000",
@@ -1466,7 +1466,7 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "2"
+            "value": "3"
           }
         ],
         "backgroundColor": "#000000",
@@ -1720,7 +1720,7 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "2"
+            "value": "3"
           }
         ],
         "backgroundColor": "#000000",
@@ -3248,7 +3248,7 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "2"
+            "value": "3"
           }
         ],
         "backgroundColor": "#000000",
@@ -3436,6 +3436,11 @@
         "column": "cod_tarefa_tipo",
         "operator": "equals",
         "value": "10"
+      },
+      {
+        "column": "nom_evento",
+        "operator": "not_equals",
+        "value": "Laudo Concluído (definitivo)"
       }
     ],
     "createdAt": "2026-05-06T00:00:00.000Z",
