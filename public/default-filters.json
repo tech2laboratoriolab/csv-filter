@@ -3438,9 +3438,9 @@
         "value": "10"
       },
       {
-        "column": "nom_evento",
-        "operator": "not_equals",
-        "value": "Laudo Concluído (definitivo)"
+        "column": "cod_evento",
+        "operator": "not_in",
+        "value": "11"
       }
     ],
     "createdAt": "2026-05-06T00:00:00.000Z",
