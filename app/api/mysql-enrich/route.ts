@@ -53,6 +53,7 @@ export async function GET() {
         Codrequisicao: string;
         Codevento: string | number;
         DtaEvento: string | Date;
+        CodPrioridade: string | number;
       }[]
     )
       .filter((row) => row.Codrequisicao && row.DtaEvento)
@@ -66,7 +67,7 @@ export async function GET() {
           cod_requisicao: String(row.Codrequisicao),
           dta_status: iso,
           nom_evento_status: String(row.Codevento ?? ""),
-          cod_prioridade: "",
+          cod_prioridade: String(row.CodPrioridade ?? ""),
         };
       });
 
