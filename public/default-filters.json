@@ -471,6 +471,32 @@
         "priority": 11
       },
       {
+        "id": "color_biop_histo_distrib_apos_macro_5dias",
+        "name": "Histotécnica/Distribuição após 5d Macroscopia",
+        "targetType": "cell",
+        "targetColumn": "nom_evento",
+        "conditions": [
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "in",
+            "value": "Histotécnica,Distribuição"
+          },
+          {
+            "conditionColumn": "nom_evento_status",
+            "operator": "equals",
+            "value": "Macroscopia"
+          },
+          {
+            "conditionColumn": "dta_status",
+            "operator": "days_ago_gte",
+            "value": "5"
+          }
+        ],
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "priority": 12
+      },
+      {
         "id": "color_clinica_mulher_nom_local_origem",
         "name": "Clínica da Mulher",
         "targetType": "cell",
@@ -792,7 +818,7 @@
       {
         "column": "cod_exame",
         "operator": "in",
-        "value": "10,20,24,30,33,35"
+        "value": "10,20,24,30,33,34,35"
       },
       {
         "column": "dta_finalizacao",
