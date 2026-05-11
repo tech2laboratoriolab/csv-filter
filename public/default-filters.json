@@ -232,7 +232,7 @@
   },
   {
     "id": "imported_1773923535521_6",
-    "name": "Biópsia",
+    "name": "BIOP",
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
@@ -472,7 +472,7 @@
       },
       {
         "id": "color_biop_histo_distrib_apos_macro_5dias",
-        "name": "Histotécnica/Distribuição após 5d Macroscopia",
+        "name": "Histotécnica/Distribuição após 4d Macroscopia",
         "targetType": "cell",
         "targetColumn": "nom_evento",
         "conditions": [
@@ -489,12 +489,38 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "5"
+            "value": "4"
           }
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
         "priority": 12
+      },
+      {
+        "id": "color_biop_macro_apos_2dias",
+        "name": "Macroscopia após 2d",
+        "targetType": "cell",
+        "targetColumn": "nom_evento",
+        "conditions": [
+          {
+            "conditionColumn": "nom_evento",
+            "operator": "equals",
+            "value": "Macroscopia"
+          },
+          {
+            "conditionColumn": "nom_evento_status",
+            "operator": "equals",
+            "value": "Macroscopia"
+          },
+          {
+            "conditionColumn": "dta_status",
+            "operator": "days_ago_gte",
+            "value": "2"
+          }
+        ],
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "priority": 13
       },
       {
         "id": "color_clinica_mulher_nom_local_origem",
