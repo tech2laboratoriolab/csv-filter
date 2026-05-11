@@ -232,7 +232,7 @@
   },
   {
     "id": "imported_1773923535521_6",
-    "name": "BIOP",
+    "name": "Biópsia",
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
@@ -257,7 +257,7 @@
       {
         "column": "cod_exame",
         "operator": "in",
-        "value": "1,2,12,14,17,23,38,40,43"
+        "value": "1,2,14,23,38,40"
       },
       {
         "column": "dta_finalizacao",
@@ -542,8 +542,8 @@
     "conditions": [
       {
         "column": "cod_exame",
-        "operator": "equals",
-        "value": "4"
+        "operator": "in",
+        "value": "4,21,33,34,35,50"
       },
       {
         "column": "dta_finalizacao",
@@ -818,7 +818,7 @@
       {
         "column": "cod_exame",
         "operator": "in",
-        "value": "10,20,24,30,33,34,35"
+        "value": "20,24"
       },
       {
         "column": "dta_finalizacao",
@@ -1080,8 +1080,8 @@
     "conditions": [
       {
         "column": "cod_exame",
-        "operator": "not_in",
-        "value": "1,2,4,13,14,20,23,24,32,34,37,38,39,40,49,50"
+        "operator": "in",
+        "value": "22,51"
       },
       {
         "column": "dta_finalizacao",
@@ -1364,8 +1364,8 @@
     "conditions": [
       {
         "column": "cod_exame",
-        "operator": "not_in",
-        "value": "1,2,4,13,14,20,23,24,32,34,37,38,39,40,49,50"
+        "operator": "in",
+        "value": "22,51"
       },
       {
         "column": "dta_finalizacao",
@@ -3081,9 +3081,9 @@
     ],
     "conditions": [
       {
-        "column": "nom_exame",
-        "operator": "contains",
-        "value": "PAAF"
+        "column": "cod_exame",
+        "operator": "in",
+        "value": "17,36"
       },
       {
         "column": "dta_finalizacao",
