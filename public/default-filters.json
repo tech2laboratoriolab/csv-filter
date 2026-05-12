@@ -3592,7 +3592,68 @@
     ],
     "createdAt": "2026-05-06T00:00:00.000Z",
     "updatedAt": "2026-05-06T00:00:00.000Z",
-    "colorRules": [],
+    "colorRules": [
+      {
+        "id": "color_consenso_dta_prevista_past",
+        "name": "Atrasado",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_past",
+        "value": "",
+        "backgroundColor": "#d50707",
+        "priority": 0,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
+      },
+      {
+        "id": "color_consenso_dta_prevista_today",
+        "name": "Hoje",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_today",
+        "value": "",
+        "backgroundColor": "#ffea00",
+        "priority": 1,
+        "targetColumn": "dta_prevista",
+        "textColor": "#000000"
+      },
+      {
+        "id": "color_consenso_dta_prevista_tomorrow",
+        "name": "Amanhã",
+        "targetType": "cell",
+        "conditionColumn": "dta_prevista",
+        "operator": "is_tomorrow",
+        "value": "",
+        "backgroundColor": "#00bfff",
+        "priority": 2,
+        "targetColumn": "dta_prevista",
+        "textColor": "#ffffff"
+      },
+      {
+        "id": "color_consenso_clinica_mulher_nom",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 3,
+        "targetColumn": "nom_local_origem"
+      },
+      {
+        "id": "color_consenso_clinica_mulher_local",
+        "name": "Clínica da Mulher",
+        "targetType": "cell",
+        "conditionColumn": "local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher - asa sul",
+        "backgroundColor": "#ad1457",
+        "textColor": "#ffffff",
+        "priority": 3,
+        "targetColumn": "local_origem"
+      }
+    ],
     "formulaColumns": [],
     "annotationColumns": [],
     "sortOrder": 15
