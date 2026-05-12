@@ -51,7 +51,7 @@ export const COLUMNS: ColumnDef[] = [
   { name: "des_conclusao", label: "DesConclusao", type: "text" },
   { name: "qtdlam", label: "QtdLam", type: "number" },
   { name: "dta_status", label: "DtaStatus", type: "date" },
-  { name: "nom_evento_status", label: "NomEventoStatus", type: "text" },
+  { name: "cod_evento_status", label: "CodEventoStatus", type: "text" },
   { name: "cod_prioridade", label: "CodPrioridade", type: "text" },
   { name: "dta_recibo", label: "DtaRecibo", type: "date" },
   { name: "vlr_recibo", label: "VlrRecibo", type: "number" },
@@ -1792,7 +1792,7 @@ export async function importMysqlEnrichment(
   data: {
     cod_requisicao: string;
     dta_status: string;
-    nom_evento_status: string;
+    cod_evento_status: string;
     cod_prioridade: string;
   }[],
 ): Promise<{ updated: number }> {
@@ -1802,15 +1802,15 @@ export async function importMysqlEnrichment(
   let updated = 0;
   db.run("BEGIN TRANSACTION;");
   const stmt = db.prepare(
-    `UPDATE csv_data SET "dta_status" = ?, "nom_evento_status" = ?, "cod_prioridade" = ? WHERE "cod_requisicao" = ?`,
+    `UPDATE csv_data SET "dta_status" = ?, "cod_evento_status" = ?, "cod_prioridade" = ? WHERE "cod_requisicao" = ?`,
   );
   for (const {
     cod_requisicao,
     dta_status,
-    nom_evento_status,
+    cod_evento_status,
     cod_prioridade,
   } of data) {
-    stmt.run([dta_status, nom_evento_status, cod_prioridade, cod_requisicao]);
+    stmt.run([dta_status, cod_evento_status, cod_prioridade, cod_requisicao]);
     updated++;
   }
   stmt.free();

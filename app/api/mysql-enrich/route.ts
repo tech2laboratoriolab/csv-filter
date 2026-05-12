@@ -66,7 +66,7 @@ export async function GET() {
         return {
           cod_requisicao: String(row.Codrequisicao),
           dta_status: iso,
-          nom_evento_status: String(row.Codevento ?? ""),
+          cod_evento_status: String(row.Codevento ?? ""),
           cod_prioridade: String(row.CodPrioridade ?? ""),
         };
       });
