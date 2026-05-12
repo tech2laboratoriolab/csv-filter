@@ -339,6 +339,8 @@ export default function DataTable({
                       const isFallback = val === col.lc.fallback;
                       const lcCellStyle = (cellStyles[col.lc.id] ||
                         {}) as React.CSSProperties;
+                      const rowBgLc = (rowStyle as React.CSSProperties)
+                        .backgroundColor;
                       const rowTextColorLc = (rowStyle as React.CSSProperties)
                         .color as string | undefined;
                       return (
@@ -353,6 +355,7 @@ export default function DataTable({
                                 : rowTextColorLc || "var(--blue)",
                             fontStyle: isFallback ? "italic" : "normal",
                             ...lcCellStyle,
+                            ...(rowBgLc ? { backgroundColor: rowBgLc } : {}),
                           }}
                           title={val}
                         >
@@ -409,6 +412,8 @@ export default function DataTable({
                       const saved = annotationValues[key] ?? "";
                       const acCellStyle = (cellStyles[col.ac.id] ||
                         {}) as React.CSSProperties;
+                      const rowBgAc = (rowStyle as React.CSSProperties)
+                        .backgroundColor;
                       return (
                         <td
                           key={`ac-${col.ac.id}`}
@@ -416,6 +421,7 @@ export default function DataTable({
                             width: col.ac.width ?? 180,
                             padding: "2px 4px",
                             ...acCellStyle,
+                            ...(rowBgAc ? { backgroundColor: rowBgAc } : {}),
                           }}
                         >
                           <input
@@ -448,12 +454,17 @@ export default function DataTable({
 
                     const cellStyle = (cellStyles[col.name] ||
                       {}) as React.CSSProperties;
+                    const rowBg = (rowStyle as React.CSSProperties)
+                      .backgroundColor;
                     const rowTextColor = (rowStyle as React.CSSProperties)
                       .color;
-                    const mergedStyle: React.CSSProperties =
-                      rowTextColor && !cellStyle.color
-                        ? { ...cellStyle, color: rowTextColor }
-                        : cellStyle;
+                    const mergedStyle: React.CSSProperties = {
+                      ...cellStyle,
+                      ...(rowBg ? { backgroundColor: rowBg } : {}),
+                      ...(rowTextColor && !cellStyle.color
+                        ? { color: rowTextColor }
+                        : {}),
+                    };
                     const val = row[col.name] ?? "";
                     const colType = columns.find(
                       (c) => c.name === col.name,
