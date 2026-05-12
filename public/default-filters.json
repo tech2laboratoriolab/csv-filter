@@ -179,7 +179,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 6
+        "priority": -2
       },
       {
         "id": "color_ac_saiu_autorizacao",
@@ -437,7 +437,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 9
+        "priority": -2
       },
       {
         "id": "color_biop_cod_evento_58",
@@ -494,7 +494,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 12
+        "priority": -2
       },
       {
         "id": "color_biop_macro_apos_2dias",
@@ -520,7 +520,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 13
+        "priority": -2
       },
       {
         "id": "color_clinica_mulher_nom_local_origem",
@@ -548,7 +548,11 @@
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
     "annotationColumns": [],
     "sortOrder": 1
   },
@@ -765,7 +769,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 10
+        "priority": -2
       },
       {
         "id": "color_cito_liq_cod_evento_58",
@@ -824,7 +828,11 @@
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
     "annotationColumns": [],
     "sortOrder": 2
   },
@@ -1028,7 +1036,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 10
+        "priority": -2
       },
       {
         "id": "color_cito_ml_cod_evento_58",
@@ -1087,7 +1095,11 @@
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
     "annotationColumns": [],
     "sortOrder": 3
   },
@@ -1301,7 +1313,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 10
+        "priority": -2
       },
       {
         "id": "color_biomol_disponivel_coleta",
@@ -1523,7 +1535,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 5
+        "priority": -2
       },
       {
         "id": "color_biomol_esp_disponivel_coleta",
@@ -1609,7 +1621,11 @@
     ],
     "formulaColumns": [],
     "annotationColumns": [],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
     "sortOrder": 5
   },
   {
@@ -1777,7 +1793,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 7
+        "priority": -2
       },
       {
         "id": "color_imuno_cod_evento_58",
@@ -2008,7 +2024,10 @@
             "value": "IMUNO"
           }
         ],
-        "displayColumns": ["cod_requisicao", "cod_evento"],
+        "displayColumns": [
+          "cod_requisicao",
+          "cod_evento"
+        ],
         "separator": " / ",
         "limit": 2,
         "fallback": "PENDENTE VERIFICAÇÃO",
@@ -2295,8 +2314,13 @@
         "insertAfterColumn": "visualizacao"
       }
     ],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"],
-    "deduplicationColumns": ["cod_requisicao"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente"
+    ],
+    "deduplicationColumns": [
+      "cod_requisicao"
+    ],
     "sortOrder": 8
   },
   {
@@ -2453,8 +2477,13 @@
         "insertAfterColumn": "visualizacao"
       }
     ],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente"],
-    "deduplicationColumns": ["cod_requisicao"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente"
+    ],
+    "deduplicationColumns": [
+      "cod_requisicao"
+    ],
     "createdAt": "2026-04-08T00:00:00.000Z",
     "sortOrder": 9
   },
@@ -2585,7 +2614,11 @@
   {
     "id": "default_erros_cadastro",
     "name": "ERROS CADASTRO",
-    "selectedColumns": ["local_origem", "nom_medico", "cod_requisicao"],
+    "selectedColumns": [
+      "local_origem",
+      "nom_medico",
+      "cod_requisicao"
+    ],
     "conditions": [
       {
         "column": "local_origem",
@@ -3305,7 +3338,7 @@
         ],
         "backgroundColor": "#000000",
         "textColor": "#ffffff",
-        "priority": 10
+        "priority": -2
       },
       {
         "id": "color_cito_liq_cod_evento_58",
@@ -3364,7 +3397,11 @@
       }
     ],
     "formulaColumns": [],
-    "whatsappLinhasColumns": ["cod_requisicao", "nom_paciente", "dta_prevista"],
+    "whatsappLinhasColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "dta_prevista"
+    ],
     "annotationColumns": [],
     "sortOrder": 2.5
   },
