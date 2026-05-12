@@ -168,7 +168,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "nom_evento",
+            "value": "cod_evento",
             "valueIsColumn": true
           },
           {
@@ -189,7 +189,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -426,7 +426,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "nom_evento",
+            "value": "cod_evento",
             "valueIsColumn": true
           },
           {
@@ -458,7 +458,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -483,7 +483,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Macroscopia"
+            "value": "14"
           },
           {
             "conditionColumn": "dta_status",
@@ -508,7 +508,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Macroscopia"
+            "value": "14"
           },
           {
             "conditionColumn": "dta_status",
@@ -756,7 +756,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "nom_evento",
+            "value": "cod_evento",
             "valueIsColumn": true
           },
           {
@@ -788,7 +788,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -1023,7 +1023,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "nom_evento",
+            "value": "cod_evento",
             "valueIsColumn": true
           },
           {
@@ -1055,7 +1055,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -1300,7 +1300,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "nom_evento",
+            "value": "cod_evento",
             "valueIsColumn": true
           },
           {
@@ -1344,7 +1344,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -1522,7 +1522,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "nom_evento",
+            "value": "cod_evento",
             "valueIsColumn": true
           },
           {
@@ -1580,7 +1580,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -1780,7 +1780,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "nom_evento",
+            "value": "cod_evento",
             "valueIsColumn": true
           },
           {
@@ -1812,7 +1812,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -1965,7 +1965,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -2258,7 +2258,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -2421,7 +2421,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -2562,7 +2562,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -2883,7 +2883,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -3074,7 +3074,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
@@ -3325,7 +3325,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "nom_evento",
+            "value": "cod_evento",
             "valueIsColumn": true
           },
           {
@@ -3357,7 +3357,7 @@
           {
             "conditionColumn": "nom_evento_status",
             "operator": "equals",
-            "value": "Aguarda autorização do convênio"
+            "value": "57"
           },
           {
             "conditionColumn": "nom_evento",
