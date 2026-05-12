@@ -224,6 +224,18 @@
         "textColor": "#ffffff",
         "priority": 0,
         "targetColumn": "local_origem"
+      },
+      {
+        "id": "color_ac_cod_evento_1021",
+        "name": "Amostra Pendente de PGTO",
+        "targetType": "cell",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "1021",
+        "backgroundColor": "#8B4513",
+        "textColor": "#ffffff",
+        "priority": 5,
+        "targetColumn": "nom_evento"
       }
     ],
     "formulaColumns": [],
@@ -823,6 +835,18 @@
         "textColor": "#ffffff",
         "priority": 0,
         "targetColumn": "local_origem"
+      },
+      {
+        "id": "color_cito_liq_cod_evento_1021",
+        "name": "Amostra Pendente de PGTO",
+        "targetType": "cell",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "1021",
+        "backgroundColor": "#8B4513",
+        "textColor": "#ffffff",
+        "priority": 5,
+        "targetColumn": "nom_evento"
       }
     ],
     "formulaColumns": [],
@@ -1379,6 +1403,18 @@
         "textColor": "#ffffff",
         "priority": 0,
         "targetColumn": "local_origem"
+      },
+      {
+        "id": "color_cap_cod_evento_1021",
+        "name": "Amostra Pendente de PGTO",
+        "targetType": "cell",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "1021",
+        "backgroundColor": "#8B4513",
+        "textColor": "#ffffff",
+        "priority": 5,
+        "targetColumn": "nom_evento"
       }
     ],
     "formulaColumns": [],
@@ -1847,6 +1883,18 @@
         "textColor": "#ffffff",
         "priority": 0,
         "targetColumn": "local_origem"
+      },
+      {
+        "id": "color_imuno_cod_evento_1021",
+        "name": "Amostra Pendente de PGTO",
+        "targetType": "cell",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "1021",
+        "backgroundColor": "#8B4513",
+        "textColor": "#ffffff",
+        "priority": 5,
+        "targetColumn": "nom_evento"
       }
     ],
     "formulaColumns": [],
@@ -3392,6 +3440,18 @@
         "textColor": "#ffffff",
         "priority": 0,
         "targetColumn": "local_origem"
+      },
+      {
+        "id": "color_paaf_cod_evento_1021",
+        "name": "Amostra Pendente de PGTO",
+        "targetType": "cell",
+        "conditionColumn": "cod_evento",
+        "operator": "equals",
+        "value": "1021",
+        "backgroundColor": "#8B4513",
+        "textColor": "#ffffff",
+        "priority": 5,
+        "targetColumn": "nom_evento"
       }
     ],
     "formulaColumns": [],
