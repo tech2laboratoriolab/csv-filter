@@ -396,7 +396,7 @@
           {
             "conditionColumn": "dta_prevista",
             "operator": "days_ahead_gte",
-            "value": "3"
+            "value": "1"
           },
           {
             "conditionColumn": "dta_prevista",
@@ -406,7 +406,7 @@
           {
             "conditionColumn": "nom_evento",
             "operator": "in",
-            "value": "Macroscopia,Histotécnica,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
+            "value": "Histotécnica,Aguarda autorização do convênio,Aguarda assinatura,Amostra Pendente de Envio ao Destino"
           }
         ],
         "backgroundColor": "#0969da",
