@@ -71,6 +71,14 @@ export default function AnotacoesPage() {
             </span>
           </Link>
 
+          <Link href="/anotacoes/analise-ia" className="anot-card">
+            <span style={{ fontSize: 40 }}>🤖</span>
+            <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-0)' }}>Análise de IA</span>
+            <span style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center' }}>
+              Detecção de contradições em laudos CITO e IHQ via Gemini
+            </span>
+          </Link>
+
         </div>
       </div>
     </div>
