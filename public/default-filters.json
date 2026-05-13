@@ -3729,5 +3729,48 @@
     "formulaColumns": [],
     "annotationColumns": [],
     "sortOrder": 15
+  },
+  {
+    "id": "jec_glandular",
+    "name": "JEC x Glandular",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "nom_medico",
+      "dta_solicitacao",
+      "laudo_micro"
+    ],
+    "conditions": [
+      {
+        "column": "nom_exame_tipo",
+        "operator": "contains",
+        "value": "CITOPATOLOGIA"
+      },
+      {
+        "column": "nom_exame",
+        "operator": "contains",
+        "value": "COLPOCITOLOGIA"
+      },
+      {
+        "column": "nom_medico",
+        "operator": "contains",
+        "value": "IVAN"
+      },
+      {
+        "column": "laudo_micro",
+        "operator": "contains",
+        "value": "glandular"
+      },
+      {
+        "column": "laudo_micro",
+        "operator": "contains",
+        "value": "ENDOCERVICAIS"
+      }
+    ],
+    "colorRules": [],
+    "formulaColumns": [],
+    "annotationColumns": [],
+    "createdAt": "2026-05-13T00:00:00.000Z",
+    "updatedAt": "2026-05-13T00:00:00.000Z"
   }
 ]
