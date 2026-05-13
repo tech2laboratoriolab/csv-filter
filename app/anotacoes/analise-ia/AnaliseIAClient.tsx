@@ -2,16 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { queryFiltered, getPrompts } from '@/lib/clientDb';
-import type { FilterCondition, Prompt } from '@/lib/clientDb';
+import { queryFiltered, getPrompts, getSavedFilters } from '@/lib/clientDb';
+import type { FilterCondition, Prompt, SavedFilter } from '@/lib/clientDb';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface LaudoRow {
-  cod_requisicao: string;
-  nom_paciente: string;
-  laudo_micro: string;
-  nom_exame: string;
+  [key: string]: string;
 }
 
 interface AnaliseResult {
@@ -20,28 +17,45 @@ interface AnaliseResult {
   error?: string;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const CITO_EXAMES = 'REDE - CITOPATOLOGIA,COLPOCITOLOGIA ONCÓTICA CONVENCIONAL,COLPOCITOLOGIA ONCÓTICA EM MEIO LÍQUIDO,REVISÃO DE LÂMINA INTERNA,CITOLOGIA ANAL CONVENCIONAL,CITOLOGIA ONCÓTICA DE LÍQUIDOS,CITOLOGIA EM MEIO LÍQUIDO URINÁRIO';
-
-const CONDITIONS: FilterCondition[] = [
-  { column: 'des_evento', operator: 'equals', value: 'Laudo Concluído (Definitivo)' },
-  { column: 'laudo_micro', operator: 'is_not_null', value: '' },
-  { column: 'nom_exame', operator: 'in', value: CITO_EXAMES },
-];
-
-const SELECTED_COLS = [
-  'cod_requisicao',
-  'nom_paciente',
-  'laudo_micro',
-  'nom_exame',
-];
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function truncate(text: string, maxLen = 80): string {
   if (!text) return '—';
   return text.length > maxLen ? text.slice(0, maxLen) + '…' : text;
+}
+
+function isLongText(value: string): boolean {
+  return value.length > 40;
+}
+
+function formatCellValue(key: string, value: string): string {
+  if (!value) return '—';
+  if (key.startsWith('dta_') && value.includes(' ')) {
+    return value.split(' ')[0];
+  }
+  return value;
+}
+
+function getColumnWidth(key: string): string | number {
+  if (key === 'cod_requisicao') return 100;
+  if (key === 'nom_paciente') return 150;
+  if (key === 'laudo_micro') return '35%';
+  if (key === 'resultado_ia') return '25%';
+  return 'auto';
+}
+
+function getColumnLabel(key: string): string {
+  const labels: Record<string, string> = {
+    cod_requisicao: 'CodRequisicao',
+    nom_paciente: 'Paciente',
+    laudo_micro: 'LaudoMicro',
+    dta_solicitacao: 'DtaSolicitacao',
+    dta_finalizacao: 'DtaFinalizacao',
+    des_evento: 'DesEvento',
+    nom_exame: 'NomExame',
+    des_topografia: 'DesTopografia',
+  };
+  return labels[key] || key;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -56,42 +70,65 @@ export default function AnaliseIAClient() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [selectedPromptId, setSelectedPromptId] = useState<string>('');
   const [promptsLoading, setPromptsLoading] = useState(true);
+  const [filter, setFilter] = useState<SavedFilter | null>(null);
+  const [columns, setColumns] = useState<string[]>([]);
 
-  // Load prompts on mount
+  // Load prompts and filter on mount
   useEffect(() => {
-    getPrompts()
-      .then((p) => {
-        setPrompts(p);
-        if (p.length > 0) setSelectedPromptId(p[0].id);
+    Promise.all([
+      getPrompts(),
+      getSavedFilters(),
+    ])
+      .then(([promptsData, filtersData]) => {
+        setPrompts(promptsData);
+        if (promptsData.length > 0) setSelectedPromptId(promptsData[0].id);
+
+        // Find "analise IA" filter
+        const analiseFilter = filtersData.find(
+          (f) => f.name.toLowerCase() === 'analise ia' || f.id === 'analise_ia'
+        );
+        if (analiseFilter) {
+          setFilter(analiseFilter);
+          // Ensure required columns are present
+          const requiredCols = ['cod_requisicao', 'laudo_micro'];
+          const allCols = Array.from(new Set([...analiseFilter.selectedColumns, ...requiredCols]));
+          setColumns(allCols);
+        } else {
+          setLoadError('Filtro "analise IA" não encontrado. Crie o filtro na página principal.');
+        }
       })
-      .catch(() => {})
+      .catch(() => setLoadError('Erro ao carregar dados iniciais.'))
       .finally(() => setPromptsLoading(false));
   }, []);
 
-  // Load laudos on mount
+  // Load laudos when filter is available
   useEffect(() => {
+    if (!filter) return;
+
     (async () => {
       try {
+        const allCols = Array.from(new Set([...filter.selectedColumns, 'cod_requisicao', 'laudo_micro']));
         const { rows: rawRows } = await queryFiltered(
-          SELECTED_COLS,
-          CONDITIONS,
+          allCols,
+          filter.conditions,
           1,
           1000,
         );
         const mapped: LaudoRow[] = (rawRows as any[])
           .filter((r) => r.laudo_micro)
-          .map((r) => ({
-            cod_requisicao: String(r.cod_requisicao ?? ''),
-            nom_paciente: String(r.nom_paciente ?? ''),
-            laudo_micro: String(r.laudo_micro ?? ''),
-            nom_exame: String(r.nom_exame ?? ''),
-          }));
+          .map((r) => {
+            const obj: LaudoRow = {};
+            allCols.forEach((col) => {
+              obj[col] = String(r[col] ?? '');
+            });
+            return obj;
+          });
         setRows(mapped);
       } catch (e: any) {
         setLoadError(e?.message ?? 'Erro ao carregar laudos.');
       }
     })();
-  }, []);
+  }, [filter]);
 
   const selectedPrompt = prompts.find((p) => p.id === selectedPromptId);
 
@@ -141,10 +178,15 @@ export default function AnaliseIAClient() {
       ...results[r.cod_requisicao],
     }));
 
+  // Dynamic columns for table (filter columns + resultado_ia)
+  const tableColumns = filter
+    ? [...filter.selectedColumns.filter((c) => c !== 'resultado_ia'), 'resultado_ia']
+    : [];
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-0)', color: 'var(--text-0)' }}>
       <style>{`
-        .ia-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .ia-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
         .ia-table th {
           background: #f1f5f9;
           font-weight: 600;
@@ -156,12 +198,21 @@ export default function AnaliseIAClient() {
           position: sticky;
           top: 0;
           z-index: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .ia-table td {
           padding: 8px 12px;
           border-bottom: 1px solid var(--border);
           vertical-align: top;
           color: var(--text-1);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .ia-table td.wrap {
+          white-space: normal;
+          word-break: break-word;
         }
         .ia-table tr:hover td { background: #f8fafc; }
         .badge-tipo {
@@ -233,7 +284,7 @@ export default function AnaliseIAClient() {
           🤖 Análise de IA
         </span>
         <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 4 }}>
-          Laudos Concluídos (Definitivo) · CITO
+          {filter ? filter.name : 'Carregando...'}
         </span>
         {/* Indicador de linhas */}
         <span style={{
@@ -258,15 +309,21 @@ export default function AnaliseIAClient() {
           </div>
         )}
 
-        {!loadError && rows.length === 0 && !isAnalyzing && (
+        {!loadError && !filter && (
           <div style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', marginTop: 48 }}>
-            Nenhum laudo encontrado com <strong>Laudo Concluído (Definitivo)</strong> e LaudoMicro preenchido.
+            Carregando filtro...
+          </div>
+        )}
+
+        {filter && rows.length === 0 && !isAnalyzing && (
+          <div style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', marginTop: 48 }}>
+            Nenhum laudo encontrado com as condições do filtro <strong>{filter.name}</strong>.
             <br />
             <span style={{ fontSize: 12, marginTop: 8, display: 'block' }}>Certifique-se de que o CSV foi carregado.</span>
           </div>
         )}
 
-        {rows.length > 0 && (
+        {filter && rows.length > 0 && (
           <>
             {/* Prompt Selector + Analyze Button */}
             <div style={{
@@ -354,10 +411,17 @@ export default function AnaliseIAClient() {
               <table className="ia-table">
                 <thead>
                   <tr>
-                    <th style={{ width: 100 }}>CodRequisicao</th>
-                    <th style={{ width: 150 }}>Paciente</th>
-                    <th style={{ width: '40%' }}>LaudoMicro</th>
-                    <th style={{ width: '30%', minWidth: 200 }}>Resultado IA</th>
+                    {tableColumns.map((col) => (
+                      <th
+                        key={col}
+                        style={{
+                          width: getColumnWidth(col),
+                          minWidth: col === 'laudo_micro' ? 200 : undefined,
+                        }}
+                      >
+                        {getColumnLabel(col)}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -365,35 +429,55 @@ export default function AnaliseIAClient() {
                     const result = results[row.cod_requisicao];
                     return (
                       <tr key={row.cod_requisicao}>
-                        <td style={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap', width: 100 }}>
-                          {row.cod_requisicao}
-                        </td>
-                        <td style={{ whiteSpace: 'nowrap', width: 150, fontSize: 12 }}>{row.nom_paciente || '—'}</td>
-                        <td style={{ width: '40%', color: 'var(--text-2)', fontSize: 12 }}>
-                          {truncate(row.laudo_micro, 120)}
-                        </td>
-                        <td style={{ width: '30%', minWidth: 200 }}>
-                          {!result && isAnalyzing && (
-                            <span style={{ color: 'var(--text-3)', fontSize: 12 }}>aguardando…</span>
-                          )}
-                          {result?.error && (
-                            <span className="badge-tipo badge-err" title={result.error}>⚠ erro</span>
-                          )}
-                          {result && !result.error && (
-                            <div>
-                              <span className={`badge-tipo ${result.contradicao === 'SIM' ? 'badge-sim' : 'badge-nao'}`}>
-                                {result.contradicao === 'SIM' ? '⚠ Contradição' : '✓ OK'}
-                              </span>
-                              {result.evidencias && result.evidencias.length > 0 && (
-                                <ul className="evidencias-list">
-                                  {result.evidencias.map((ev, i) => (
-                                    <li key={i}>{ev}</li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
-                          )}
-                        </td>
+                        {tableColumns.map((col) => {
+                          if (col === 'resultado_ia') {
+                            return (
+                              <td key={col} style={{ minWidth: 200 }}>
+                                {!result && isAnalyzing && (
+                                  <span style={{ color: 'var(--text-3)', fontSize: 12 }}>aguardando…</span>
+                                )}
+                                {result?.error && (
+                                  <span className="badge-tipo badge-err" title={result.error}>⚠ erro</span>
+                                )}
+                                {result && !result.error && (
+                                  <div>
+                                    <span className={`badge-tipo ${result.contradicao === 'SIM' ? 'badge-sim' : 'badge-nao'}`}>
+                                      {result.contradicao === 'SIM' ? '⚠ Contradição' : '✓ OK'}
+                                    </span>
+                                    {result.evidencias && result.evidencias.length > 0 && (
+                                      <ul className="evidencias-list">
+                                        {result.evidencias.map((ev, i) => (
+                                          <li key={i}>{ev}</li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          }
+
+                          const value = row[col] ?? '';
+                          const isLong = isLongText(value);
+
+                          return (
+                            <td
+                              key={col}
+                              className={isLong ? 'wrap' : ''}
+                              style={{
+                                fontFamily: col === 'cod_requisicao' ? 'monospace' : undefined,
+                                fontSize: 12,
+                                width: getColumnWidth(col),
+                                maxWidth: col === 'laudo_micro' ? 400 : undefined,
+                              }}
+                              title={isLong ? value : undefined}
+                            >
+                              {col === 'laudo_micro'
+                                ? truncate(value, 120)
+                                : formatCellValue(col, value)}
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}
