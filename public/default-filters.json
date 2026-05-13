@@ -3772,5 +3772,34 @@
     "annotationColumns": [],
     "createdAt": "2026-05-13T00:00:00.000Z",
     "updatedAt": "2026-05-13T00:00:00.000Z"
+  },
+  {
+    "id": "insatisfatorio_clinica_mulher",
+    "name": "INSATISFATÓRIO",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "nom_local_origem",
+      "avaliacao_cito",
+      "dta_solicitacao",
+      "dta_finalizacao"
+    ],
+    "conditions": [
+      {
+        "column": "avaliacao_cito",
+        "operator": "equals",
+        "value": "INSATISFATÓRIO"
+      },
+      {
+        "column": "nom_local_origem",
+        "operator": "contains",
+        "value": "clinica da mulher"
+      }
+    ],
+    "colorRules": [],
+    "formulaColumns": [],
+    "annotationColumns": [],
+    "createdAt": "2026-05-13T00:00:00.000Z",
+    "updatedAt": "2026-05-13T00:00:00.000Z"
   }
 ]
