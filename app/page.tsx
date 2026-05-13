@@ -22,6 +22,7 @@ import {
   importMysqlEnrichment,
   importReciboEnrichment,
   importTarefaTipoEnrichment,
+  importMicroMedicoEnrichment,
   getTableStats,
   getSavedFilters,
   getDistinctValues,
@@ -448,15 +449,36 @@ export default function Home() {
                   console.error("[TarefaTipo enrich] Falha:", tarefaTipoErr);
                 }
 
+                let microMedicoUpdated = 0;
+                try {
+                  const microMedicoRes = await fetch("/api/micro-medico-enrich");
+                  const microMedicoData = await microMedicoRes.json();
+                  if (
+                    microMedicoRes.ok &&
+                    Array.isArray(microMedicoData) &&
+                    microMedicoData.length > 0
+                  ) {
+                    const { updated } =
+                      await importMicroMedicoEnrichment(microMedicoData);
+                    microMedicoUpdated = updated;
+                    console.log(
+                      `[MicroMedico enrich] ${microMedicoUpdated} linha(s) atualizadas`,
+                    );
+                  }
+                } catch (microMedicoErr) {
+                  console.error("[MicroMedico enrich] Falha:", microMedicoErr);
+                }
+
                 await fetchDataRef.current();
                 if (
                   mysqlUpdated > 0 ||
                   reciboUpdated > 0 ||
-                  tarefaTipoUpdated > 0
+                  tarefaTipoUpdated > 0 ||
+                  microMedicoUpdated > 0
                 ) {
                   showToast(
                     "success",
-                    `${mysqlUpdated} status + ${reciboUpdated} recibo(s) + ${tarefaTipoUpdated} tarefa(s) sincronizados`,
+                    `${mysqlUpdated} status + ${reciboUpdated} recibo(s) + ${tarefaTipoUpdated} tarefa(s) + ${microMedicoUpdated} micro médico(s) sincronizados`,
                     true,
                   );
                 } else {

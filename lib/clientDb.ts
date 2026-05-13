@@ -52,6 +52,7 @@ export const COLUMNS: ColumnDef[] = [
   { name: "qtdlam", label: "QtdLam", type: "number" },
   { name: "dta_status", label: "DtaStatus", type: "date" },
   { name: "cod_evento_status", label: "CodEventoStatus", type: "text" },
+  { name: "dta_micro_medico", label: "DtaMicroMedico", type: "date" },
   { name: "cod_prioridade", label: "CodPrioridade", type: "text" },
   { name: "dta_recibo", label: "DtaRecibo", type: "date" },
   { name: "vlr_recibo", label: "VlrRecibo", type: "number" },
@@ -1785,6 +1786,34 @@ export async function getBioMolecularRows(
       return obj;
     }),
   };
+}
+
+// --- Micro Médico Enrichment Import ---
+export async function importMicroMedicoEnrichment(
+  data: { cod_requisicao: string; dta_micro_medico: string }[],
+): Promise<{ updated: number }> {
+  if (data.length === 0) return { updated: 0 };
+  const db = await getDb();
+
+  let updated = 0;
+  db.run("BEGIN TRANSACTION;");
+  const stmt = db.prepare(
+    `UPDATE csv_data SET "dta_micro_medico" = ? WHERE "cod_requisicao" = ?`,
+  );
+  for (const { cod_requisicao, dta_micro_medico } of data) {
+    stmt.run([dta_micro_medico, cod_requisicao]);
+    updated++;
+  }
+  stmt.free();
+  db.run("COMMIT;");
+
+  const idb = await getIdb();
+  if (idb) {
+    const snapshot = db.export();
+    await idb.put("csv_database", snapshot, "snapshot");
+  }
+
+  return { updated };
 }
 
 // --- MySQL Enrichment Import ---
