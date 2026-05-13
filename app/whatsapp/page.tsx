@@ -205,16 +205,26 @@ function applyWhatsAppDateFilter(filter: SavedFilter): FilterCondition[] {
   ];
 }
 
-function sortRowsDescByDate(
+function sortRowsAscByDate(
   rows: Record<string, string>[],
   columns: { name: string; type: string }[],
 ): Record<string, string>[] {
-  const dateCol = columns.find((c) => c.type === "date");
+  const dateCol =
+    columns.find((c) => c.name === "dta_solicitacao") ||
+    columns.find((c) => c.type === "date");
   if (!dateCol) return rows;
   return [...rows].sort((a, b) => {
     const va = a[dateCol.name] ?? "";
     const vb = b[dateCol.name] ?? "";
-    return vb.localeCompare(va);
+    const parse = (v: string): number => {
+      if (!v) return Number.MAX_SAFE_INTEGER;
+      const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) return Number(iso[1]) * 10000 + Number(iso[2]) * 100 + Number(iso[3]);
+      const br = v.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (br) return Number(br[3]) * 10000 + Number(br[2]) * 100 + Number(br[1]);
+      return Number.MAX_SAFE_INTEGER;
+    };
+    return parse(va) - parse(vb);
   });
 }
 
@@ -256,7 +266,7 @@ async function combineFilterData(
 
   const columnsCombined =
     results.find((r) => r.rowData.columns?.length)?.rowData.columns ?? [];
-  const rowsCombined = sortRowsDescByDate(
+  const rowsCombined = sortRowsAscByDate(
     results.flatMap((r) => r.rowData.rows ?? []),
     columnsCombined,
   );
@@ -581,7 +591,7 @@ export default function WhatsAppPage() {
         const columnsCombined =
           bioResults.find((r) => r.rowData.columns?.length)?.rowData.columns ??
           [];
-        const rowsCombined = sortRowsDescByDate(
+        const rowsCombined = sortRowsAscByDate(
           bioResults.flatMap((r) => r.rowData.rows ?? []),
           columnsCombined,
         );
@@ -646,7 +656,7 @@ export default function WhatsAppPage() {
         const columnsCombined =
           analisesResults.find((r) => r.rowData.columns?.length)?.rowData
             .columns ?? [];
-        const rowsCombined = sortRowsDescByDate(
+        const rowsCombined = sortRowsAscByDate(
           analisesResults.flatMap((r) => r.rowData.rows ?? []),
           columnsCombined,
         );
@@ -808,7 +818,7 @@ export default function WhatsAppPage() {
       const columnsCombined =
         bioResults.find((r) => r.rowData.columns?.length)?.rowData.columns ??
         [];
-      const rowsCombined = sortRowsDescByDate(
+      const rowsCombined = sortRowsAscByDate(
         bioResults.flatMap((r) => r.rowData.rows ?? []),
         columnsCombined,
       );
@@ -858,7 +868,7 @@ export default function WhatsAppPage() {
       const columnsCombined =
         analisesResults.find((r) => r.rowData.columns?.length)?.rowData
           .columns ?? [];
-      const rowsCombined = sortRowsDescByDate(
+      const rowsCombined = sortRowsAscByDate(
         analisesResults.flatMap((r) => r.rowData.rows ?? []),
         columnsCombined,
       );
