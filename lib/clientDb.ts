@@ -169,7 +169,7 @@ let idbPromise: Promise<IDBPDatabase> | null = null;
 function getIdb() {
   if (typeof window === "undefined") return null; // SSR safety
   if (!idbPromise) {
-    idbPromise = openDB("csv-filter-pro", 5, {
+    idbPromise = openDB("csv-filter-pro", 6, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           if (!db.objectStoreNames.contains("filters")) {
@@ -200,6 +200,11 @@ function getIdb() {
         if (oldVersion < 5) {
           if (!db.objectStoreNames.contains("analises_clinicas_settings")) {
             db.createObjectStore("analises_clinicas_settings");
+          }
+        }
+        if (oldVersion < 6) {
+          if (!db.objectStoreNames.contains("prompts")) {
+            db.createObjectStore("prompts", { keyPath: "id" });
           }
         }
       },
@@ -612,6 +617,10 @@ export interface FilterCondition {
     | "is_today_or_tomorrow"
     | "is_future_or_today"
     | "is_past_or_today"
+    | "days_ago_gte"
+    | "days_ago_lte"
+    | "days_ahead_gte"
+    | "days_ahead_lte"
     | "unique_combination";
   value: string | number;
   value2?: string | number;
@@ -842,6 +851,26 @@ function conditionToSQL(c: FilterCondition): { clause: string; params: any[] } {
     case "is_past_or_today":
       clause = `(${col} IS NOT NULL AND DATE(${col}) <= date('now', 'localtime'))`;
       break;
+    case "days_ago_gte": {
+      const n = parseInt(String(c.value)) || 0;
+      clause = `(${col} IS NOT NULL AND DATE(${col}) <= date('now', 'localtime', '-${n} days'))`;
+      break;
+    }
+    case "days_ago_lte": {
+      const n = parseInt(String(c.value)) || 0;
+      clause = `(${col} IS NOT NULL AND DATE(${col}) BETWEEN date('now', 'localtime', '-${n} days') AND date('now', 'localtime'))`;
+      break;
+    }
+    case "days_ahead_gte": {
+      const n = parseInt(String(c.value)) || 0;
+      clause = `(${col} IS NOT NULL AND DATE(${col}) >= date('now', 'localtime', '+${n} days'))`;
+      break;
+    }
+    case "days_ahead_lte": {
+      const n = parseInt(String(c.value)) || 0;
+      clause = `(${col} IS NOT NULL AND DATE(${col}) BETWEEN date('now', 'localtime') AND date('now', 'localtime', '+${n} days'))`;
+      break;
+    }
     case "unique_combination":
       // Handled at query level via window function CTE — no inline clause
       break;
@@ -1251,6 +1280,105 @@ export async function resetAllData(): Promise<void> {
 
   // Remove seed keys so defaults get re-seeded
   localStorage.removeItem(SEED_KEY);
+}
+
+// --- Prompts ---
+export interface Prompt {
+  id: string;
+  name: string;
+  description: string;
+  text: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+const SEED_PROMPTS_KEY = "csv-filter-prompts-seeded";
+
+const DEFAULT_PROMPTS: Prompt[] = [
+  {
+    id: "prompt-revisor",
+    name: "Revisor de Contradições",
+    description: "Analisa o laudo e identifica contradições internas no texto.",
+    text: `Atue como um revisor técnico da área de citopatologia e histopatologia. Leia atentamente o laudo médico e identifique se existem contradições internas.
+
+Sua resposta deve ser gerada estritamente em formato JSON, seguindo as regras abaixo:
+1. Crie uma chave chamada "contradicao" com o valor "SIM" ou "NÃO".
+2. Se a resposta for "SIM", adicione uma chave chamada "evidencias" contendo um array (lista) de strings com 1 ou 2 tópicos resumindo os trechos exatos que se contradizem.
+3. Se a resposta for "NÃO", omita completamente a chave "evidencias".
+4. Não inclua nenhum texto adicional, explicações ou formatações fora do bloco JSON.
+
+"""
+{laudo}
+"""`,
+    createdAt: "2026-05-13T00:00:00.000Z",
+  },
+  {
+    id: "prompt-resumo",
+    name: "Resumo Clínico",
+    description: "Gera um resumo conciso do laudo médico em poucas palavras.",
+    text: `Atue como um assistente médico especializado. Leia o laudo a seguir e forneça um resumo clínico conciso, destacando apenas os achados principais.
+
+Sua resposta deve ser gerada estritamente em formato JSON:
+1. Crie uma chave "resumo" com um texto curto (máximo 3 frases).
+2. Crie uma chave "achados_principais" com um array de strings listando os principais achados.
+3. Não inclua texto adicional fora do JSON.
+
+"""
+{laudo}
+"""`,
+    createdAt: "2026-05-13T00:00:00.000Z",
+  },
+  {
+    id: "prompt-classificador",
+    name: "Classificador de Gravidade",
+    description: "Classifica o laudo por nível de gravidade (baixa, média, alta).",
+    text: `Atue como um patologista experiente. Leia o laudo médico e classifique o nível de gravidade dos achados.
+
+Sua resposta deve ser gerada estritamente em formato JSON:
+1. Crie uma chave "gravidade" com um dos valores: "BAIXA", "MÉDIA" ou "ALTA".
+2. Crie uma chave "justificativa" com uma breve explicação (1 frase) da classificação.
+3. Crie uma chave "recomendacoes" com um array de strings com recomendações clínicas.
+4. Não inclua texto adicional fora do JSON.
+
+"""
+{laudo}
+"""`,
+    createdAt: "2026-05-13T00:00:00.000Z",
+  },
+];
+
+async function seedDefaultPrompts(idb: IDBPDatabase): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(SEED_PROMPTS_KEY)) return;
+
+  try {
+    const tx = idb.transaction("prompts", "readwrite");
+    await Promise.all(DEFAULT_PROMPTS.map((p) => tx.store.put(p)));
+    await tx.done;
+    localStorage.setItem(SEED_PROMPTS_KEY, "1");
+  } catch {
+    // silently ignore
+  }
+}
+
+export async function getPrompts(): Promise<Prompt[]> {
+  const idb = await getIdb();
+  if (!idb) return [];
+  await seedDefaultPrompts(idb);
+  return idb.getAll("prompts");
+}
+
+export async function savePrompt(prompt: Prompt): Promise<void> {
+  prompt.updatedAt = new Date().toISOString();
+  const idb = await getIdb();
+  if (!idb) return;
+  await idb.put("prompts", prompt);
+}
+
+export async function deletePrompt(id: string): Promise<void> {
+  const idb = await getIdb();
+  if (!idb) return;
+  await idb.delete("prompts", id);
 }
 
 async function seedDefaultFilters(idb: IDBPDatabase): Promise<void> {

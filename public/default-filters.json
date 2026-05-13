@@ -3731,49 +3731,6 @@
     "sortOrder": 15
   },
   {
-    "id": "jec_glandular",
-    "name": "JEC x Glandular",
-    "selectedColumns": [
-      "cod_requisicao",
-      "nom_paciente",
-      "nom_medico",
-      "dta_solicitacao",
-      "laudo_micro"
-    ],
-    "conditions": [
-      {
-        "column": "nom_exame_tipo",
-        "operator": "contains",
-        "value": "CITOPATOLOGIA"
-      },
-      {
-        "column": "nom_exame",
-        "operator": "contains",
-        "value": "COLPOCITOLOGIA"
-      },
-      {
-        "column": "nom_medico",
-        "operator": "contains",
-        "value": "IVAN"
-      },
-      {
-        "column": "laudo_micro",
-        "operator": "contains",
-        "value": "glandular"
-      },
-      {
-        "column": "laudo_micro",
-        "operator": "contains",
-        "value": "ENDOCERVICAIS"
-      }
-    ],
-    "colorRules": [],
-    "formulaColumns": [],
-    "annotationColumns": [],
-    "createdAt": "2026-05-13T00:00:00.000Z",
-    "updatedAt": "2026-05-13T00:00:00.000Z"
-  },
-  {
     "id": "insatisfatorio_clinica_mulher",
     "name": "INSATISFATÓRIO",
     "selectedColumns": [
@@ -3794,6 +3751,47 @@
         "column": "nom_local_origem",
         "operator": "contains",
         "value": "clinica da mulher"
+      }
+    ],
+    "colorRules": [],
+    "formulaColumns": [],
+    "annotationColumns": [],
+    "createdAt": "2026-05-13T00:00:00.000Z",
+    "updatedAt": "2026-05-13T00:00:00.000Z"
+  },
+  {
+    "id": "analise_ia",
+    "name": "analise IA",
+    "selectedColumns": [
+      "cod_requisicao",
+      "nom_paciente",
+      "des_evento",
+      "nom_exame",
+      "des_topografia",
+      "laudo_micro",
+      "dta_solicitacao",
+      "dta_finalizacao"
+    ],
+    "conditions": [
+      {
+        "column": "des_evento",
+        "operator": "equals",
+        "value": "Laudo Concluído (Definitivo)"
+      },
+      {
+        "column": "laudo_micro",
+        "operator": "is_not_null",
+        "value": ""
+      },
+      {
+        "column": "nom_exame",
+        "operator": "in",
+        "value": "REDE - CITOPATOLOGIA,COLPOCITOLOGIA ONCÓTICA CONVENCIONAL,COLPOCITOLOGIA ONCÓTICA EM MEIO LÍQUIDO,REVISÃO DE LÂMINA INTERNA,CITOLOGIA ANAL CONVENCIONAL,CITOLOGIA ONCÓTICA DE LÍQUIDOS,CITOLOGIA EM MEIO LÍQUIDO URINÁRIO"
+      },
+      {
+        "column": "dta_finalizacao",
+        "operator": "days_ago_lte",
+        "value": "7"
       }
     ],
     "colorRules": [],
