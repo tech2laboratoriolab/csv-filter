@@ -70,10 +70,12 @@ export default function AnaliseIAClient() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [selectedPromptId, setSelectedPromptId] = useState<string>('');
   const [promptsLoading, setPromptsLoading] = useState(true);
+  const [availableFilters, setAvailableFilters] = useState<SavedFilter[]>([]);
+  const [selectedFilterId, setSelectedFilterId] = useState<string>('');
   const [filter, setFilter] = useState<SavedFilter | null>(null);
   const [columns, setColumns] = useState<string[]>([]);
 
-  // Load prompts and filter on mount
+  // Load prompts and filters on mount
   useEffect(() => {
     Promise.all([
       getPrompts(),
@@ -81,32 +83,63 @@ export default function AnaliseIAClient() {
     ])
       .then(([promptsData, filtersData]) => {
         setPrompts(promptsData);
-        if (promptsData.length > 0) setSelectedPromptId(promptsData[0].id);
+        // Default to "Revisor de Contradições" prompt
+        const revisorPrompt = promptsData.find(
+          (p) => p.name === 'Revisor de Contradições' || p.id === 'prompt-revisor'
+        );
+        if (revisorPrompt) {
+          setSelectedPromptId(revisorPrompt.id);
+        } else if (promptsData.length > 0) {
+          setSelectedPromptId(promptsData[0].id);
+        }
 
-        // Find "analise IA" filter
+        setAvailableFilters(filtersData);
+
+        if (filtersData.length === 0) {
+          setLoadError('Nenhum filtro encontrado. Crie um filtro na página principal.');
+          return;
+        }
+
+        // Try to find "analise IA" filter first, otherwise use the first filter
         const analiseFilter = filtersData.find(
           (f) => f.name.toLowerCase() === 'analise ia' || f.id === 'analise_ia'
         );
-        if (analiseFilter) {
-          setFilter(analiseFilter);
-          // Ensure required columns are present
-          const requiredCols = ['cod_requisicao', 'laudo_micro'];
-          const allCols = Array.from(new Set([...analiseFilter.selectedColumns, ...requiredCols]));
-          setColumns(allCols);
-        } else {
-          setLoadError('Filtro "analise IA" não encontrado. Crie o filtro na página principal.');
-        }
+        const defaultFilter = analiseFilter ?? filtersData[0];
+        setSelectedFilterId(defaultFilter.id);
+        setFilter(defaultFilter);
+
+        // Ensure required columns are present
+        const requiredCols = ['cod_requisicao', 'laudo_micro'];
+        const allCols = Array.from(new Set([...defaultFilter.selectedColumns, ...requiredCols]));
+        setColumns(allCols);
       })
       .catch(() => setLoadError('Erro ao carregar dados iniciais.'))
       .finally(() => setPromptsLoading(false));
   }, []);
 
-  // Load laudos when filter is available
+  // Handle filter change
+  const handleFilterChange = useCallback((filterId: string) => {
+    setSelectedFilterId(filterId);
+    const newFilter = availableFilters.find((f) => f.id === filterId);
+    if (!newFilter) return;
+
+    setFilter(newFilter);
+    setResults({});
+    setJsonPanelOpen(false);
+
+    // Ensure required columns are present
+    const requiredCols = ['cod_requisicao', 'laudo_micro'];
+    const allCols = Array.from(new Set([...newFilter.selectedColumns, ...requiredCols]));
+    setColumns(allCols);
+  }, [availableFilters]);
+
+  // Load laudos when filter changes
   useEffect(() => {
     if (!filter) return;
 
     (async () => {
       try {
+        setRows([]);
         const allCols = Array.from(new Set([...filter.selectedColumns, 'cod_requisicao', 'laudo_micro']));
         const { rows: rawRows } = await queryFiltered(
           allCols,
@@ -325,7 +358,7 @@ export default function AnaliseIAClient() {
 
         {filter && rows.length > 0 && (
           <>
-            {/* Prompt Selector + Analyze Button */}
+            {/* Filter + Prompt Selector + Analyze Button */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -333,6 +366,34 @@ export default function AnaliseIAClient() {
               marginBottom: 16,
               flexWrap: 'wrap',
             }}>
+              {/* Filter Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+                  Filtro:
+                </label>
+                <select
+                  value={selectedFilterId}
+                  onChange={(e) => handleFilterChange(e.target.value)}
+                  disabled={isAnalyzing || availableFilters.length === 0}
+                  style={{
+                    flex: 1,
+                    minWidth: 180,
+                    padding: '6px 10px',
+                    background: 'var(--bg-3)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    color: 'var(--text-0)',
+                    fontSize: 13,
+                    cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {availableFilters.map((f) => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Prompt Selector */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
                   Prompt:
