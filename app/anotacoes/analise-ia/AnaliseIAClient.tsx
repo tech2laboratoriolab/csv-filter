@@ -354,10 +354,10 @@ export default function AnaliseIAClient() {
               <table className="ia-table">
                 <thead>
                   <tr>
-                    <th>CodRequisicao</th>
-                    <th>Paciente</th>
-                    <th>LaudoMicro</th>
-                    <th>Resultado IA</th>
+                    <th style={{ width: 100 }}>CodRequisicao</th>
+                    <th style={{ width: 150 }}>Paciente</th>
+                    <th style={{ width: '40%' }}>LaudoMicro</th>
+                    <th style={{ width: '30%', minWidth: 200 }}>Resultado IA</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -365,14 +365,14 @@ export default function AnaliseIAClient() {
                     const result = results[row.cod_requisicao];
                     return (
                       <tr key={row.cod_requisicao}>
-                        <td style={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }}>
+                        <td style={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap', width: 100 }}>
                           {row.cod_requisicao}
                         </td>
-                        <td style={{ whiteSpace: 'nowrap' }}>{row.nom_paciente || '—'}</td>
-                        <td style={{ maxWidth: 280, color: 'var(--text-2)', fontSize: 12 }}>
-                          {truncate(row.laudo_micro)}
+                        <td style={{ whiteSpace: 'nowrap', width: 150, fontSize: 12 }}>{row.nom_paciente || '—'}</td>
+                        <td style={{ width: '40%', color: 'var(--text-2)', fontSize: 12 }}>
+                          {truncate(row.laudo_micro, 120)}
                         </td>
-                        <td style={{ minWidth: 140 }}>
+                        <td style={{ width: '30%', minWidth: 200 }}>
                           {!result && isAnalyzing && (
                             <span style={{ color: 'var(--text-3)', fontSize: 12 }}>aguardando…</span>
                           )}
