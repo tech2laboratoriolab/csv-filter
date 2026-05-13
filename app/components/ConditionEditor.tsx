@@ -109,6 +109,7 @@ export default function ConditionEditor({
     op === 'is_tomorrow' || op === 'is_today_or_tomorrow' || op === 'is_future' || op === 'is_future_or_today' ||
     op === 'is_past' || op === 'is_past_or_today' || op === 'unique_combination';
   const isList = (op: string) => op === 'in' || op === 'not_in';
+  const isDaysOffset = (op: string) => ['days_ahead_gte','days_ahead_lte','days_ago_gte','days_ago_lte'].includes(op);
 
   return (
     <div>
@@ -178,10 +179,11 @@ export default function ConditionEditor({
                     </select>
                   ) : (
                     <input
-                      type={isDate(c.column) ? 'date' : 'text'}
-                      placeholder={isList(c.operator) ? 'val1,val2,val3' : 'Valor'}
+                      type={isDaysOffset(c.operator) ? 'number' : (isDate(c.column) ? 'date' : 'text')}
+                      placeholder={isList(c.operator) ? 'val1,val2,val3' : (isDaysOffset(c.operator) ? 'N dias' : 'Valor')}
                       value={c.value}
                       onChange={e => updateCond(i, 'value', e.target.value)}
+                      style={isDaysOffset(c.operator) ? { maxWidth: 80 } : undefined}
                     />
                   )
                 )}
