@@ -13,6 +13,7 @@ import type {
 import DataTable from "@/app/components/DataTable";
 import TarefaModal from "@/app/components/TarefaModal";
 import VipModal from "@/app/components/VipModal";
+import InfoModal from "@/app/components/InfoModal";
 import { getVipMode, setVipMode, getVipFilterCondition } from "@/lib/vip";
 import { colorRuleExtraColumns } from "@/lib/colorRules";
 import {
@@ -118,6 +119,11 @@ export default function Home() {
   const [enrichToast, setEnrichToast] = useState<{
     type: "loading" | "success" | "error";
     msg: string;
+  } | null>(null);
+  const [infoModal, setInfoModal] = useState<{
+    title: string;
+    message: string;
+    type?: "success" | "error" | "info";
   } | null>(null);
   const enrichToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const PAGE_SIZE = 50;
@@ -273,13 +279,33 @@ export default function Home() {
         setProgress(95);
         if (results.data.length < 2) {
           setUploading(false);
-          alert("CSV precisa ter cabeçalho + dados");
+          setInfoModal({
+            title: "Upload inválido",
+            message: "CSV precisa ter cabeçalho + dados",
+            type: "error",
+          });
           return;
         }
 
         try {
           const headers = results.data[0];
           const dataRows = results.data.slice(1);
+
+          const showToast = (
+            type: "loading" | "success" | "error",
+            msg: string,
+            autoDismiss = false,
+          ) => {
+            if (enrichToastTimer.current)
+              clearTimeout(enrichToastTimer.current);
+            setEnrichToast({ type, msg });
+            if (autoDismiss) {
+              enrichToastTimer.current = setTimeout(
+                () => setEnrichToast(null),
+                4000,
+              );
+            }
+          };
 
           const mappedCols = headers
             .map((h) => HEADER_MAP[h.trim().toLowerCase()])
@@ -309,7 +335,7 @@ export default function Home() {
             await fetchDataRef.current();
             let msg = `${laudoRows} linha(s) inserida(s) do laudo.`;
             if (laudoSkipped > 0) msg += ` ${laudoSkipped} ignorada(s).`;
-            alert(msg);
+            showToast("success", msg, true);
           } else if (isPatologiaMolecularCSV) {
             const { updated, skipped } = await importPatologiaMolecularCSV(
               headers,
@@ -327,8 +353,10 @@ export default function Home() {
             );
 
             await fetchDataRef.current();
-            alert(
+            showToast(
+              "success",
               `${updated} registro(s) atualizados com dados moleculares${skipped > 0 ? ` (${skipped} não encontrados)` : ""}`,
+              true,
             );
           } else {
             const allFilters = await getSavedFilters();
@@ -365,25 +393,10 @@ export default function Home() {
             if (merged > 0) msg += `${merged} linha(s) mesclada(s). `;
             if (skipped > 0) msg += `${skipped} ignorada(s). `;
 
-            if (msg) alert(msg.trim());
+            if (msg) showToast("success", msg.trim(), true);
           }
 
           // Trigger MySQL enrichment only for patologia_molecular files
-          const showToast = (
-            type: "loading" | "success" | "error",
-            msg: string,
-            autoDismiss = false,
-          ) => {
-            if (enrichToastTimer.current)
-              clearTimeout(enrichToastTimer.current);
-            setEnrichToast({ type, msg });
-            if (autoDismiss) {
-              enrichToastTimer.current = setTimeout(
-                () => setEnrichToast(null),
-                4000,
-              );
-            }
-          };
           if (file.name.startsWith("patologia_molecular")) {
             showToast("loading", "Sincronizando com banco remoto...");
             try {
@@ -451,7 +464,9 @@ export default function Home() {
 
                 let microMedicoUpdated = 0;
                 try {
-                  const microMedicoRes = await fetch("/api/micro-medico-enrich");
+                  const microMedicoRes = await fetch(
+                    "/api/micro-medico-enrich",
+                  );
                   const microMedicoData = await microMedicoRes.json();
                   if (
                     microMedicoRes.ok &&
@@ -491,14 +506,22 @@ export default function Home() {
             }
           }
         } catch (e: any) {
-          alert("Erro no upload: " + e.message);
+          setInfoModal({
+            title: "Erro no upload",
+            message: e.message,
+            type: "error",
+          });
         } finally {
           setUploading(false);
         }
       },
       error: (err) => {
         clearInterval(iv);
-        alert("Erro ao ler arquivo: " + err.message);
+        setInfoModal({
+          title: "Erro ao ler arquivo",
+          message: err.message,
+          type: "error",
+        });
         setUploading(false);
       },
     });
@@ -758,9 +781,17 @@ export default function Home() {
 
         const updated = await getSavedFilters();
         setSavedFilters(updated);
-        alert(`${imported} filtro(s) importado(s)!`);
+        setInfoModal({
+          title: "Filtros importados",
+          message: `${imported} filtro(s) importado(s)!`,
+          type: "success",
+        });
       } catch (err) {
-        alert("Erro ao importar filtros. Arquivo inválido.");
+        setInfoModal({
+          title: "Erro ao importar",
+          message: "Erro ao importar filtros. Arquivo inválido.",
+          type: "error",
+        });
       }
     };
     reader.readAsText(file);
@@ -1385,6 +1416,16 @@ export default function Home() {
             setShowVipModal(false);
             fetchData(selectedCols, conditions, 1, sortCol, sortDir);
           }}
+        />
+      )}
+
+      {/* ===== INFO MODAL ===== */}
+      {infoModal && (
+        <InfoModal
+          title={infoModal.title}
+          message={infoModal.message}
+          type={infoModal.type}
+          onClose={() => setInfoModal(null)}
         />
       )}
 
