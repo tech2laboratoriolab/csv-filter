@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@google/genai": "^2.2.0",
     "@supabase/supabase-js": "^2.103.0",
     "hyperformula": "^3.2.0",
     "idb": "^8.0.3",
