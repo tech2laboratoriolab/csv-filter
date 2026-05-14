@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getPrompts, savePrompt, deletePrompt, type Prompt } from '@/lib/clientDb';
+import { getPrompts, savePrompt, deletePrompt, type Prompt, COLUMNS } from '@/lib/clientDb';
 
 export default function PromptConfigPage() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
@@ -125,7 +125,7 @@ export default function PromptConfigPage() {
                 Nenhum prompt encontrado
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                 {prompts.map((p) => (
                   <div
                     key={p.id}
@@ -135,30 +135,12 @@ export default function PromptConfigPage() {
                       borderRadius: 10,
                       padding: 14,
                       display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
+                      flexDirection: 'column',
+                      minWidth: 300,
+                      flex: '1 1 300px',
                     }}
                   >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{p.name}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 6 }}>
-                        {p.description || 'Sem descrição'}
-                      </div>
-                      <div style={{
-                        fontSize: 11,
-                        color: 'var(--text-3)',
-                        background: 'var(--bg-2)',
-                        padding: '6px 10px',
-                        borderRadius: 6,
-                        fontFamily: 'monospace',
-                        whiteSpace: 'pre-wrap',
-                        maxHeight: 80,
-                        overflow: 'auto',
-                      }}>
-                        {p.text.slice(0, 200)}{p.text.length > 200 ? '...' : ''}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, marginLeft: 12, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginBottom: 10 }}>
                       <button
                         onClick={() => startEdit(p)}
                         style={{
@@ -188,6 +170,38 @@ export default function PromptConfigPage() {
                         Excluir
                       </button>
                     </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{p.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span>{p.description || 'Sem descrição'}</span>
+                        {p.defaultColumn && (
+                          <span style={{
+                            fontSize: 11,
+                            background: '#ede9fe',
+                            color: '#6d28d9',
+                            padding: '1px 8px',
+                            borderRadius: 999,
+                            fontWeight: 600,
+                          }}>
+                            col: {p.defaultColumn}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{
+                        fontSize: 11,
+                        color: 'var(--text-1)',
+                        background: 'var(--bg-2)',
+                        padding: '6px 10px',
+                        borderRadius: 6,
+                        fontFamily: 'monospace',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        maxHeight: 80,
+                        overflow: 'auto',
+                      }}>
+                        {p.text.slice(0, 200)}{p.text.length > 200 ? '...' : ''}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -202,115 +216,155 @@ export default function PromptConfigPage() {
             border: '1px solid var(--border)',
             borderRadius: 12,
             padding: 20,
+            height: 'calc(100vh - 96px)',
+            display: 'flex',
+            flexDirection: 'column',
           }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 16 }}>
-              {editing.createdAt ? 'Editar Prompt' : 'Novo Prompt'}
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>
-                Nome *
-              </label>
-              <input
-                type="text"
-                value={editing.name}
-                onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                placeholder="Ex: Revisor de Contradições"
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '8px 12px',
-                  background: 'var(--bg-3)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  color: 'var(--text-0)',
-                  fontSize: 13,
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>
-                Descrição
-              </label>
-              <input
-                type="text"
-                value={editing.description}
-                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                placeholder="Ex: Analisa o laudo e identifica contradições internas"
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '8px 12px',
-                  background: 'var(--bg-3)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  color: 'var(--text-0)',
-                  fontSize: 13,
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>
-                Texto do Prompt *
-              </label>
-              <textarea
-                value={editing.text}
-                onChange={(e) => setEditing({ ...editing, text: e.target.value })}
-                placeholder="Digite o prompt aqui. Use {laudo} para indicar onde o texto do laudo será inserido."
-                rows={12}
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '10px 12px',
-                  background: 'var(--bg-3)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  color: 'var(--text-0)',
-                  fontSize: 13,
-                  fontFamily: 'monospace',
-                  resize: 'vertical',
-                }}
-              />
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
-                Use {'{laudo}'} para indicar onde o texto do laudo será inserido
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>
+                {editing.createdAt ? 'Editar Prompt' : 'Novo Prompt'}
+              </span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => setEditing(null)}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: 13,
+                    background: 'var(--bg-3)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    color: 'var(--text-2)',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: 13,
+                    background: 'var(--blue)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    opacity: saving ? 0.6 : 1,
+                    fontWeight: 600,
+                  }}
+                >
+                  {saving ? 'Salvando...' : 'Salvar'}
+                </button>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setEditing(null)}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: 13,
-                  background: 'var(--bg-3)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  color: 'var(--text-2)',
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: 13,
-                  background: 'var(--blue)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: saving ? 'not-allowed' : 'pointer',
-                  opacity: saving ? 0.6 : 1,
-                  fontWeight: 600,
-                }}
-              >
-                {saving ? 'Salvando...' : 'Salvar'}
-              </button>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'stretch', flex: 1, minHeight: 0 }}>
+              {/* Coluna esquerda: campos */}
+              <div style={{ flex: '0 0 300px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>
+                    Nome *
+                  </label>
+                  <input
+                    type="text"
+                    value={editing.name}
+                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                    placeholder="Ex: Revisor de Contradições"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '8px 12px',
+                      background: 'var(--bg-3)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      color: 'var(--text-0)',
+                      fontSize: 13,
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>
+                    Descrição
+                  </label>
+                  <input
+                    type="text"
+                    value={editing.description}
+                    onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                    placeholder="Ex: Analisa o laudo e identifica contradições internas"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '8px 12px',
+                      background: 'var(--bg-3)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      color: 'var(--text-0)',
+                      fontSize: 13,
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>
+                    Coluna padrão
+                  </label>
+                  <select
+                    value={editing.defaultColumn ?? ''}
+                    onChange={(e) => setEditing({ ...editing, defaultColumn: e.target.value || undefined })}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '8px 12px',
+                      background: 'var(--bg-3)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      color: 'var(--text-0)',
+                      fontSize: 13,
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    <option value="">— nenhuma —</option>
+                    {COLUMNS.map((c) => (
+                      <option key={c.name} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+                    Nome da coluna pré-selecionada ao escolher este prompt (opcional)
+                  </div>
+                </div>
+              </div>
+
+              {/* Coluna direita: textarea */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>
+                  Texto do Prompt *
+                </label>
+                <textarea
+                  value={editing.text}
+                  onChange={(e) => setEditing({ ...editing, text: e.target.value })}
+                  placeholder="Digite o prompt aqui. Use {laudo} para indicar onde o texto do laudo será inserido."
+                  style={{
+                    flex: 1,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '10px 12px',
+                    background: 'var(--bg-3)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    color: 'var(--text-0)',
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                    resize: 'none',
+                  }}
+                />
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+                  Use {'{laudo}'} para indicar onde o texto do laudo será inserido
+                </div>
+              </div>
             </div>
+
           </div>
         )}
       </div>

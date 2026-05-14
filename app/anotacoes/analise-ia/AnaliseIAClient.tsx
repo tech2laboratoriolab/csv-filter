@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { queryFiltered, getPrompts, getSavedFilters } from '@/lib/clientDb';
-import type { FilterCondition, Prompt, SavedFilter } from '@/lib/clientDb';
+import type { Prompt, SavedFilter } from '@/lib/clientDb';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ function formatCellValue(key: string, value: string): string {
 }
 
 function getColumnWidth(key: string): string | number {
-  if (key === 'cod_requisicao') return 100;
+  if (key === 'cod_requisicao') return 160;
   if (key === 'nom_paciente') return 150;
   if (key === 'laudo_micro') return '35%';
   if (key === 'resultado_ia') return '25%';
@@ -58,6 +58,11 @@ function getColumnLabel(key: string): string {
   return labels[key] || key;
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const BATCH_SIZE = 10;
+const CONCURRENCY = 8;
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function AnaliseIAClient() {
@@ -73,7 +78,9 @@ export default function AnaliseIAClient() {
   const [availableFilters, setAvailableFilters] = useState<SavedFilter[]>([]);
   const [selectedFilterId, setSelectedFilterId] = useState<string>('');
   const [filter, setFilter] = useState<SavedFilter | null>(null);
-  const [columns, setColumns] = useState<string[]>([]);
+  const [resultFilter, setResultFilter] = useState<'all' | 'SIM' | 'NÃO' | 'error'>('all');
+  const [selectedAnalysisColumn, setSelectedAnalysisColumn] = useState<string>('');
+  const [tokenUsage, setTokenUsage] = useState({ input: 0, output: 0 });
 
   // Load prompts and filters on mount
   useEffect(() => {
@@ -107,11 +114,10 @@ export default function AnaliseIAClient() {
         const defaultFilter = analiseFilter ?? filtersData[0];
         setSelectedFilterId(defaultFilter.id);
         setFilter(defaultFilter);
+        // Prefer the prompt's defaultColumn (e.g. laudo_micro) over selectedColumns[0]
+        const defaultCol = revisorPrompt?.defaultColumn ?? defaultFilter.selectedColumns[0] ?? '';
+        setSelectedAnalysisColumn(defaultCol);
 
-        // Ensure required columns are present
-        const requiredCols = ['cod_requisicao', 'laudo_micro'];
-        const allCols = Array.from(new Set([...defaultFilter.selectedColumns, ...requiredCols]));
-        setColumns(allCols);
       })
       .catch(() => setLoadError('Erro ao carregar dados iniciais.'))
       .finally(() => setPromptsLoading(false));
@@ -124,23 +130,24 @@ export default function AnaliseIAClient() {
     if (!newFilter) return;
 
     setFilter(newFilter);
+    // Keep the prompt's defaultColumn when switching filters
+    setSelectedAnalysisColumn((prev) => {
+      const promptDefault = prompts.find((p) => p.id === selectedPromptId)?.defaultColumn;
+      return promptDefault ?? newFilter.selectedColumns[0] ?? prev;
+    });
     setResults({});
     setJsonPanelOpen(false);
 
-    // Ensure required columns are present
-    const requiredCols = ['cod_requisicao', 'laudo_micro'];
-    const allCols = Array.from(new Set([...newFilter.selectedColumns, ...requiredCols]));
-    setColumns(allCols);
-  }, [availableFilters]);
+  }, [availableFilters, prompts, selectedPromptId]);
 
   // Load laudos when filter changes
   useEffect(() => {
-    if (!filter) return;
+    if (!filter || !selectedAnalysisColumn) return;
 
     (async () => {
       try {
         setRows([]);
-        const allCols = Array.from(new Set([...filter.selectedColumns, 'cod_requisicao', 'laudo_micro']));
+        const allCols = Array.from(new Set([...filter.selectedColumns, 'cod_requisicao', selectedAnalysisColumn]));
         const { rows: rawRows } = await queryFiltered(
           allCols,
           filter.conditions,
@@ -148,7 +155,7 @@ export default function AnaliseIAClient() {
           1000,
         );
         const mapped: LaudoRow[] = (rawRows as any[])
-          .filter((r) => r.laudo_micro)
+          .filter((r) => r[selectedAnalysisColumn])
           .map((r) => {
             const obj: LaudoRow = {};
             allCols.forEach((col) => {
@@ -161,49 +168,138 @@ export default function AnaliseIAClient() {
         setLoadError(e?.message ?? 'Erro ao carregar laudos.');
       }
     })();
-  }, [filter]);
+  }, [filter, selectedAnalysisColumn]);
 
   const selectedPrompt = prompts.find((p) => p.id === selectedPromptId);
 
   const handleAnalyze = useCallback(async () => {
-    if (isAnalyzing || rows.length === 0 || !selectedPrompt) return;
+    if (isAnalyzing || rows.length === 0 || !selectedPrompt || !selectedAnalysisColumn) return;
     setIsAnalyzing(true);
     setProgress({ done: 0, total: rows.length });
     setResults({});
+    setResultFilter('all');
+    setTokenUsage({ input: 0, output: 0 });
 
     const newResults: Record<string, AnaliseResult> = {};
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      try {
-        const res = await fetch('/api/analise-ia', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            laudoMicro: row.laudo_micro,
-            prompt: selectedPrompt.text,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          newResults[row.cod_requisicao] = { contradicao: 'NÃO', error: data.error ?? 'Erro desconhecido' };
-        } else {
-          newResults[row.cod_requisicao] = data;
-        }
-      } catch (e: any) {
-        newResults[row.cod_requisicao] = { contradicao: 'NÃO', error: e?.message ?? 'Falha de rede' };
-      }
-
-      // Update state progressively
-      setResults({ ...newResults });
-      setProgress({ done: i + 1, total: rows.length });
+    const chunks: LaudoRow[][] = [];
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      chunks.push(rows.slice(i, i + BATCH_SIZE));
     }
 
-    setIsAnalyzing(false);
-  }, [isAnalyzing, rows, selectedPrompt]);
+    const processChunk = async (chunk: LaudoRow[]) => {
+      const fetchSingle = async (row: LaudoRow) => {
+        try {
+          const res = await fetch('/api/analise-ia', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ laudoMicro: row[selectedAnalysisColumn], prompt: selectedPrompt.text }),
+          });
+          const d = await res.json();
+          newResults[row.cod_requisicao] = res.ok
+            ? (d as AnaliseResult)
+            : { contradicao: 'NÃO' as const, error: d.error ?? 'Erro desconhecido' };
+          if (res.ok) {
+            setTokenUsage((prev) => ({ input: prev.input + (d.inputTokens ?? 0), output: prev.output + (d.outputTokens ?? 0) }));
+          }
+        } catch (e: any) {
+          newResults[row.cod_requisicao] = { contradicao: 'NÃO' as const, error: e?.message ?? 'Falha de rede' };
+        }
+        setResults({ ...newResults });
+        setProgress({ done: Object.keys(newResults).length, total: rows.length });
+      };
 
-  // Build JSON output array
-  const jsonOutput = rows
+      const tryBatch = async (): Promise<boolean> => {
+        try {
+          const res = await fetch('/api/analise-ia', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: chunk.map((r) => ({ codRequisicao: r.cod_requisicao, laudoMicro: r[selectedAnalysisColumn] })),
+              prompt: selectedPrompt.text,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.results) return false;
+          for (const [codReq, result] of Object.entries(data.results)) {
+            newResults[codReq] = result as AnaliseResult;
+          }
+          setTokenUsage((prev) => ({ input: prev.input + (data.totalInputTokens ?? 0), output: prev.output + (data.totalOutputTokens ?? 0) }));
+          if (Array.isArray(data.missing) && data.missing.length > 0) {
+            const missingRows = chunk.filter((r) => (data.missing as string[]).includes(r.cod_requisicao));
+            await Promise.all(missingRows.map(fetchSingle));
+          }
+          return true;
+        } catch (e: any) {
+          console.error('[analise-ia-client] Batch falhou:', e);
+          return false;
+        }
+      };
+
+      // ── Tentativa 1: Batch ──────────────────────────────────────────────
+      let batchSuccess = await tryBatch();
+
+      // ── Tentativa 2: Retry Batch (com delay) ────────────────────────────
+      if (!batchSuccess) {
+        await new Promise((r) => setTimeout(r, 1500));
+        batchSuccess = await tryBatch();
+      }
+
+      // ── Fallback: Individual (em paralelo) ──────────────────────────────
+      if (!batchSuccess) {
+        await Promise.all(chunk.map(fetchSingle));
+      } else {
+        setResults({ ...newResults });
+        setProgress({ done: Object.keys(newResults).length, total: rows.length });
+      }
+    };
+
+    // Processa chunks em paralelo com semáforo de concorrência
+    await new Promise<void>((resolve) => {
+      if (chunks.length === 0) { resolve(); return; }
+
+      let chunkIndex = 0;
+      let activeCount = 0;
+
+      const pump = () => {
+        while (activeCount < CONCURRENCY && chunkIndex < chunks.length) {
+          const chunk = chunks[chunkIndex++];
+          activeCount++;
+          processChunk(chunk).finally(() => {
+            activeCount--;
+            if (activeCount === 0 && chunkIndex >= chunks.length) {
+              resolve();
+            } else {
+              pump();
+            }
+          });
+        }
+      };
+
+      pump();
+    });
+
+    setIsAnalyzing(false);
+  }, [isAnalyzing, rows, selectedPrompt, selectedAnalysisColumn]);
+
+  // Dynamic columns for table (filter columns + resultado_ia)
+  const tableColumns = filter
+    ? [...filter.selectedColumns.filter((c) => c !== 'resultado_ia'), 'resultado_ia']
+    : [];
+
+  const countErrors = rows.filter((r) => !!results[r.cod_requisicao]?.error).length;
+  const countSim = rows.filter((r) => results[r.cod_requisicao]?.contradicao === 'SIM' && !results[r.cod_requisicao]?.error).length;
+  const countNao = rows.filter((r) => results[r.cod_requisicao]?.contradicao === 'NÃO' && !results[r.cod_requisicao]?.error).length;
+  const countAll = Object.keys(results).length;
+
+  const displayedRows = resultFilter === 'all'
+    ? rows
+    : resultFilter === 'error'
+    ? rows.filter((r) => !!results[r.cod_requisicao]?.error)
+    : rows.filter((r) => results[r.cod_requisicao]?.contradicao === resultFilter && !results[r.cod_requisicao]?.error);
+
+  // Build JSON output array (respects active filter)
+  const jsonOutput = displayedRows
     .filter((r) => results[r.cod_requisicao])
     .map((r) => ({
       cod_requisicao: r.cod_requisicao,
@@ -211,13 +307,8 @@ export default function AnaliseIAClient() {
       ...results[r.cod_requisicao],
     }));
 
-  // Dynamic columns for table (filter columns + resultado_ia)
-  const tableColumns = filter
-    ? [...filter.selectedColumns.filter((c) => c !== 'resultado_ia'), 'resultado_ia']
-    : [];
-
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-0)', color: 'var(--text-0)' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-0)', color: 'var(--text-0)', overflow: 'hidden' }}>
       <style>{`
         .ia-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
         .ia-table th {
@@ -297,6 +388,24 @@ export default function AnaliseIAClient() {
           border-radius: 2px;
           transition: width 0.2s;
         }
+        .result-tabs { display: flex; gap: 6px; align-items: center; }
+        .result-tab {
+          padding: 4px 12px;
+          border-radius: 999px;
+          font-size: 12px;
+          font-weight: 600;
+          border: 1.5px solid transparent;
+          cursor: pointer;
+          transition: all 0.15s;
+          background: var(--bg-1);
+          color: var(--text-2);
+          border-color: var(--border);
+        }
+        .result-tab:hover { border-color: #94a3b8; }
+        .result-tab.active-all  { background: #ede9fe; color: #6d28d9; border-color: #8b5cf6; }
+        .result-tab.active-sim  { background: #fee2e2; color: #b91c1c; border-color: #f87171; }
+        .result-tab.active-nao  { background: #dcfce7; color: #166534; border-color: #4ade80; }
+        .result-tab.active-err  { background: #fef9c3; color: #78350f; border-color: #fde047; }
       `}</style>
 
       {/* Header */}
@@ -319,9 +428,24 @@ export default function AnaliseIAClient() {
         <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 4 }}>
           {filter ? filter.name : 'Carregando...'}
         </span>
+        {tokenUsage.input > 0 && (
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: 12,
+            color: 'var(--text-2)',
+            background: 'var(--bg-1)',
+            padding: '4px 10px',
+            borderRadius: 12,
+            border: '1px solid var(--border)',
+          }}>
+            {((tokenUsage.input + tokenUsage.output) / 1000).toFixed(1)}k tokens
+            {' · '}
+            ~${((tokenUsage.input * 0.15 + tokenUsage.output * 0.60) / 1_000_000).toFixed(4)}
+          </span>
+        )}
         {/* Indicador de linhas */}
         <span style={{
-          marginLeft: 'auto',
+          marginLeft: tokenUsage.input > 0 ? 0 : 'auto',
           fontSize: 12,
           color: 'var(--text-2)',
           background: 'var(--bg-1)',
@@ -348,15 +472,7 @@ export default function AnaliseIAClient() {
           </div>
         )}
 
-        {filter && rows.length === 0 && !isAnalyzing && (
-          <div style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', marginTop: 48 }}>
-            Nenhum laudo encontrado com as condições do filtro <strong>{filter.name}</strong>.
-            <br />
-            <span style={{ fontSize: 12, marginTop: 8, display: 'block' }}>Certifique-se de que o CSV foi carregado.</span>
-          </div>
-        )}
-
-        {filter && rows.length > 0 && (
+        {filter && (
           <>
             {/* Filter + Prompt Selector + Analyze Button */}
             <div style={{
@@ -393,6 +509,40 @@ export default function AnaliseIAClient() {
                 </select>
               </div>
 
+              {/* Column Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 180 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+                  Coluna:
+                </label>
+                <select
+                  value={selectedAnalysisColumn}
+                  onChange={(e) => {
+                    setSelectedAnalysisColumn(e.target.value);
+                    setResults({});
+                    setJsonPanelOpen(false);
+                  }}
+                  disabled={isAnalyzing || filter.selectedColumns.length === 0}
+                  style={{
+                    flex: 1,
+                    minWidth: 160,
+                    padding: '6px 10px',
+                    background: 'var(--bg-3)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    color: 'var(--text-0)',
+                    fontSize: 13,
+                    cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {Array.from(new Set([
+                    ...filter.selectedColumns,
+                    ...(selectedPrompt?.defaultColumn ? [selectedPrompt.defaultColumn] : []),
+                  ])).map((col) => (
+                    <option key={col} value={col}>{getColumnLabel(col)}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Prompt Selector */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
@@ -400,7 +550,13 @@ export default function AnaliseIAClient() {
                 </label>
                 <select
                   value={selectedPromptId}
-                  onChange={(e) => setSelectedPromptId(e.target.value)}
+                  onChange={(e) => {
+                    const newPrompt = prompts.find((p) => p.id === e.target.value);
+                    setSelectedPromptId(e.target.value);
+                    if (newPrompt?.defaultColumn) {
+                      setSelectedAnalysisColumn(newPrompt.defaultColumn);
+                    }
+                  }}
                   disabled={isAnalyzing || promptsLoading}
                   style={{
                     flex: 1,
@@ -435,28 +591,59 @@ export default function AnaliseIAClient() {
                 </Link>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {progress && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 180 }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
-                      {progress.done}/{progress.total}
-                    </span>
-                    <div className="progress-bar-track">
-                      <div
-                        className="progress-bar-fill"
-                        style={{ width: `${(progress.done / progress.total) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
+            </div>
+
+            {/* Result filter tabs + progress + analyze button */}
+            <div className="result-tabs" style={{ marginBottom: 12 }}>
+              {countAll > 0 && (<>
                 <button
-                  className="analyze-btn"
-                  onClick={handleAnalyze}
-                  disabled={isAnalyzing || rows.length === 0 || !selectedPrompt}
+                  className={`result-tab${resultFilter === 'all' ? ' active-all' : ''}`}
+                  onClick={() => setResultFilter('all')}
                 >
-                  {isAnalyzing ? 'Analisando…' : '▶ Analisar Tudo'}
+                  Todos ({countAll})
                 </button>
-              </div>
+                <button
+                  className={`result-tab${resultFilter === 'SIM' ? ' active-sim' : ''}`}
+                  onClick={() => setResultFilter('SIM')}
+                >
+                  ⚠ Contradição ({countSim})
+                </button>
+                <button
+                  className={`result-tab${resultFilter === 'NÃO' ? ' active-nao' : ''}`}
+                  onClick={() => setResultFilter('NÃO')}
+                >
+                  ✓ OK ({countNao})
+                </button>
+                {countErrors > 0 && (
+                  <button
+                    className={`result-tab${resultFilter === 'error' ? ' active-err' : ''}`}
+                    onClick={() => setResultFilter('error')}
+                  >
+                    ⚠ Erro ({countErrors})
+                  </button>
+                )}
+              </>)}
+              <div style={{ flex: 1 }} />
+              {progress && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 180 }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
+                    {progress.done}/{progress.total}
+                  </span>
+                  <div className="progress-bar-track">
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: `${(progress.done / progress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              <button
+                className="analyze-btn"
+                onClick={handleAnalyze}
+                disabled={isAnalyzing || rows.length === 0 || !selectedPrompt || !selectedAnalysisColumn}
+              >
+                {isAnalyzing ? 'Analisando…' : '▶ Analisar Tudo'}
+              </button>
             </div>
 
             {/* Table with scroll */}
@@ -486,14 +673,23 @@ export default function AnaliseIAClient() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => {
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={tableColumns.length || 1}
+                        style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-3)', fontSize: 13 }}
+                      >
+                        Nenhum laudo encontrado — verifique se o CSV foi carregado.
+                      </td>
+                    </tr>
+                  ) : displayedRows.map((row) => {
                     const result = results[row.cod_requisicao];
                     return (
                       <tr key={row.cod_requisicao}>
                         {tableColumns.map((col) => {
                           if (col === 'resultado_ia') {
                             return (
-                              <td key={col} style={{ minWidth: 200 }}>
+                              <td key={col} className="wrap" style={{ minWidth: 200, maxWidth: 320 }}>
                                 {!result && isAnalyzing && (
                                   <span style={{ color: 'var(--text-3)', fontSize: 12 }}>aguardando…</span>
                                 )}

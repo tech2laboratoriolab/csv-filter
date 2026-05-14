@@ -1288,72 +1288,27 @@ export interface Prompt {
   name: string;
   description: string;
   text: string;
+  defaultColumn?: string;
   createdAt: string;
   updatedAt?: string;
 }
 
-const SEED_PROMPTS_KEY = "csv-filter-prompts-seeded";
-
-const DEFAULT_PROMPTS: Prompt[] = [
-  {
-    id: "prompt-revisor",
-    name: "Revisor de Contradições",
-    description: "Analisa o laudo e identifica contradições internas no texto.",
-    text: `Atue como um revisor técnico da área de citopatologia e histopatologia. Leia atentamente o laudo médico e identifique se existem contradições internas.
-
-Sua resposta deve ser gerada estritamente em formato JSON, seguindo as regras abaixo:
-1. Crie uma chave chamada "contradicao" com o valor "SIM" ou "NÃO".
-2. Se a resposta for "SIM", adicione uma chave chamada "evidencias" contendo um array (lista) de strings com 1 ou 2 tópicos resumindo os trechos exatos que se contradizem.
-3. Se a resposta for "NÃO", omita completamente a chave "evidencias".
-4. Não inclua nenhum texto adicional, explicações ou formatações fora do bloco JSON.
-
-"""
-{laudo}
-"""`,
-    createdAt: "2026-05-13T00:00:00.000Z",
-  },
-  {
-    id: "prompt-resumo",
-    name: "Resumo Clínico",
-    description: "Gera um resumo conciso do laudo médico em poucas palavras.",
-    text: `Atue como um assistente médico especializado. Leia o laudo a seguir e forneça um resumo clínico conciso, destacando apenas os achados principais.
-
-Sua resposta deve ser gerada estritamente em formato JSON:
-1. Crie uma chave "resumo" com um texto curto (máximo 3 frases).
-2. Crie uma chave "achados_principais" com um array de strings listando os principais achados.
-3. Não inclua texto adicional fora do JSON.
-
-"""
-{laudo}
-"""`,
-    createdAt: "2026-05-13T00:00:00.000Z",
-  },
-  {
-    id: "prompt-classificador",
-    name: "Classificador de Gravidade",
-    description: "Classifica o laudo por nível de gravidade (baixa, média, alta).",
-    text: `Atue como um patologista experiente. Leia o laudo médico e classifique o nível de gravidade dos achados.
-
-Sua resposta deve ser gerada estritamente em formato JSON:
-1. Crie uma chave "gravidade" com um dos valores: "BAIXA", "MÉDIA" ou "ALTA".
-2. Crie uma chave "justificativa" com uma breve explicação (1 frase) da classificação.
-3. Crie uma chave "recomendacoes" com um array de strings com recomendações clínicas.
-4. Não inclua texto adicional fora do JSON.
-
-"""
-{laudo}
-"""`,
-    createdAt: "2026-05-13T00:00:00.000Z",
-  },
-];
+const SEED_PROMPTS_KEY = "csv-filter-prompts-seeded-v4";
 
 async function seedDefaultPrompts(idb: IDBPDatabase): Promise<void> {
   if (typeof window === "undefined") return;
   if (localStorage.getItem(SEED_PROMPTS_KEY)) return;
 
   try {
+    const res = await fetch("/prompts.json");
+    if (!res.ok) return;
+    const data = await res.json();
+    const prompts: Prompt[] = (data.prompts ?? []).map((p: any) => ({
+      ...p,
+      createdAt: p.createdAt ?? new Date().toISOString(),
+    }));
     const tx = idb.transaction("prompts", "readwrite");
-    await Promise.all(DEFAULT_PROMPTS.map((p) => tx.store.put(p)));
+    await Promise.all(prompts.map((p) => tx.store.put(p)));
     await tx.done;
     localStorage.setItem(SEED_PROMPTS_KEY, "1");
   } catch {

@@ -3765,9 +3765,6 @@
     "selectedColumns": [
       "cod_requisicao",
       "nom_paciente",
-      "des_evento",
-      "nom_exame",
-      "des_topografia",
       "laudo_micro",
       "dta_solicitacao",
       "dta_finalizacao"
@@ -3791,7 +3788,7 @@
       {
         "column": "dta_finalizacao",
         "operator": "days_ago_lte",
-        "value": "7"
+        "value": "1"
       }
     ],
     "colorRules": [],
