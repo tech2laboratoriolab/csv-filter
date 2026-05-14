@@ -12,7 +12,7 @@ interface LaudoRow {
 }
 
 interface AnaliseResult {
-  contradicao: 'SIM' | 'NÃO';
+  contradicao: 'SIM' | 'POSSÍVEL' | 'NÃO';
   evidencias?: string[];
   error?: string;
 }
@@ -78,7 +78,7 @@ export default function AnaliseIAClient() {
   const [availableFilters, setAvailableFilters] = useState<SavedFilter[]>([]);
   const [selectedFilterId, setSelectedFilterId] = useState<string>('');
   const [filter, setFilter] = useState<SavedFilter | null>(null);
-  const [resultFilter, setResultFilter] = useState<'all' | 'SIM' | 'NÃO' | 'error'>('all');
+  const [resultFilter, setResultFilter] = useState<'all' | 'SIM' | 'POSSÍVEL' | 'NÃO' | 'error'>('all');
   const [selectedAnalysisColumn, setSelectedAnalysisColumn] = useState<string>('');
   const [tokenUsage, setTokenUsage] = useState({ input: 0, output: 0 });
   const [copied, setCopied] = useState(false);
@@ -290,6 +290,7 @@ export default function AnaliseIAClient() {
 
   const countErrors = rows.filter((r) => !!results[r.cod_requisicao]?.error).length;
   const countSim = rows.filter((r) => results[r.cod_requisicao]?.contradicao === 'SIM' && !results[r.cod_requisicao]?.error).length;
+  const countPossivel = rows.filter((r) => results[r.cod_requisicao]?.contradicao === 'POSSÍVEL' && !results[r.cod_requisicao]?.error).length;
   const countNao = rows.filter((r) => results[r.cod_requisicao]?.contradicao === 'NÃO' && !results[r.cod_requisicao]?.error).length;
   const countAll = Object.keys(results).length;
 
@@ -369,9 +370,10 @@ export default function AnaliseIAClient() {
           font-weight: 700;
           letter-spacing: 0.04em;
         }
-        .badge-sim  { background: #fee2e2; color: #b91c1c; }
-        .badge-nao  { background: #dcfce7; color: #166534; }
-        .badge-err  { background: #fef9c3; color: #78350f; }
+        .badge-sim      { background: #fee2e2; color: #b91c1c; }
+        .badge-possivel { background: #ffedd5; color: #9a3412; }
+        .badge-nao      { background: #dcfce7; color: #166534; }
+        .badge-err      { background: #fef9c3; color: #78350f; }
         .evidencias-list { margin: 4px 0 0 0; padding-left: 16px; color: #b91c1c; font-size: 12px; }
         .result-tab {
           width: 100%;
@@ -389,10 +391,11 @@ export default function AnaliseIAClient() {
           margin-bottom: 4px;
         }
         .result-tab:hover { border-color: #94a3b8; }
-        .result-tab.active-all  { background: #ede9fe; color: #6d28d9; border-color: #8b5cf6; }
-        .result-tab.active-sim  { background: #fee2e2; color: #b91c1c; border-color: #f87171; }
-        .result-tab.active-nao  { background: #dcfce7; color: #166534; border-color: #4ade80; }
-        .result-tab.active-err  { background: #fef9c3; color: #78350f; border-color: #fde047; }
+        .result-tab.active-all      { background: #ede9fe; color: #6d28d9; border-color: #8b5cf6; }
+        .result-tab.active-sim      { background: #fee2e2; color: #b91c1c; border-color: #f87171; }
+        .result-tab.active-possivel { background: #ffedd5; color: #9a3412; border-color: #fb923c; }
+        .result-tab.active-nao      { background: #dcfce7; color: #166534; border-color: #4ade80; }
+        .result-tab.active-err      { background: #fef9c3; color: #78350f; border-color: #fde047; }
       `}</style>
 
       {/* ===== SIDEBAR ===== */}
@@ -541,6 +544,12 @@ export default function AnaliseIAClient() {
                   ⚠ Contradição ({countSim})
                 </button>
                 <button
+                  className={`result-tab${resultFilter === 'POSSÍVEL' ? ' active-possivel' : ''}`}
+                  onClick={() => setResultFilter('POSSÍVEL')}
+                >
+                  ? Suspeito ({countPossivel})
+                </button>
+                <button
                   className={`result-tab${resultFilter === 'NÃO' ? ' active-nao' : ''}`}
                   onClick={() => setResultFilter('NÃO')}
                 >
@@ -677,8 +686,14 @@ export default function AnaliseIAClient() {
                                 )}
                                 {result && !result.error && (
                                   <div>
-                                    <span className={`badge-tipo ${result.contradicao === 'SIM' ? 'badge-sim' : 'badge-nao'}`}>
-                                      {result.contradicao === 'SIM' ? '⚠ Contradição' : '✓ OK'}
+                                    <span className={`badge-tipo ${
+                                      result.contradicao === 'SIM' ? 'badge-sim'
+                                      : result.contradicao === 'POSSÍVEL' ? 'badge-possivel'
+                                      : 'badge-nao'
+                                    }`}>
+                                      {result.contradicao === 'SIM' ? '⚠ Contradição'
+                                        : result.contradicao === 'POSSÍVEL' ? '? Suspeito'
+                                        : '✓ OK'}
                                     </span>
                                     {result.evidencias && result.evidencias.length > 0 && (
                                       <ul className="evidencias-list">

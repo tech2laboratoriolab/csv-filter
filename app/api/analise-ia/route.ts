@@ -3,9 +3,9 @@ export const runtime = "nodejs";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 const { defaultTemplate, batchInstruction } = JSON.parse(
   readFileSync(join(process.cwd(), "public/prompts.json"), "utf-8"),
@@ -24,7 +24,10 @@ function buildBatchPrompt(items: BatchItem[], customPrompt?: string): string {
     )
     .join("\n\n");
 
-  const basePrompt = (customPrompt ?? defaultTemplate).replace(/\{laudo\}/g, laudosList);
+  const basePrompt = (customPrompt ?? defaultTemplate).replace(
+    /\{laudo\}/g,
+    laudosList,
+  );
 
   return basePrompt + batchInstruction.replace("{N}", String(items.length));
 }
@@ -37,7 +40,29 @@ function cleanGeminiText(raw: string): string {
     .trim();
 }
 
-async function callGemini(prompt: string, apiKey: string) {
+const SCHEMA_INDIVIDUAL = {
+  type: Type.OBJECT,
+  properties: {
+    contradicao: { type: Type.STRING },
+    evidencias: { type: Type.ARRAY, items: { type: Type.STRING } },
+  },
+  required: ["contradicao"],
+};
+
+const SCHEMA_BATCH = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      cod_requisicao: { type: Type.STRING },
+      contradicao: { type: Type.STRING },
+      evidencias: { type: Type.ARRAY, items: { type: Type.STRING } },
+    },
+    required: ["cod_requisicao", "contradicao"],
+  },
+};
+
+async function callGemini(prompt: string, apiKey: string, isBatchMode = false) {
   const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({
@@ -47,6 +72,7 @@ async function callGemini(prompt: string, apiKey: string) {
       temperature: 0,
       maxOutputTokens: 8192,
       responseMimeType: "application/json",
+      responseSchema: isBatchMode ? SCHEMA_BATCH : SCHEMA_INDIVIDUAL,
     },
   });
 
@@ -91,11 +117,14 @@ export async function POST(req: NextRequest) {
     }
 
     const customPrompt = body.prompt?.trim();
-    const prompt = (customPrompt ?? defaultTemplate).replace(/\{laudo\}/g, laudoMicro);
+    const prompt = (customPrompt ?? defaultTemplate).replace(
+      /\{laudo\}/g,
+      laudoMicro,
+    );
 
     let geminiResult: Awaited<ReturnType<typeof callGemini>>;
     try {
-      geminiResult = await callGemini(prompt, apiKey);
+      geminiResult = await callGemini(prompt, apiKey, false);
     } catch (e: any) {
       console.error("[analise-ia] Falha Gemini (individual):", e.message);
       return NextResponse.json(
@@ -142,7 +171,7 @@ export async function POST(req: NextRequest) {
 
   let geminiResult: Awaited<ReturnType<typeof callGemini>>;
   try {
-    geminiResult = await callGemini(prompt, apiKey);
+    geminiResult = await callGemini(prompt, apiKey, true);
   } catch (e: any) {
     console.error(
       `[analise-ia] Falha Gemini (batch ${validItems.length}):`,
