@@ -69,6 +69,34 @@ COLUMNS.forEach((c) => {
   HEADER_MAP[c.label.toLowerCase()] = c.name;
 });
 
+// --- Mol CSV (csvBiomol / IPOG) ---
+export const MOL_COLUMNS: ColumnDef[] = [
+  { name: "guia_mol",       label: "GuiaIPOG",  type: "text" },
+  { name: "referencia_mol", label: "Referencia", type: "text" },
+  { name: "emissao_mol",    label: "Emissao",    type: "date" },
+  { name: "liberacao_mol",  label: "Liberacao",  type: "date" },
+  { name: "paciente_mol",   label: "Paciente",   type: "text" },
+  { name: "exame_mol",      label: "Exame",      type: "text" },
+  { name: "analito_mol",    label: "Analito",    type: "text" },
+  { name: "resultado_mol",  label: "Resultado",  type: "text" },
+  { name: "anomes_mol",     label: "AnoMes",     type: "text" },
+];
+
+export const MOL_HEADER_MAP: Record<string, string> = {
+  "guiaipog":   "guia_mol",
+  "referência": "referencia_mol",
+  "referencia": "referencia_mol",
+  "emissão":    "emissao_mol",
+  "emissao":    "emissao_mol",
+  "liberação":  "liberacao_mol",
+  "liberacao":  "liberacao_mol",
+  "paciente":   "paciente_mol",
+  "exame":      "exame_mol",
+  "analito":    "analito_mol",
+  "resultado":  "resultado_mol",
+  "anomes":     "anomes_mol",
+};
+
 function normalizeDateString(raw: string): string {
   const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)/);
   if (m)
@@ -107,6 +135,20 @@ function createEmptyDb(SQL: any): Database {
   for (const col of indexCols) {
     db.run(`CREATE INDEX idx_${col} ON csv_data("${col}")`);
   }
+
+  db.run(`CREATE TABLE mol_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guia_mol TEXT,
+    referencia_mol TEXT,
+    emissao_mol TEXT,
+    liberacao_mol TEXT,
+    paciente_mol TEXT,
+    exame_mol TEXT,
+    analito_mol TEXT,
+    resultado_mol TEXT,
+    anomes_mol TEXT
+  )`);
+
   return db;
 }
 
@@ -117,6 +159,26 @@ function migrateDb(db: Database): void {
   for (const c of newCols) {
     const sqlType = c.type === "number" ? "REAL" : "TEXT";
     db.run(`ALTER TABLE csv_data ADD COLUMN "${c.name}" ${sqlType}`);
+  }
+}
+
+function migrateMolDb(db: Database): void {
+  const tables = db.exec(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='mol_data'",
+  );
+  if (tables.length === 0 || tables[0].values.length === 0) {
+    db.run(`CREATE TABLE mol_data (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guia_mol TEXT,
+      referencia_mol TEXT,
+      emissao_mol TEXT,
+      liberacao_mol TEXT,
+      paciente_mol TEXT,
+      exame_mol TEXT,
+      analito_mol TEXT,
+      resultado_mol TEXT,
+      anomes_mol TEXT
+    )`);
   }
 }
 
@@ -141,6 +203,7 @@ export function getDb(): Promise<Database> {
         if (snapshot) {
           const db = new SQL.Database(snapshot);
           migrateDb(db);
+          migrateMolDb(db);
           return db;
         }
       }
@@ -2011,4 +2074,172 @@ export async function importReciboEnrichment(
   }
 
   return { updated };
+}
+
+// --- Mol CSV (csvBiomol / IPOG) ---
+
+export async function importMolCSV(
+  headers: string[],
+  rows: string[][],
+): Promise<{ rowCount: number }> {
+  const db = await getDb();
+
+  const colMapping: { csvIndex: number; dbCol: string }[] = [];
+  headers.forEach((h, i) => {
+    const key = h.trim().toLowerCase();
+    const dbName = MOL_HEADER_MAP[key];
+    if (dbName) colMapping.push({ csvIndex: i, dbCol: dbName });
+  });
+
+  if (colMapping.length === 0) {
+    throw new Error("Nenhuma coluna do CSV mol corresponde ao schema esperado");
+  }
+
+  const dbCols = colMapping.map((m) => `"${m.dbCol}"`).join(", ");
+  const placeholders = colMapping.map(() => "?").join(", ");
+  const stmt = db.prepare(
+    `INSERT INTO mol_data (${dbCols}) VALUES (${placeholders})`,
+  );
+
+  let rowCount = 0;
+  db.run("BEGIN TRANSACTION;");
+  for (const row of rows) {
+    const vals = colMapping.map(({ csvIndex, dbCol }) => {
+      const col = MOL_COLUMNS.find((c) => c.name === dbCol);
+      let v = row[csvIndex] ?? "";
+      if (col?.type === "date" && v) v = normalizeDateString(v);
+      return v === "" ? null : v;
+    });
+    stmt.run(vals);
+    rowCount++;
+  }
+  stmt.free();
+  db.run("COMMIT;");
+
+  const idbMol = await getIdb();
+  if (idbMol) {
+    const snapshot = db.export();
+    await idbMol.put("csv_database", snapshot, "snapshot");
+  }
+
+  return { rowCount };
+}
+
+export async function getMolStats(): Promise<{
+  total: number;
+  minDate: string | null;
+  maxDate: string | null;
+}> {
+  try {
+    const db = await getDb();
+    const resCount = db.exec("SELECT COUNT(*) as total FROM mol_data");
+    const total = resCount.length > 0 ? Number(resCount[0].values[0][0]) : 0;
+    const resDate = db.exec(
+      "SELECT MIN(emissao_mol) as min_date, MAX(emissao_mol) as max_date FROM mol_data WHERE emissao_mol IS NOT NULL",
+    );
+    const minDate =
+      resDate.length > 0 ? String(resDate[0].values[0][0] ?? "") || null : null;
+    const maxDate =
+      resDate.length > 0 ? String(resDate[0].values[0][1] ?? "") || null : null;
+    return { total, minDate, maxDate };
+  } catch {
+    return { total: 0, minDate: null, maxDate: null };
+  }
+}
+
+export async function getMolColumnValues(column: string): Promise<string[]> {
+  const db = await getDb();
+  const res = db.exec(
+    `SELECT DISTINCT "${column}" FROM mol_data WHERE "${column}" IS NOT NULL AND "${column}" != '' ORDER BY "${column}"`,
+  );
+  if (res.length === 0) return [];
+  return res[0].values.map((r: any[]) => String(r[0]));
+}
+
+export async function queryMolFiltered(
+  selectedColumns: string[],
+  conditions: FilterCondition[],
+  page = 1,
+  pageSize = 50,
+  sortColumn?: string,
+  sortDir: "asc" | "desc" = "asc",
+): Promise<{ rows: Record<string, string>[]; total: number }> {
+  const db = await getDb();
+  const { sql: where, params } = buildWhereClause(conditions);
+  const offset = (page - 1) * pageSize;
+
+  const cols =
+    selectedColumns.length > 0
+      ? selectedColumns.map((c) => `"${c}"`).join(", ")
+      : MOL_COLUMNS.map((c) => `"${c.name}"`).join(", ");
+
+  const orderBy = sortColumn
+    ? `ORDER BY "${sortColumn}" ${sortDir}`
+    : "ORDER BY id";
+
+  const resTotal = db.exec(
+    `SELECT COUNT(*) as total FROM mol_data ${where}`,
+    params,
+  );
+  const total = resTotal.length > 0 ? Number(resTotal[0].values[0][0]) : 0;
+
+  const resRows = db.exec(
+    `SELECT ${cols} FROM mol_data ${where} ${orderBy} LIMIT ? OFFSET ?`,
+    [...params, pageSize, offset],
+  );
+  const rows = resultToObjects(resRows).map((r) => {
+    const obj: Record<string, string> = {};
+    for (const key of Object.keys(r)) obj[key] = String(r[key] ?? "");
+    return obj;
+  });
+
+  return { rows, total };
+}
+
+export async function exportMolCSV(
+  selectedColumns: string[],
+  conditions: FilterCondition[],
+): Promise<string> {
+  const db = await getDb();
+  const { sql: where, params } = buildWhereClause(conditions);
+
+  const cols =
+    selectedColumns.length > 0
+      ? selectedColumns
+      : MOL_COLUMNS.map((c) => c.name);
+
+  const colsSql = cols.map((c) => `"${c}"`).join(", ");
+  const res = db.exec(
+    `SELECT ${colsSql} FROM mol_data ${where} ORDER BY id`,
+    params,
+  );
+
+  const colDefs = cols.map((name) => {
+    const def = MOL_COLUMNS.find((c) => c.name === name);
+    return def?.label ?? name;
+  });
+
+  const lines: string[] = [colDefs.join(",")];
+  if (res.length > 0) {
+    for (const row of res[0].values) {
+      lines.push(
+        row
+          .map((v: any) =>
+            v == null ? "" : String(v).includes(",") ? `"${v}"` : String(v),
+          )
+          .join(","),
+      );
+    }
+  }
+  return lines.join("\n");
+}
+
+export async function clearMolData(): Promise<void> {
+  const db = await getDb();
+  db.run("DELETE FROM mol_data");
+  const idbMol = await getIdb();
+  if (idbMol) {
+    const snapshot = db.export();
+    await idbMol.put("csv_database", snapshot, "snapshot");
+  }
 }

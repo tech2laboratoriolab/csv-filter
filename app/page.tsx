@@ -20,6 +20,7 @@ import {
   importCSV,
   importLaudoCSVAsRows,
   importPatologiaMolecularCSV,
+  importMolCSV,
   importMysqlEnrichment,
   importReciboEnrichment,
   importTarefaTipoEnrichment,
@@ -318,6 +319,10 @@ export default function Home() {
             mappedCols.includes("des_conclusao") &&
             mappedCols.includes("cod_requisicao");
 
+          const isMolCSV = headers.some(
+            (h) => h.trim().toLowerCase() === "guiaipog",
+          );
+
           if (isVisualizacaoCSV) {
             // Import all recognized csvlaudo columns unconditionally.
             // Restricting by allowedCols would silently drop columns (e.g.
@@ -356,6 +361,14 @@ export default function Home() {
             showToast(
               "success",
               `${updated} registro(s) atualizados com dados moleculares${skipped > 0 ? ` (${skipped} não encontrados)` : ""}`,
+              true,
+            );
+          } else if (isMolCSV) {
+            const { rowCount: molRows } = await importMolCSV(headers, dataRows);
+            setProgress(100);
+            showToast(
+              "success",
+              `${molRows} registro(s) biomoleculares carregados.`,
               true,
             );
           } else {
@@ -899,6 +912,26 @@ export default function Home() {
               📱 WhatsApp
             </a>
           )}
+          <a
+            href="/mol"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              padding: "6px 10px",
+              background: "rgba(139,92,246,0.12)",
+              border: "1px solid rgba(139,92,246,0.3)",
+              borderRadius: 6,
+              color: "#a78bfa",
+              textDecoration: "none",
+              fontSize: 12,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}
+          >
+            🧬 Biomolecular
+          </a>
         </div>
 
         <div className="sidebar-scroll">

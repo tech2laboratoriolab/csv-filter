@@ -19,6 +19,9 @@ csvlaudoPositivo ->
 IdRequisicao;CodRequisicao;NomExame;DtaSolicitacao;DtaFinalizacao;StatusRequisicao;NomFontePagadora;NomPaciente;DtaNascimento;Idade;Sexo;NomLocalOrigem;NomMedico;Teste;Controle;StatusFrasco;Topografia;IdRequisicaoCaptura;Conclusao;TituloResultado;Resultado;TituloConclusao;DesConclusao;Assinatura1;Assinatura2;FaixaEtaria;Endereco;Bairro;Cidade;CEP;TelFixo;TelCelular;Informacoes;NumExterno;Visualizado
 172255;0200053077008;PCR;2026-02-09;2026-02-13;"Laudo Concluído (Definitivo)";"BRADESCO SAUDE - 005711";"LORENA AUGUSTA DAS MERCES DA COSTA";1996-12-02;29;F;"CLAF - TAGUATINGA";"LARISSA ABU KAMEL LASMAR";"Genotipagem HPV 28 - PCR";6599891281;Análise/Conclusão;"Sem observação específica";112827;1;"ALTO RISCO HPV 39";;"ALTO RISCO HPV 39";Positivo;"Ana Clara Vieira Frois";;20-29;;;;;;;"Amostra: 24-TGI; Conservantes: 1-SEM CONSERVANTE INDICADO ; Frascos: 1; Coletor(a): ; ";;0
 
+csvBiomol -> guiaipog,referência,emissão,liberação,paciente,exame,analito,resultado,AnoMes
+2041,0200021760000,8/24/2023 14:09:18,8/24/2023 14:28:31,MARIO GORINI,CHLAMYDIA TRACHOMATIS E NEISSERIA GONORRHOEAE,CT,POSITIVO,8/1/2023
+
 csv2_tratamento_anatomo -> =QUERY(csvLaudo!A:AT; "SELECT \* WHERE Y <> '' AND H <> '' ORDER BY A ASC " )
 
 cito -> =QUERY('CSV2'!A3:BU;"SELECT V, AI, AN,Q,L,AZ, W,BP, Z WHERE NOT AI CONTAINS 'TESTE' and L <> 'NUCLEO - FAT EXT - CITOLOGIA' and not H CONTAINS 'BIOCITHO' AND AI <> 'TESTE' AND Y IS NULL AND AL <> '46' AND AL <> '1004' and AL <> '1015' AND AJ <> '32'AND (AK = '30' OR AK = '20'OR AK = '24' OR AK = '10' OR AK = '33' OR AK = '4' OR AK = '35' OR AK = '10') AND AK <> '37' AND BB <> '40601161' AND AI IS NOT NULL ORDER BY Z" )
