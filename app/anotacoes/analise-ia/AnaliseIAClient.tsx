@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { queryFiltered, getPrompts, getSavedFilters } from '@/lib/clientDb';
 import type { Prompt, SavedFilter } from '@/lib/clientDb';
@@ -81,6 +81,7 @@ export default function AnaliseIAClient() {
   const [resultFilter, setResultFilter] = useState<'all' | 'SIM' | 'NÃO' | 'error'>('all');
   const [selectedAnalysisColumn, setSelectedAnalysisColumn] = useState<string>('');
   const [tokenUsage, setTokenUsage] = useState({ input: 0, output: 0 });
+  const [copied, setCopied] = useState(false);
 
   // Load prompts and filters on mount
   useEffect(() => {
@@ -307,8 +308,29 @@ export default function AnaliseIAClient() {
       ...results[r.cod_requisicao],
     }));
 
+  const selectStyle: CSSProperties = {
+    width: '100%',
+    padding: '6px 10px',
+    background: 'var(--bg-3)',
+    border: '1px solid var(--border)',
+    borderRadius: 8,
+    color: 'var(--text-0)',
+    fontSize: 13,
+    cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+    marginTop: 4,
+    marginBottom: 8,
+  };
+
+  const labelStyle: CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    color: 'var(--text-3)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+  };
+
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-0)', color: 'var(--text-0)', overflow: 'hidden' }}>
+    <div className="app">
       <style>{`
         .ia-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
         .ia-table th {
@@ -351,47 +373,10 @@ export default function AnaliseIAClient() {
         .badge-nao  { background: #dcfce7; color: #166534; }
         .badge-err  { background: #fef9c3; color: #78350f; }
         .evidencias-list { margin: 4px 0 0 0; padding-left: 16px; color: #b91c1c; font-size: 12px; }
-        .json-panel {
-          background: #0f172a;
-          color: #e2e8f0;
-          font-family: monospace;
-          font-size: 12px;
-          padding: 16px;
-          border-radius: 8px;
-          overflow: auto;
-          max-height: 400px;
-          white-space: pre;
-        }
-        .analyze-btn {
-          padding: 8px 18px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: opacity 0.15s;
-        }
-        .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .analyze-btn:not(:disabled):hover { opacity: 0.9; }
-        .progress-bar-track {
-          height: 4px;
-          background: #e2e8f0;
-          border-radius: 2px;
-          overflow: hidden;
-          flex: 1;
-        }
-        .progress-bar-fill {
-          height: 100%;
-          background: linear-gradient(90deg, #6366f1, #8b5cf6);
-          border-radius: 2px;
-          transition: width 0.2s;
-        }
-        .result-tabs { display: flex; gap: 6px; align-items: center; }
         .result-tab {
-          padding: 4px 12px;
-          border-radius: 999px;
+          width: 100%;
+          padding: 6px 12px;
+          border-radius: 6px;
           font-size: 12px;
           font-weight: 600;
           border: 1.5px solid transparent;
@@ -400,6 +385,8 @@ export default function AnaliseIAClient() {
           background: var(--bg-1);
           color: var(--text-2);
           border-color: var(--border);
+          text-align: left;
+          margin-bottom: 4px;
         }
         .result-tab:hover { border-color: #94a3b8; }
         .result-tab.active-all  { background: #ede9fe; color: #6d28d9; border-color: #8b5cf6; }
@@ -408,194 +395,139 @@ export default function AnaliseIAClient() {
         .result-tab.active-err  { background: #fef9c3; color: #78350f; border-color: #fde047; }
       `}</style>
 
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(to right, #eff6ff, #eef2ff, #f5f3ff)',
-        borderBottom: '1px solid var(--border)',
-        padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
-        flexShrink: 0,
-      }}>
-        <Link href="/anotacoes" style={{ color: 'var(--text-3)', textDecoration: 'none', fontSize: 13 }}>
-          ← Voltar
-        </Link>
-        <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-0)' }}>
-          🤖 Análise de IA
-        </span>
-        <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 4 }}>
-          {filter ? filter.name : 'Carregando...'}
-        </span>
-        {tokenUsage.input > 0 && (
-          <span style={{
-            marginLeft: 'auto',
-            fontSize: 12,
-            color: 'var(--text-2)',
-            background: 'var(--bg-1)',
-            padding: '4px 10px',
-            borderRadius: 12,
-            border: '1px solid var(--border)',
-          }}>
-            {((tokenUsage.input + tokenUsage.output) / 1000).toFixed(1)}k tokens
-            {' · '}
-            ~${((tokenUsage.input * 0.15 + tokenUsage.output * 0.60) / 1_000_000).toFixed(4)}
-          </span>
-        )}
-        {/* Indicador de linhas */}
-        <span style={{
-          marginLeft: tokenUsage.input > 0 ? 0 : 'auto',
-          fontSize: 12,
-          color: 'var(--text-2)',
-          background: 'var(--bg-1)',
-          padding: '4px 10px',
-          borderRadius: 12,
-          border: '1px solid var(--border)',
-        }}>
-          {rows.length} laudo{rows.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-
-      {/* Body */}
-      <div style={{ flex: 1, overflow: 'hidden', padding: 24, background: 'var(--bg-0)', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-
-        {loadError && (
-          <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px 16px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
-            {loadError}
+      {/* ===== SIDEBAR ===== */}
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 6 }}>
+            <Link href="/anotacoes" style={{ color: 'var(--text-3)', textDecoration: 'none', fontSize: 12, textAlign: 'center' }}>
+              ← Voltar
+            </Link>
+            <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-0)', textAlign: 'center' }}>
+              🤖 Análise de IA
+            </span>
           </div>
-        )}
-
-        {!loadError && !filter && (
-          <div style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', marginTop: 48 }}>
-            Carregando filtro...
-          </div>
-        )}
-
-        {filter && (
-          <>
-            {/* Filter + Prompt Selector + Analyze Button */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              marginBottom: 16,
-              flexWrap: 'wrap',
-            }}>
-              {/* Filter Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
-                  Filtro:
-                </label>
-                <select
-                  value={selectedFilterId}
-                  onChange={(e) => handleFilterChange(e.target.value)}
-                  disabled={isAnalyzing || availableFilters.length === 0}
-                  style={{
-                    flex: 1,
-                    minWidth: 180,
-                    padding: '6px 10px',
-                    background: 'var(--bg-3)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    color: 'var(--text-0)',
-                    fontSize: 13,
-                    cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {availableFilters.map((f) => (
-                    <option key={f.id} value={f.id}>{f.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Column Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 180 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
-                  Coluna:
-                </label>
-                <select
-                  value={selectedAnalysisColumn}
-                  onChange={(e) => {
-                    setSelectedAnalysisColumn(e.target.value);
-                    setResults({});
-                    setJsonPanelOpen(false);
-                  }}
-                  disabled={isAnalyzing || filter.selectedColumns.length === 0}
-                  style={{
-                    flex: 1,
-                    minWidth: 160,
-                    padding: '6px 10px',
-                    background: 'var(--bg-3)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    color: 'var(--text-0)',
-                    fontSize: 13,
-                    cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {Array.from(new Set([
-                    ...filter.selectedColumns,
-                    ...(selectedPrompt?.defaultColumn ? [selectedPrompt.defaultColumn] : []),
-                  ])).map((col) => (
-                    <option key={col} value={col}>{getColumnLabel(col)}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Prompt Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
-                  Prompt:
-                </label>
-                <select
-                  value={selectedPromptId}
-                  onChange={(e) => {
-                    const newPrompt = prompts.find((p) => p.id === e.target.value);
-                    setSelectedPromptId(e.target.value);
-                    if (newPrompt?.defaultColumn) {
-                      setSelectedAnalysisColumn(newPrompt.defaultColumn);
-                    }
-                  }}
-                  disabled={isAnalyzing || promptsLoading}
-                  style={{
-                    flex: 1,
-                    minWidth: 200,
-                    padding: '6px 10px',
-                    background: 'var(--bg-3)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    color: 'var(--text-0)',
-                    fontSize: 13,
-                    cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {prompts.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                <Link
-                  href="/anotacoes/analise-ia/config"
-                  style={{
-                    padding: '6px 10px',
-                    fontSize: 12,
-                    background: 'var(--bg-3)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    color: 'var(--text-2)',
-                    textDecoration: 'none',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  ⚙️ Config
-                </Link>
-              </div>
-
+          <div className="stats-row" style={{ marginTop: 10 }}>
+            <div className="stat">
+              <div className="stat-value">{rows.length}</div>
+              <div className="stat-label">Laudos</div>
             </div>
+            {tokenUsage.input > 0 && (
+              <div className="stat">
+                <div className="stat-value">{((tokenUsage.input + tokenUsage.output) / 1000).toFixed(1)}k</div>
+                <div className="stat-label">~${((tokenUsage.input * 0.15 + tokenUsage.output * 0.60) / 1_000_000).toFixed(4)}</div>
+              </div>
+            )}
+          </div>
+        </div>
 
-            {/* Result filter tabs + progress + analyze button */}
-            <div className="result-tabs" style={{ marginBottom: 12 }}>
-              {countAll > 0 && (<>
+        <div className="sidebar-scroll">
+
+          {/* Configuração */}
+          <div className="section">
+            <div className="section-title">Configuração</div>
+            <div style={{ padding: '0 4px' }}>
+              <label style={labelStyle}>Filtro</label>
+              <select
+                value={selectedFilterId}
+                onChange={(e) => handleFilterChange(e.target.value)}
+                disabled={isAnalyzing || availableFilters.length === 0}
+                style={selectStyle}
+              >
+                {availableFilters.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+
+              <label style={labelStyle}>Coluna de análise</label>
+              <select
+                value={selectedAnalysisColumn}
+                onChange={(e) => {
+                  setSelectedAnalysisColumn(e.target.value);
+                  setResults({});
+                  setJsonPanelOpen(false);
+                }}
+                disabled={isAnalyzing || !filter || filter.selectedColumns.length === 0}
+                style={selectStyle}
+              >
+                {filter && Array.from(new Set([
+                  ...filter.selectedColumns,
+                  ...(selectedPrompt?.defaultColumn ? [selectedPrompt.defaultColumn] : []),
+                ])).map((col) => (
+                  <option key={col} value={col}>{getColumnLabel(col)}</option>
+                ))}
+              </select>
+
+              <label style={labelStyle}>Prompt</label>
+              <select
+                value={selectedPromptId}
+                onChange={(e) => {
+                  const newPrompt = prompts.find((p) => p.id === e.target.value);
+                  setSelectedPromptId(e.target.value);
+                  if (newPrompt?.defaultColumn) {
+                    setSelectedAnalysisColumn(newPrompt.defaultColumn);
+                  }
+                }}
+                disabled={isAnalyzing || promptsLoading}
+                style={{ ...selectStyle, marginBottom: 6 }}
+              >
+                {prompts.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <Link
+                href="/anotacoes/analise-ia/config"
+                style={{
+                  display: 'block',
+                  padding: '5px 10px',
+                  fontSize: 12,
+                  background: 'var(--bg-3)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  color: 'var(--text-2)',
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                  marginBottom: 4,
+                }}
+              >
+                ⚙️ Config
+              </Link>
+            </div>
+          </div>
+
+          {/* Análise */}
+          <div className="section">
+            <div className="section-title">Análise</div>
+            <div style={{ padding: '0 4px' }}>
+              <button
+                className="btn btn-primary"
+                style={{ width: '100%' }}
+                onClick={handleAnalyze}
+                disabled={isAnalyzing || rows.length === 0 || !selectedPrompt || !selectedAnalysisColumn}
+              >
+                {isAnalyzing ? <><span className="spinner" /> Analisando…</> : '▶ Analisar Tudo'}
+              </button>
+              {progress && (
+                <div style={{ marginTop: 10 }}>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${(progress.done / progress.total) * 100}%` }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+                    <span>{progress.done}/{progress.total} laudos</span>
+                    <span>{Math.round((progress.done / progress.total) * 100)}%</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Resultados */}
+          {countAll > 0 && (
+            <div className="section">
+              <div className="section-title">Resultados ({countAll})</div>
+              <div style={{ padding: '0 4px' }}>
                 <button
                   className={`result-tab${resultFilter === 'all' ? ' active-all' : ''}`}
                   onClick={() => setResultFilter('all')}
@@ -622,40 +554,85 @@ export default function AnaliseIAClient() {
                     ⚠ Erro ({countErrors})
                   </button>
                 )}
-              </>)}
-              <div style={{ flex: 1 }} />
-              {progress && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 180 }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
-                    {progress.done}/{progress.total}
-                  </span>
-                  <div className="progress-bar-track">
-                    <div
-                      className="progress-bar-fill"
-                      style={{ width: `${(progress.done / progress.total) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-              <button
-                className="analyze-btn"
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || rows.length === 0 || !selectedPrompt || !selectedAnalysisColumn}
-              >
-                {isAnalyzing ? 'Analisando…' : '▶ Analisar Tudo'}
-              </button>
+              </div>
             </div>
+          )}
 
-            {/* Table with scroll */}
-            <div style={{
-              flex: 1,
-              overflow: 'auto',
-              borderRadius: 8,
-              border: '1px solid var(--border)',
-              background: '#fff',
-              marginBottom: 24,
-              minHeight: 0,
-            }}>
+          {/* JSON Output */}
+          {jsonOutput.length > 0 && (
+            <div className="section">
+              <div className="section-title">Visualização</div>
+              <div style={{ padding: '0 4px', display: 'flex', gap: 6 }}>
+                <button
+                  className={`result-tab${!jsonPanelOpen ? ' active-all' : ''}`}
+                  onClick={() => setJsonPanelOpen(false)}
+                >
+                  Tabela
+                </button>
+                <button
+                  className={`result-tab${jsonPanelOpen ? ' active-all' : ''}`}
+                  onClick={() => setJsonPanelOpen(true)}
+                >
+                  JSON ({jsonOutput.length})
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* ===== MAIN ===== */}
+      <div className="main">
+        <div className="main-content" style={{ padding: 0 }}>
+          {loadError && (
+            <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px 16px', margin: 16, borderRadius: 8, fontSize: 13 }}>
+              {loadError}
+            </div>
+          )}
+
+          {!loadError && !filter && (
+            <div style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', marginTop: 48 }}>
+              Carregando filtro...
+            </div>
+          )}
+
+          {filter && jsonPanelOpen && jsonOutput.length > 0 && (
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, background: '#0f172a', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderBottom: '1px solid #1e293b', flexShrink: 0 }}>
+                <span style={{ color: '#94a3b8', fontSize: 12, fontFamily: 'monospace' }}>
+                  JSON — {jsonOutput.length} resultado{jsonOutput.length !== 1 ? 's' : ''}
+                </span>
+                <button
+                  style={{
+                    marginLeft: 'auto',
+                    padding: '8px 20px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    borderRadius: 6,
+                    border: `1px solid ${copied ? '#4ade80' : '#334155'}`,
+                    background: copied ? '#166534' : '#1e293b',
+                    color: copied ? '#fff' : '#94a3b8',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(JSON.stringify(jsonOutput, null, 2));
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                >
+                  {copied ? '✓ Copiado!' : 'Copiar JSON'}
+                </button>
+              </div>
+              <pre style={{ flex: 1, overflow: 'auto', margin: 0, padding: 16, color: '#e2e8f0', fontFamily: 'monospace', fontSize: 12, whiteSpace: 'pre', lineHeight: 1.6 }}>
+                {JSON.stringify(jsonOutput, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {filter && !jsonPanelOpen && (
+            <div style={{ flex: 1, overflow: 'auto', background: '#fff', minHeight: 0 }}>
               <table className="ia-table">
                 <thead>
                   <tr>
@@ -673,19 +650,21 @@ export default function AnaliseIAClient() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.length === 0 ? (
+                  {displayedRows.length === 0 ? (
                     <tr>
                       <td
                         colSpan={tableColumns.length || 1}
                         style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-3)', fontSize: 13 }}
                       >
-                        Nenhum laudo encontrado — verifique se o CSV foi carregado.
+                        {rows.length === 0
+                          ? 'Nenhum laudo encontrado — verifique se o CSV foi carregado.'
+                          : 'Nenhum resultado para este filtro.'}
                       </td>
                     </tr>
-                  ) : displayedRows.map((row) => {
+                  ) : displayedRows.map((row, index) => {
                     const result = results[row.cod_requisicao];
                     return (
-                      <tr key={row.cod_requisicao}>
+                      <tr key={row.cod_requisicao || String(index)}>
                         {tableColumns.map((col) => {
                           if (col === 'resultado_ia') {
                             return (
@@ -741,44 +720,8 @@ export default function AnaliseIAClient() {
                 </tbody>
               </table>
             </div>
-
-            {/* JSON Output Panel */}
-            {jsonOutput.length > 0 && (
-              <div style={{ marginBottom: 24, flexShrink: 0 }}>
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}
-                  onClick={() => setJsonPanelOpen((v) => !v)}
-                >
-                  <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-0)' }}>
-                    {jsonPanelOpen ? '▾' : '▸'} Resultado JSON ({jsonOutput.length} laudos)
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigator.clipboard.writeText(JSON.stringify(jsonOutput, null, 2));
-                    }}
-                    style={{
-                      padding: '2px 10px',
-                      fontSize: 11,
-                      border: '1px solid var(--border)',
-                      borderRadius: 4,
-                      background: '#fff',
-                      cursor: 'pointer',
-                      color: 'var(--text-2)',
-                    }}
-                  >
-                    Copiar
-                  </button>
-                </div>
-                {jsonPanelOpen && (
-                  <div className="json-panel">
-                    {JSON.stringify(jsonOutput, null, 2)}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
