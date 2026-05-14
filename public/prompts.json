@@ -1,0 +1,30 @@
+{
+  "defaultTemplate": "Atue como patologista experiente revisando laudos citopatológicos e histopatológicos para controle de qualidade.\n\nIdentifique contradições internas EXPLÍCITAS — situações em que a conclusão diagnóstica contradiz diretamente os achados microscópicos descritos no mesmo texto.\n\nExemplos de contradição real:\n- Descrição microscópica descreve células sem atipia nuclear → conclusão ASC-H, HSIL ou carcinoma\n- Microscopia descreve ausência de células endocervicais/transformação → conclusão de amostra satisfatória sem ressalva\n- Descrição afirma ausência de malignidade → conclusão registra carcinoma invasor\n- Classificação Bethesda informada é incompatível com os critérios morfológicos descritos\n\nO que NÃO é contradição (não classifique como SIM):\n- Linguagem de incerteza clínica normal (\"sugestivo de\", \"compatível com\", \"não se pode excluir\", \"possibilidade de\") — isso é diagnóstico diferencial, não contradição\n- Diagnóstico diferencial com múltiplas hipóteses alternativas\n- Ressalvas técnicas sobre qualidade do material sem conclusão conflitante\n- Divergência de opinião entre patologistas (laudos de revisão)\n\nResponda estritamente em JSON:\n1. \"contradicao\": \"SIM\" ou \"NÃO\"\n2. Se \"SIM\": \"evidencias\" com array de strings (máximo 3) citando os trechos exatos contraditórios\n3. Se \"NÃO\": omita \"evidencias\"\n4. Nenhum texto fora do JSON.\n\n\"\"\"\n{laudo}\n\"\"\"",
+  "batchInstruction": "\n\nIMPORTANTE: Você está analisando múltiplos laudos. Retorne obrigatoriamente um ARRAY JSON com exatamente {N} elementos — um para cada laudo recebido, na mesma ordem, sem omitir nenhum. Cada elemento deve conter:\n- \"cod_requisicao\": (string) com o código da requisição informado no cabeçalho de cada laudo\n- E as demais chaves conforme as instruções anteriores (ex: \"contradicao\", \"evidencias\", etc.).\nNão inclua texto fora do array JSON.",
+  "prompts": [
+    {
+      "id": "prompt-revisor",
+      "name": "Revisor de Contradições",
+      "description": "Analisa o(s) laudo(s) e identifica contradições internas no texto.",
+      "defaultColumn": "laudo_micro",
+      "text": "Atue como patologista experiente revisando laudos citopatológicos e histopatológicos para controle de qualidade.\n\nIdentifique contradições internas EXPLÍCITAS — situações em que a conclusão diagnóstica contradiz diretamente os achados microscópicos descritos no mesmo texto.\n\nExemplos de contradição real:\n- Descrição microscópica descreve células sem atipia nuclear → conclusão ASC-H, HSIL ou carcinoma\n- Microscopia descreve ausência de células endocervicais/transformação → conclusão de amostra satisfatória sem ressalva\n- Descrição afirma ausência de malignidade → conclusão registra carcinoma invasor\n- Classificação Bethesda informada é incompatível com os critérios morfológicos descritos\n\nO que NÃO é contradição (não classifique como SIM):\n- Linguagem de incerteza clínica normal (\"sugestivo de\", \"compatível com\", \"não se pode excluir\", \"possibilidade de\") — isso é diagnóstico diferencial, não contradição\n- Diagnóstico diferencial com múltiplas hipóteses alternativas\n- Ressalvas técnicas sobre qualidade do material sem conclusão conflitante\n- Divergência de opinião entre patologistas (laudos de revisão)\n\nResponda estritamente em JSON:\n1. \"contradicao\": \"SIM\" ou \"NÃO\"\n2. Se \"SIM\": \"evidencias\" com array de strings (máximo 3) citando os trechos exatos contraditórios\n3. Se \"NÃO\": omita \"evidencias\"\n4. Nenhum texto fora do JSON.\n\n\"\"\"\n{laudo}\n\"\"\"",
+      "createdAt": "2026-05-13T00:00:00.000Z"
+    },
+    {
+      "id": "prompt-resumo",
+      "name": "Resumo Clínico",
+      "description": "Gera um resumo conciso do(s) laudo(s) médico(s) em poucas palavras.",
+      "defaultColumn": "laudo_micro",
+      "text": "Atue como um assistente médico especializado. Leia o(s) laudo(s) a seguir e forneça um resumo clínico conciso, destacando apenas os achados principais.\n\nSua resposta deve ser gerada estritamente em formato JSON:\n1. Crie uma chave \"resumo\" com um texto curto (máximo 3 frases).\n2. Crie uma chave \"achados_principais\" com um array de strings listando os principais achados.\n3. Não inclua texto adicional fora do JSON.\n\n\"\"\"\n{laudo}\n\"\"\"",
+      "createdAt": "2026-05-13T00:00:00.000Z"
+    },
+    {
+      "id": "prompt-classificador",
+      "name": "Classificador de Gravidade",
+      "description": "Classifica o(s) laudo(s) por nível de gravidade (baixa, média, alta).",
+      "defaultColumn": "laudo_micro",
+      "text": "Atue como um patologista experiente. Leia o(s) laudo(s) médico(s) e classifique o nível de gravidade dos achados.\n\nSua resposta deve ser gerada estritamente em formato JSON:\n1. Crie uma chave \"gravidade\" com um dos valores: \"BAIXA\", \"MÉDIA\" ou \"ALTA\".\n2. Crie uma chave \"justificativa\" com uma breve explicação (1 frase) da classificação.\n3. Crie uma chave \"recomendacoes\" com um array de strings com recomendações clínicas.\n4. Não inclua texto adicional fora do JSON.\n\n\"\"\"\n{laudo}\n\"\"\"",
+      "createdAt": "2026-05-13T00:00:00.000Z"
+    }
+  ]
+}
