@@ -29,7 +29,10 @@ import {
   getSavedFilters,
   getDistinctValues,
   queryFiltered,
+  queryMolFiltered,
   exportFilteredCSV,
+  exportMolCSV,
+  getMolStats,
   saveFilterToFile,
   deleteFilterFile,
   deleteDefaultFilters,
@@ -39,6 +42,7 @@ import {
   deriveColumnsFromFilters,
   resetAllData,
   COLUMNS,
+  MOL_COLUMNS,
   HEADER_MAP,
   ColumnDef,
   FilterCondition,
@@ -73,6 +77,8 @@ const OPS_DATE = [
 export default function Home() {
   const { track } = useTrack();
   const [columns, setColumns] = useState<ColumnDef[]>(COLUMNS);
+  const [dataSource, setDataSource] = useState<"main" | "mol">("main");
+  const [molRowCount, setMolRowCount] = useState(0);
   const [selectedCols, setSelectedCols] = useState<string[]>([]);
   const [conditions, setConditions] = useState<FilterCondition[]>([]);
   const [rows, setRows] = useState<any[]>([]);
@@ -142,6 +148,9 @@ export default function Home() {
           setSelectedCols(allCols);
           fetchData(allCols, [], 1);
         }
+
+        const molStats = await getMolStats();
+        setMolRowCount(molStats.total);
 
         const filters = await getSavedFilters();
         setSavedFilters(filters);
@@ -222,28 +231,44 @@ export default function Home() {
       sDir?: "asc" | "desc",
       rules?: ColorRule[],
       dedup?: string[],
+      src?: "main" | "mol",
     ) => {
       setLoading(true);
       try {
+        const activeSrc = src !== undefined ? src : dataSource;
         const activeCols = cols ?? selectedCols;
-        const activeRules = rules !== undefined ? rules : colorRules;
-        const activeDedup = dedup !== undefined ? dedup : deduplicationColumns;
-        const extraCols = colorRuleExtraColumns(activeRules, activeCols);
         const baseConds = conds ?? conditions;
-        const vipCond = getVipFilterCondition();
-        const effectiveConds = vipCond ? [vipCond, ...baseConds] : baseConds;
-        const result = await queryFiltered(
-          activeCols,
-          effectiveConds,
-          pg ?? page,
-          PAGE_SIZE,
-          sCol ?? sortCol,
-          sDir ?? sortDir,
-          extraCols,
-          activeDedup,
-        );
-        setRows(result.rows || []);
-        setTotal(Number(result.total) || 0);
+
+        if (activeSrc === "mol") {
+          const result = await queryMolFiltered(
+            activeCols,
+            baseConds,
+            pg ?? page,
+            PAGE_SIZE,
+            sCol ?? sortCol,
+            sDir ?? sortDir,
+          );
+          setRows(result.rows || []);
+          setTotal(Number(result.total) || 0);
+        } else {
+          const activeRules = rules !== undefined ? rules : colorRules;
+          const activeDedup = dedup !== undefined ? dedup : deduplicationColumns;
+          const extraCols = colorRuleExtraColumns(activeRules, activeCols);
+          const vipCond = getVipFilterCondition();
+          const effectiveConds = vipCond ? [vipCond, ...baseConds] : baseConds;
+          const result = await queryFiltered(
+            activeCols,
+            effectiveConds,
+            pg ?? page,
+            PAGE_SIZE,
+            sCol ?? sortCol,
+            sDir ?? sortDir,
+            extraCols,
+            activeDedup,
+          );
+          setRows(result.rows || []);
+          setTotal(Number(result.total) || 0);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -258,6 +283,7 @@ export default function Home() {
       sortDir,
       colorRules,
       deduplicationColumns,
+      dataSource,
     ],
   );
 
@@ -366,6 +392,7 @@ export default function Home() {
           } else if (isMolCSV) {
             const { rowCount: molRows } = await importMolCSV(headers, dataRows);
             setProgress(100);
+            setMolRowCount(molRows);
             showToast(
               "success",
               `${molRows} registro(s) biomoleculares carregados.`,
@@ -594,8 +621,10 @@ export default function Home() {
     setActiveFilterId(null);
     setConditions([]);
     setDeduplicationColumns([]);
+    setDataSource("main");
+    setColumns(COLUMNS);
     setPage(1);
-    fetchData(selectedCols, [], 1, sortCol, sortDir, colorRules, []);
+    fetchData(selectedCols, [], 1, sortCol, sortDir, colorRules, [], "main");
   };
 
   // Sort
@@ -663,6 +692,9 @@ export default function Home() {
   };
 
   const loadFilter = (f: SavedFilter) => {
+    const src = f.dataSource === "mol" ? "mol" : "main";
+    setDataSource(src);
+    setColumns(src === "mol" ? MOL_COLUMNS : COLUMNS);
     setActiveFilterId(f.id);
     const newColorRules = f.colorRules ?? [];
     const newDedup = f.deduplicationColumns ?? [];
@@ -684,6 +716,7 @@ export default function Home() {
       undefined,
       newColorRules,
       newDedup,
+      src,
     );
   };
 
@@ -718,6 +751,7 @@ export default function Home() {
     setRows([]);
     setTotal(0);
     setRowCount(0);
+    setMolRowCount(0);
     setMinDate("");
     setMaxDate("");
     setSelectedCols([]);
@@ -730,6 +764,8 @@ export default function Home() {
     setTemplateColumns([]);
     setAnnotationValues({});
     setActiveFilterId(null);
+    setDataSource("main");
+    setColumns(COLUMNS);
     setPage(1);
     setSortCol(undefined);
     setSortDir("asc");
@@ -812,16 +848,15 @@ export default function Home() {
 
   // Export CSV
   const exportCSV = async () => {
-    const csvContent = await exportFilteredCSV(
-      selectedCols,
-      conditions,
-      deduplicationColumns,
-    );
+    const csvContent =
+      dataSource === "mol"
+        ? await exportMolCSV(selectedCols, conditions)
+        : await exportFilteredCSV(selectedCols, conditions, deduplicationColumns);
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "dados_filtrados.csv";
+    a.download = dataSource === "mol" ? "biomolecular.csv" : "dados_filtrados.csv";
     a.click();
     URL.revokeObjectURL(url);
     track("csv_exported", { rows: total });
@@ -840,7 +875,7 @@ export default function Home() {
       )
     : columns;
 
-  const hasData = rowCount > 0;
+  const hasData = rowCount > 0 || molRowCount > 0;
 
   return (
     <div className="app">
@@ -912,26 +947,6 @@ export default function Home() {
               📱 WhatsApp
             </a>
           )}
-          <a
-            href="/mol"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              padding: "6px 10px",
-              background: "rgba(139,92,246,0.12)",
-              border: "1px solid rgba(139,92,246,0.3)",
-              borderRadius: 6,
-              color: "#a78bfa",
-              textDecoration: "none",
-              fontSize: 12,
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-            }}
-          >
-            🧬 Biomolecular
-          </a>
         </div>
 
         <div className="sidebar-scroll">
@@ -993,7 +1008,7 @@ export default function Home() {
               <div className="stats-row">
                 <div className="stat">
                   <div className="stat-value">
-                    {rowCount.toLocaleString("pt-BR")}
+                    {(dataSource === "mol" ? molRowCount : rowCount).toLocaleString("pt-BR")}
                   </div>
                   <div className="stat-label">Linhas</div>
                 </div>
@@ -1023,14 +1038,16 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="saved-actions">
-                        <a
-                          href={`/filters/${f.id}`}
-                          className="btn btn-sm btn-icon btn-blue"
-                          title="Abrir página do filtro"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          ↗
-                        </a>
+                        {f.dataSource !== "mol" && (
+                          <a
+                            href={`/filters/${f.id}`}
+                            className="btn btn-sm btn-icon btn-blue"
+                            title="Abrir página do filtro"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            ↗
+                          </a>
+                        )}
                         <button
                           className="btn btn-sm btn-icon btn-ghost"
                           onClick={(e) => exportFilter(f, e)}

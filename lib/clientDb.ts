@@ -756,6 +756,7 @@ export interface SavedFilter {
   id: string;
   name: string;
   description?: string;
+  dataSource?: "main" | "mol";
   selectedColumns: string[];
   conditions: FilterCondition[];
   colorRules?: ColorRule[];
@@ -1315,7 +1316,7 @@ export async function exportFilteredCSV(
 }
 
 // --- IndexedDB: Filters ---
-const SEED_KEY = "csv-filter-defaults-seeded-v12";
+const SEED_KEY = "csv-filter-defaults-seeded-v13";
 
 // --- Reset All Data ---
 export async function resetAllData(): Promise<void> {

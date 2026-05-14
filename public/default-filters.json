@@ -3799,5 +3799,24 @@
     ],
     "createdAt": "2026-05-13T00:00:00.000Z",
     "updatedAt": "2026-05-13T00:00:00.000Z"
+  },
+  {
+    "id": "default-biomol",
+    "name": "🧬 Biomol",
+    "description": "Dados csvBiomol / IPOG",
+    "dataSource": "mol",
+    "selectedColumns": [
+      "guia_mol",
+      "referencia_mol",
+      "emissao_mol",
+      "liberacao_mol",
+      "paciente_mol",
+      "exame_mol",
+      "analito_mol",
+      "resultado_mol",
+      "anomes_mol"
+    ],
+    "conditions": [],
+    "createdAt": "2026-05-14T00:00:00.000Z"
   }
 ]
