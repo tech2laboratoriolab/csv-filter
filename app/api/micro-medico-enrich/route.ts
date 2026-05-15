@@ -41,19 +41,18 @@ export async function GET() {
   try {
     const [rows] = await pool.execute(QUERY);
 
-    const result = (rows as { CodRequisicao: string; DtaEvento: string | Date }[])
-      .filter((row) => row.CodRequisicao && row.DtaEvento)
-      .map((row) => {
-        const raw = row.DtaEvento;
-        const iso =
-          raw instanceof Date
-            ? raw.toISOString().slice(0, 10)
-            : String(raw).slice(0, 10);
-        return {
-          cod_requisicao: String(row.CodRequisicao),
-          dta_micro_medico: iso,
-        };
-      });
+    const result = (rows as { CodRequisicao: string; DtaEvento: string | Date }[]).reduce<
+      { cod_requisicao: string; dta_micro_medico: string }[]
+    >((acc, row) => {
+      if (!row.CodRequisicao || !row.DtaEvento) return acc;
+      const raw = row.DtaEvento;
+      const iso =
+        raw instanceof Date
+          ? raw.toISOString().slice(0, 10)
+          : String(raw).slice(0, 10);
+      acc.push({ cod_requisicao: String(row.CodRequisicao), dta_micro_medico: iso });
+      return acc;
+    }, []);
 
     return NextResponse.json(result);
   } catch (err: unknown) {

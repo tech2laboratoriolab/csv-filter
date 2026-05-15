@@ -159,7 +159,7 @@ export default function NotesClient() {
             boxSizing: 'border-box',
           }}>
             {editingId !== null && (
-              <div style={{ fontSize: 11, color: 'var(--blue)', marginBottom: 8, fontWeight: 600 }}>
+              <div style={{ fontSize: 12, color: 'var(--blue)', marginBottom: 8, fontWeight: 600 }}>
                 Editando nota
               </div>
             )}
@@ -260,7 +260,7 @@ export default function NotesClient() {
             <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {loading ? (
               <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: 40 }}>
-                Carregando...
+                Carregando…
               </div>
             ) : notas.length === 0 ? (
               <div style={{
@@ -308,7 +308,7 @@ export default function NotesClient() {
                     }}>
                       {nota.texto}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
+                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
                       {fmtDate(nota.created_at)}
                     </div>
                   </div>
@@ -326,21 +326,21 @@ export default function NotesClient() {
 
                     {confirmDelete === nota.id ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
                           Excluir?
                         </span>
                         <button
                           className="btn btn-red btn-sm"
                           onClick={() => { setConfirmDelete(null); handleDelete(nota.id); }}
                           disabled={deleting === nota.id}
-                          style={{ padding: '3px 10px', fontSize: 11 }}
+                          style={{ padding: '3px 10px', fontSize: 12 }}
                         >
                           Sim
                         </button>
                         <button
                           className="btn btn-ghost btn-sm"
                           onClick={() => setConfirmDelete(null)}
-                          style={{ padding: '3px 10px', fontSize: 11 }}
+                          style={{ padding: '3px 10px', fontSize: 12 }}
                         >
                           Não
                         </button>

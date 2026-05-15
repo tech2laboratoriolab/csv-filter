@@ -39,7 +39,7 @@ export default function AnnotationColumnEditor({
     <div>
       <div
         style={{
-          fontSize: 11,
+          fontSize: 12,
           color: 'var(--text-3)',
           marginBottom: 12,
           padding: '8px 10px',
@@ -86,7 +86,7 @@ export default function AnnotationColumnEditor({
                 value={ac.insertAfterColumn || ''}
                 onChange={e => update(i, 'insertAfterColumn', e.target.value || undefined)}
               >
-                <option value="">— No final —</option>
+                <option value="">(No final)</option>
                 {selectedCols.map(name => {
                   const col = columns.find(c => c.name === name);
                   return (
@@ -103,7 +103,7 @@ export default function AnnotationColumnEditor({
                 onChange={e => update(i, 'width', parseInt(e.target.value) || 180)}
                 style={{ width: 70 }}
               />
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>px</span>
+              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>px</span>
             </div>
           </div>
         </div>

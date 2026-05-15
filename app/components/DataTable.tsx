@@ -381,7 +381,7 @@ export default function DataTable({
                             color:
                               ((rowStyle as React.CSSProperties)
                                 .color as string) || "var(--text-1)",
-                            fontSize: 11,
+                            fontSize: 12,
                             lineHeight: 1.4,
                             verticalAlign: "top",
                             padding: "24px 6px 6px",

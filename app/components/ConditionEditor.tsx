@@ -136,7 +136,7 @@ export default function ConditionEditor({
               <div
                 style={{
                   textAlign: 'center',
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: 700,
                   color: 'var(--accent)',
                   margin: '2px 0',
@@ -200,7 +200,7 @@ export default function ConditionEditor({
                   className="btn btn-sm"
                   title="Adicionar condição OR"
                   onClick={() => addOrCondition(i)}
-                  style={{ fontSize: 11, padding: '2px 6px', opacity: 0.7 }}
+                  style={{ fontSize: 12, padding: '2px 6px', opacity: 0.7 }}
                 >
                   ＋OU
                 </button>

@@ -55,21 +55,24 @@ export async function GET() {
         DtaEvento: string | Date;
         CodPrioridade: string | number;
       }[]
-    )
-      .filter((row) => row.Codrequisicao && row.DtaEvento)
-      .map((row) => {
+    ).reduce<{ cod_requisicao: string; dta_status: string; cod_evento_status: string; cod_prioridade: string }[]>(
+      (acc, row) => {
+        if (!row.Codrequisicao || !row.DtaEvento) return acc;
         const raw = row.DtaEvento;
         const iso =
           raw instanceof Date
             ? raw.toISOString().slice(0, 10)
             : String(raw).slice(0, 10);
-        return {
+        acc.push({
           cod_requisicao: String(row.Codrequisicao),
           dta_status: iso,
           cod_evento_status: String(row.Codevento ?? ""),
           cod_prioridade: String(row.CodPrioridade ?? ""),
-        };
-      });
+        });
+        return acc;
+      },
+      [],
+    );
 
     return NextResponse.json(result);
   } catch (err: unknown) {

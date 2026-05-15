@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
 
         const response = await fetch(`${wahaUrl}/api/sendText`, {
           method: "POST",
+          cache: "no-store",
           headers: {
             "Content-Type": "application/json",
             "X-Api-Key": wahaApiKey,

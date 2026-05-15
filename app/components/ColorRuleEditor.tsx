@@ -35,7 +35,10 @@ function normalizeConditions(rule: ColorRule): ColorCondition[] {
 const NO_VALUE_OPS = ['is_null','is_not_null','is_today','is_yesterday','is_day_before_yesterday','is_tomorrow','is_today_or_tomorrow','is_future','is_future_or_today','is_past','is_past_or_today'];
 const DAYS_OFFSET_OPS = ['days_ahead_gte','days_ahead_lte','days_ago_gte','days_ago_lte'];
 
-export default function ColorRuleEditor({ rules, columns, annotationColumns = [], lookupColumns = [], onChange }: ColorRuleEditorProps) {
+const EMPTY_ANNOTATION_COLUMNS: AnnotationColumn[] = [];
+const EMPTY_LOOKUP_COLUMNS: LookupColumn[] = [];
+
+export default function ColorRuleEditor({ rules, columns, annotationColumns = EMPTY_ANNOTATION_COLUMNS, lookupColumns = EMPTY_LOOKUP_COLUMNS, onChange }: ColorRuleEditorProps) {
   const updateRule = (i: number, field: string, val: unknown) => {
     const next = [...rules];
     (next[i] as unknown as Record<string, unknown>)[field] = val;
@@ -163,7 +166,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                     value={rule.targetColumn || ''}
                     onChange={e => updateRule(i, 'targetColumn', e.target.value || undefined)}
                   >
-                    <option value="">— Selecionar coluna —</option>
+                    <option value="">(Selecionar coluna)</option>
                     {columnOptions}
                   </select>
                 )}
@@ -180,7 +183,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                   const noValue = NO_VALUE_OPS.includes(cond.operator);
                   return (
                     <div key={ci} className="rule-row" style={{ alignItems: 'center' }}>
-                      <label style={{ minWidth: 20, color: 'var(--text-3)', fontSize: 11, textAlign: 'right' }}>
+                      <label style={{ minWidth: 20, color: 'var(--text-3)', fontSize: 12, textAlign: 'right' }}>
                         {ci === 0 ? 'Se' : 'E'}
                       </label>
                       <select
@@ -202,7 +205,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                           className="btn btn-sm btn-ghost"
                           title={cond.valueIsColumn ? 'Mudar para valor literal' : 'Comparar com outra coluna'}
                           onClick={() => updateCondition(i, ci, 'valueIsColumn', !cond.valueIsColumn)}
-                          style={{ fontSize: 10, padding: '2px 6px', minWidth: 30 }}
+                          style={{ fontSize: 12, padding: '2px 6px', minWidth: 30 }}
                         >
                           {cond.valueIsColumn ? 'col' : 'val'}
                         </button>
@@ -270,7 +273,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                       title="Cor de fundo"
                       className="color-picker"
                     />
-                    <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Fundo</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Fundo</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <input
@@ -283,7 +286,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                     />
                     <label
                       htmlFor={`tc-${rule.id}`}
-                      style={{ fontSize: 11, color: 'var(--text-3)', cursor: 'pointer' }}
+                      style={{ fontSize: 12, color: 'var(--text-3)', cursor: 'pointer' }}
                     >
                       Texto
                     </label>
@@ -306,7 +309,7 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 11,
+                      fontSize: 12,
                       border: '1px solid var(--border)',
                     }}
                   >
@@ -315,8 +318,8 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = []
                 </div>
               </div>
 
-              <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                Prioridade {rule.priority} — regras com número menor são aplicadas por último (vencem)
+              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                Prioridade {rule.priority}: regras com número menor são aplicadas por último (vencem)
               </div>
             </div>
           </div>

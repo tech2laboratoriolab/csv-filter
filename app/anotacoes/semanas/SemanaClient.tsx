@@ -276,7 +276,7 @@ export default function SemanaClient() {
           }}>
             {currentWeek ? displayWeek(currentWeek) : '—'}
             {isCurrentWeek && (
-              <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 atual
               </span>
             )}
@@ -291,7 +291,7 @@ export default function SemanaClient() {
 
         {/* Save indicator */}
         {saving && (
-          <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 4 }}>Salvando...</span>
+          <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 4 }}>Salvando…</span>
         )}
         {savedOk && !saving && (
           <span style={{ fontSize: 12, color: '#16a34a', marginLeft: 4, fontWeight: 600 }}>✓ Salvo</span>
@@ -317,7 +317,7 @@ export default function SemanaClient() {
             borderBottom: '1px solid var(--border)',
             background: 'linear-gradient(to right, #eff6ff, #eef2ff)',
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-3)' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-3)' }}>
               Semanas
             </div>
           </div>
@@ -363,7 +363,7 @@ export default function SemanaClient() {
 
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: 'var(--text-3)' }}>
-              Carregando...
+              Carregando…
             </div>
           ) : patologistas.length === 0 ? (
             <div style={{
@@ -431,7 +431,7 @@ export default function SemanaClient() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
               {gerirList.map(p => (
-                <div key={p.nome} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xs)', transition: 'all 0.15s' }}>
+                <div key={p.nome} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xs)', transition: 'background 0.15s, border-color 0.15s' }}>
                   <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(to right, var(--blue), var(--indigo))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
                     {nomeDisplay(p.nome).charAt(0)}
                   </div>
@@ -449,7 +449,7 @@ export default function SemanaClient() {
             </div>
 
             <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xs)', padding: 14, marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-3)', marginBottom: 10 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-3)', marginBottom: 10 }}>
                 Adicionar patologista
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -495,11 +495,11 @@ function SemanaItem({ weekKey, active, isCurrent, unsaved, onClick }: { weekKey:
         border: 'none',
         borderLeft: `3px solid ${active ? 'var(--blue)' : 'transparent'}`,
         cursor: 'pointer',
-        transition: 'all 0.15s',
+        transition: 'background 0.15s, border-color 0.15s',
         gap: 2,
       }}
     >
-      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: active ? 'var(--blue)' : 'var(--text-2)', letterSpacing: '0.3px' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: active ? 'var(--blue)' : 'var(--text-2)', letterSpacing: '0.3px' }}>
         {month.toUpperCase()} {sat.getFullYear()}
         {isCurrent && (
           <span style={{
@@ -511,7 +511,7 @@ function SemanaItem({ weekKey, active, isCurrent, unsaved, onClick }: { weekKey:
             flexShrink: 0,
           }} title="Semana atual" />
         )}
-        {unsaved && <span style={{ marginLeft: 2, fontSize: 9, color: 'var(--text-3)', fontWeight: 500 }}>nova</span>}
+        {unsaved && <span style={{ marginLeft: 2, fontSize: 12, color: 'var(--text-3)', fontWeight: 500 }}>nova</span>}
       </span>
       <span style={{ fontSize: 12, color: active ? 'var(--blue)' : 'var(--text-3)' }}>
         {sat.getDate().toString().padStart(2, '0')}/{(sat.getMonth()+1).toString().padStart(2,'0')}

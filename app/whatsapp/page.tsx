@@ -157,7 +157,7 @@ function formatDateBR(date: Date): string {
 }
 
 const DATE_COLUMN_NAMES = new Set(
-  COLUMNS.filter((c) => c.type === "date").map((c) => c.name),
+  COLUMNS.reduce<string[]>((acc, c) => { if (c.type === "date") acc.push(c.name); return acc; }, []),
 );
 
 const DATE_OPERATORS: FilterCondition["operator"][] = [
@@ -213,7 +213,7 @@ function sortRowsAscByDate(
     columns.find((c) => c.name === "dta_solicitacao") ||
     columns.find((c) => c.type === "date");
   if (!dateCol) return rows;
-  return [...rows].sort((a, b) => {
+  return rows.toSorted((a, b) => {
     const va = a[dateCol.name] ?? "";
     const vb = b[dateCol.name] ?? "";
     const parse = (v: string): number => {
