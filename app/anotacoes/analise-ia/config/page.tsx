@@ -10,8 +10,14 @@ export default function PromptConfigPage() {
   const [editing, setEditing] = useState<Prompt | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [promptsSource, setPromptsSource] = useState<'drive' | 'local' | null>(null);
 
   useEffect(() => {
+    fetch('/api/prompts')
+      .then((r) => r.json())
+      .then((d) => setPromptsSource(d.source ?? null))
+      .catch(() => {});
+
     getPrompts()
       .then((p) => setPrompts(p))
       .catch(() => setError('Erro ao carregar prompts'))
@@ -80,6 +86,19 @@ export default function PromptConfigPage() {
           ← Voltar
         </Link>
         <span style={{ fontWeight: 700, fontSize: 16 }}>⚙️ Configuração de Prompts</span>
+        {promptsSource && (
+          <span style={{
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '2px 10px',
+            borderRadius: 999,
+            background: promptsSource === 'drive' ? '#dcfce7' : '#fef9c3',
+            color: promptsSource === 'drive' ? '#15803d' : '#92400e',
+            border: `1px solid ${promptsSource === 'drive' ? '#86efac' : '#fde68a'}`,
+          }}>
+            {promptsSource === 'drive' ? '● Google Drive' : '● Arquivo local'}
+          </span>
+        )}
       </div>
 
       <div style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>

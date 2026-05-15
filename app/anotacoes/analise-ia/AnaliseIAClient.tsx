@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import Link from 'next/link';
-import { queryFiltered, getPrompts, getSavedFilters } from '@/lib/clientDb';
+import { queryFiltered, getPrompts, getSavedFilters, getPromptsSource } from '@/lib/clientDb';
 import type { Prompt, SavedFilter } from '@/lib/clientDb';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -75,6 +75,7 @@ export default function AnaliseIAClient() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [selectedPromptId, setSelectedPromptId] = useState<string>('');
   const [promptsLoading, setPromptsLoading] = useState(true);
+  const [promptsSource, setPromptsSource] = useState<'drive' | 'local' | null>(null);
   const [availableFilters, setAvailableFilters] = useState<SavedFilter[]>([]);
   const [selectedFilterId, setSelectedFilterId] = useState<string>('');
   const [filter, setFilter] = useState<SavedFilter | null>(null);
@@ -91,6 +92,7 @@ export default function AnaliseIAClient() {
     ])
       .then(([promptsData, filtersData]) => {
         setPrompts(promptsData);
+        setPromptsSource(getPromptsSource());
         // Default to "Revisor de Contradições" prompt
         const revisorPrompt = promptsData.find(
           (p) => p.name === 'Revisor de Contradições' || p.id === 'prompt-revisor'
@@ -494,6 +496,22 @@ export default function AnaliseIAClient() {
               >
                 ⚙️ Config
               </Link>
+              {promptsSource && (
+                <span style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: 999,
+                  background: promptsSource === 'drive' ? '#dcfce7' : '#fef9c3',
+                  color: promptsSource === 'drive' ? '#15803d' : '#92400e',
+                  border: `1px solid ${promptsSource === 'drive' ? '#86efac' : '#fde68a'}`,
+                  marginTop: 4,
+                }}>
+                  {promptsSource === 'drive' ? '● Google Drive' : '● Arquivo local'}
+                </span>
+              )}
             </div>
           </div>
 

@@ -13,7 +13,7 @@ WITH UltimoAcesso AS (
         usuariologacesso as u
     WHERE
         u.DtaEvento >= CURDATE() - INTERVAL 30 DAY
-        AND u.Evento LIKE '[MIC] V%'
+        AND u.Evento LIKE 'Visualiza%'
 )
 SELECT
     req.CodRequisicao,

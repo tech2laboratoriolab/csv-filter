@@ -1,22 +1,22 @@
 export const runtime = "nodejs";
 
-import { readFileSync } from "fs";
-import { join } from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, Type } from "@google/genai";
+import { getPromptsConfig } from "@/lib/promptsConfig";
 
 const GEMINI_MODEL = "gemini-3.1-flash-lite";
-
-const { defaultTemplate, batchInstruction } = JSON.parse(
-  readFileSync(join(process.cwd(), "public/prompts.json"), "utf-8"),
-) as { defaultTemplate: string; batchInstruction: string };
 
 interface BatchItem {
   codRequisicao: string;
   laudoMicro: string;
 }
 
-function buildBatchPrompt(items: BatchItem[], customPrompt?: string): string {
+function buildBatchPrompt(
+  items: BatchItem[],
+  defaultTemplate: string,
+  batchInstruction: string,
+  customPrompt?: string,
+): string {
   const laudosList = items
     .map(
       (item, idx) =>
@@ -97,6 +97,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const { defaultTemplate, batchInstruction } = await getPromptsConfig();
+
   let body: { laudoMicro?: string; prompt?: string; items?: BatchItem[] };
   try {
     body = await req.json();
@@ -167,7 +169,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const customPrompt = body.prompt?.trim();
-  const prompt = buildBatchPrompt(validItems, customPrompt);
+  const prompt = buildBatchPrompt(validItems, defaultTemplate, batchInstruction, customPrompt);
 
   let geminiResult: Awaited<ReturnType<typeof callGemini>>;
   try {

@@ -80,6 +80,7 @@ export const MOL_COLUMNS: ColumnDef[] = [
   { name: "analito_mol",    label: "Analito",    type: "text" },
   { name: "resultado_mol",  label: "Resultado",  type: "text" },
   { name: "anomes_mol",     label: "AnoMes",     type: "text" },
+  { name: "visualizado_mol", label: "Visualizado", type: "number" },
 ];
 
 export const MOL_HEADER_MAP: Record<string, string> = {
@@ -104,6 +105,14 @@ function normalizeDateString(raw: string): string {
   return raw;
 }
 
+// csvBiomol usa formato US: mm/dd/yyyy HH:MM:SS (mês vem antes do dia)
+function normalizeMolDateString(raw: string): string {
+  const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)/);
+  if (m)
+    return `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}${m[4]}`;
+  return raw;
+}
+
 // --- In-Memory SQLite Setup ---
 let _dbPromise: Promise<Database> | null = null;
 
@@ -120,6 +129,7 @@ function createEmptyDb(SQL: any): Database {
   )`);
 
   const indexCols = [
+    "cod_requisicao",
     "nom_convenio",
     "nom_exame",
     "nom_paciente",
@@ -146,8 +156,10 @@ function createEmptyDb(SQL: any): Database {
     exame_mol TEXT,
     analito_mol TEXT,
     resultado_mol TEXT,
-    anomes_mol TEXT
+    anomes_mol TEXT,
+    visualizado_mol TEXT
   )`);
+  db.run(`CREATE INDEX idx_referencia_mol ON mol_data("referencia_mol")`);
 
   return db;
 }
@@ -160,6 +172,7 @@ function migrateDb(db: Database): void {
     const sqlType = c.type === "number" ? "REAL" : "TEXT";
     db.run(`ALTER TABLE csv_data ADD COLUMN "${c.name}" ${sqlType}`);
   }
+  db.run(`CREATE INDEX IF NOT EXISTS idx_cod_requisicao ON csv_data("cod_requisicao")`);
 }
 
 function migrateMolDb(db: Database): void {
@@ -177,9 +190,29 @@ function migrateMolDb(db: Database): void {
       exame_mol TEXT,
       analito_mol TEXT,
       resultado_mol TEXT,
-      anomes_mol TEXT
+      anomes_mol TEXT,
+      visualizado_mol TEXT
     )`);
+  } else {
+    const molCols = db.exec("PRAGMA table_info(mol_data)");
+    const molColNames = (molCols[0]?.values ?? []).map((r: any[]) => r[1] as string);
+    if (!molColNames.includes("visualizado_mol")) {
+      db.run("ALTER TABLE mol_data ADD COLUMN visualizado_mol TEXT");
+    }
   }
+  db.run(`CREATE INDEX IF NOT EXISTS idx_referencia_mol ON mol_data("referencia_mol")`);
+}
+
+function syncMolVisualizacao(db: Database): void {
+  db.run(`
+    UPDATE mol_data
+    SET visualizado_mol = (
+      SELECT CAST(CAST(c.visualizacao AS INTEGER) AS TEXT)
+      FROM csv_data c
+      WHERE c.cod_requisicao = mol_data.referencia_mol
+      LIMIT 1
+    )
+  `);
 }
 
 export function getDb(): Promise<Database> {
@@ -483,6 +516,7 @@ export async function importLaudoCSV(
 
   stmt.free();
   db.run("COMMIT;");
+  syncMolVisualizacao(db);
 
   const idb = await getIdb();
   if (idb) {
@@ -550,6 +584,7 @@ export async function importLaudoCSVAsRows(
 
   insertStmt.free();
   db.run("COMMIT;");
+  syncMolVisualizacao(db);
 
   const idb = await getIdb();
   if (idb) {
@@ -1357,16 +1392,29 @@ export interface Prompt {
   updatedAt?: string;
 }
 
-const SEED_PROMPTS_KEY = "csv-filter-prompts-seeded-v4";
+const SEED_PROMPTS_VERSION_KEY = "csv-filter-prompts-version";
+const PROMPTS_SOURCE_KEY = "csv-filter-prompts-source";
 
 async function seedDefaultPrompts(idb: IDBPDatabase): Promise<void> {
   if (typeof window === "undefined") return;
-  if (localStorage.getItem(SEED_PROMPTS_KEY)) return;
 
   try {
-    const res = await fetch("/prompts.json");
+    const res = await fetch("/api/prompts");
     if (!res.ok) return;
     const data = await res.json();
+
+    if (data.source) localStorage.setItem(PROMPTS_SOURCE_KEY, data.source);
+
+    const remoteVersion = data.version ?? "default";
+    const storedVersion = localStorage.getItem(SEED_PROMPTS_VERSION_KEY);
+
+    if (storedVersion === remoteVersion) return;
+
+    // Limpa prompts antigos antes de re-semear com a nova versão
+    const clearTx = idb.transaction("prompts", "readwrite");
+    await clearTx.store.clear();
+    await clearTx.done;
+
     const prompts: Prompt[] = (data.prompts ?? []).map((p: any) => ({
       ...p,
       createdAt: p.createdAt ?? new Date().toISOString(),
@@ -1374,7 +1422,7 @@ async function seedDefaultPrompts(idb: IDBPDatabase): Promise<void> {
     const tx = idb.transaction("prompts", "readwrite");
     await Promise.all(prompts.map((p) => tx.store.put(p)));
     await tx.done;
-    localStorage.setItem(SEED_PROMPTS_KEY, "1");
+    localStorage.setItem(SEED_PROMPTS_VERSION_KEY, remoteVersion);
   } catch {
     // silently ignore
   }
@@ -1398,6 +1446,12 @@ export async function deletePrompt(id: string): Promise<void> {
   const idb = await getIdb();
   if (!idb) return;
   await idb.delete("prompts", id);
+}
+
+export function getPromptsSource(): 'drive' | 'local' | null {
+  if (typeof window === 'undefined') return null;
+  const v = localStorage.getItem(PROMPTS_SOURCE_KEY);
+  return v === 'drive' || v === 'local' ? v : null;
 }
 
 async function seedDefaultFilters(idb: IDBPDatabase): Promise<void> {
@@ -2108,7 +2162,7 @@ export async function importMolCSV(
     const vals = colMapping.map(({ csvIndex, dbCol }) => {
       const col = MOL_COLUMNS.find((c) => c.name === dbCol);
       let v = row[csvIndex] ?? "";
-      if (col?.type === "date" && v) v = normalizeDateString(v);
+      if (col?.type === "date" && v) v = normalizeMolDateString(v);
       return v === "" ? null : v;
     });
     stmt.run(vals);
@@ -2116,6 +2170,7 @@ export async function importMolCSV(
   }
   stmt.free();
   db.run("COMMIT;");
+  syncMolVisualizacao(db);
 
   const idbMol = await getIdb();
   if (idbMol) {
