@@ -252,7 +252,8 @@ export default function Home() {
           setTotal(Number(result.total) || 0);
         } else {
           const activeRules = rules !== undefined ? rules : colorRules;
-          const activeDedup = dedup !== undefined ? dedup : deduplicationColumns;
+          const activeDedup =
+            dedup !== undefined ? dedup : deduplicationColumns;
           const extraCols = colorRuleExtraColumns(activeRules, activeCols);
           const vipCond = getVipFilterCondition();
           const effectiveConds = vipCond ? [vipCond, ...baseConds] : baseConds;
@@ -367,6 +368,15 @@ export default function Home() {
             let msg = `${laudoRows} linha(s) inserida(s) do laudo.`;
             if (laudoSkipped > 0) msg += ` ${laudoSkipped} ignorada(s).`;
             showToast("success", msg, true);
+          } else if (isMolCSV) {
+            const { rowCount: molRows } = await importMolCSV(headers, dataRows);
+            setProgress(100);
+            setMolRowCount(molRows);
+            showToast(
+              "success",
+              `${molRows} registro(s) biomoleculares carregados.`,
+              true,
+            );
           } else if (isPatologiaMolecularCSV) {
             const { updated, skipped } = await importPatologiaMolecularCSV(
               headers,
@@ -387,15 +397,6 @@ export default function Home() {
             showToast(
               "success",
               `${updated} registro(s) atualizados com dados moleculares${skipped > 0 ? ` (${skipped} não encontrados)` : ""}`,
-              true,
-            );
-          } else if (isMolCSV) {
-            const { rowCount: molRows } = await importMolCSV(headers, dataRows);
-            setProgress(100);
-            setMolRowCount(molRows);
-            showToast(
-              "success",
-              `${molRows} registro(s) biomoleculares carregados.`,
               true,
             );
           } else {
@@ -851,12 +852,17 @@ export default function Home() {
     const csvContent =
       dataSource === "mol"
         ? await exportMolCSV(selectedCols, conditions)
-        : await exportFilteredCSV(selectedCols, conditions, deduplicationColumns);
+        : await exportFilteredCSV(
+            selectedCols,
+            conditions,
+            deduplicationColumns,
+          );
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = dataSource === "mol" ? "biomolecular.csv" : "dados_filtrados.csv";
+    a.download =
+      dataSource === "mol" ? "biomolecular.csv" : "dados_filtrados.csv";
     a.click();
     URL.revokeObjectURL(url);
     track("csv_exported", { rows: total });
@@ -1008,7 +1014,10 @@ export default function Home() {
               <div className="stats-row">
                 <div className="stat">
                   <div className="stat-value">
-                    {(dataSource === "mol" ? molRowCount : rowCount).toLocaleString("pt-BR")}
+                    {(dataSource === "mol"
+                      ? molRowCount
+                      : rowCount
+                    ).toLocaleString("pt-BR")}
                   </div>
                   <div className="stat-label">Linhas</div>
                 </div>
@@ -1038,16 +1047,14 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="saved-actions">
-                        {f.dataSource !== "mol" && (
-                          <a
-                            href={`/filters/${f.id}`}
-                            className="btn btn-sm btn-icon btn-blue"
-                            title="Abrir página do filtro"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            ↗
-                          </a>
-                        )}
+                        <a
+                          href={`/filters/${f.id}`}
+                          className="btn btn-sm btn-icon btn-blue"
+                          title="Abrir página do filtro"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          ↗
+                        </a>
                         <button
                           className="btn btn-sm btn-icon btn-ghost"
                           onClick={(e) => exportFilter(f, e)}

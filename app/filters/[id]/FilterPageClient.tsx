@@ -22,13 +22,16 @@ import TarefaModal from "@/app/components/TarefaModal";
 import {
   getTableStats,
   queryFiltered,
+  queryMolFiltered,
   evaluateLookupColumns,
   getAnnotations,
   setAnnotation,
   getFilterById,
   saveFilterToFile,
   exportFilteredCSV,
+  exportMolCSV,
   COLUMNS,
+  MOL_COLUMNS,
 } from "@/lib/clientDb";
 import { colorRuleExtraColumns } from "@/lib/colorRules";
 import { getVipMode, setVipMode, getVipFilterCondition } from "@/lib/vip";
@@ -89,6 +92,7 @@ export default function FilterPageClient({ filterId }: Props) {
           formulaColumns: f.formulaColumns ?? [],
           annotationColumns: f.annotationColumns ?? [],
         });
+        setColumns(f.dataSource === "mol" ? MOL_COLUMNS : COLUMNS);
       }
     });
   }, [filterId]);
@@ -104,25 +108,40 @@ export default function FilterPageClient({ filterId }: Props) {
       if (!filter) return;
       setLoading(true);
       try {
+        const isMol = filter.dataSource === "mol";
         const activeCols = selectedCols ?? filter.selectedColumns;
-        const extraCols = colorRuleExtraColumns(
-          filter.colorRules ?? [],
-          activeCols,
-          COLUMNS.map((c) => c.name),
-        );
         const baseConds = conditions ?? filter.conditions;
-        const vipCond = getVipFilterCondition();
+        const vipCond = !isMol ? getVipFilterCondition() : null;
         const effectiveConds = vipCond ? [vipCond, ...baseConds] : baseConds;
-        const result = await queryFiltered(
-          activeCols,
-          effectiveConds,
-          pg ?? page,
-          PAGE_SIZE,
-          sCol ?? sortCol,
-          sDir ?? sortDir,
-          extraCols,
-          filter.deduplicationColumns ?? [],
-        );
+
+        let result: { rows: Record<string, unknown>[]; total: unknown };
+        if (isMol) {
+          const molResult = await queryMolFiltered(
+            activeCols,
+            effectiveConds,
+            pg ?? page,
+            PAGE_SIZE,
+            sCol ?? sortCol,
+            sDir ?? sortDir,
+          );
+          result = { rows: molResult.rows as Record<string, unknown>[], total: Number(molResult.total) };
+        } else {
+          const extraCols = colorRuleExtraColumns(
+            filter.colorRules ?? [],
+            activeCols,
+            COLUMNS.map((c) => c.name),
+          );
+          result = await queryFiltered(
+            activeCols,
+            effectiveConds,
+            pg ?? page,
+            PAGE_SIZE,
+            sCol ?? sortCol,
+            sDir ?? sortDir,
+            extraCols,
+            filter.deduplicationColumns ?? [],
+          );
+        }
         setRows(result.rows ?? []);
         setTotal(Number(result.total) ?? 0);
         setFetchError(null);
@@ -237,11 +256,14 @@ export default function FilterPageClient({ filterId }: Props) {
   };
 
   const handleExportCSV = async () => {
-    const csvContent = await exportFilteredCSV(
-      filter.selectedColumns,
-      filter.conditions,
-      filter.deduplicationColumns ?? [],
-    );
+    const csvContent =
+      filter.dataSource === "mol"
+        ? await exportMolCSV(filter.selectedColumns, filter.conditions)
+        : await exportFilteredCSV(
+            filter.selectedColumns,
+            filter.conditions,
+            filter.deduplicationColumns ?? [],
+          );
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
