@@ -39,26 +39,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17733162881470.13836697637247597",
@@ -284,26 +282,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17726525839140.2616239091910396",
@@ -630,26 +626,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17724614190940.36787949209356696",
@@ -934,26 +928,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17724619347420.11235748418454228",
@@ -1236,26 +1228,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17727443239420.20981534229568677",
@@ -1543,26 +1533,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17731630034800.5860937796585116",
@@ -1765,26 +1753,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17733165216350.5520487987428974",
@@ -2029,26 +2015,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17743000000001.ihq_pendente",
@@ -2299,26 +2283,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17730820643320.2973617643266665",
@@ -2473,26 +2455,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "molpos_color_1",
@@ -2650,26 +2630,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "color_recebido_saiu_autorizacao",
@@ -2971,26 +2949,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "color_erros_saiu_autorizacao",
@@ -3162,26 +3138,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "color_coleta_lab_saiu_autorizacao",
@@ -3276,26 +3250,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "17724614190940.36787949209356696",
@@ -3582,26 +3554,24 @@
       {
         "id": "color_prioridade_2_rosa",
         "name": "Prioridade 2",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "cod_requisicao"
+        "priority": 50
       },
       {
         "id": "color_prioridade_2_rosa_paciente",
         "name": "Prioridade 2 (Paciente)",
-        "targetType": "cell",
+        "targetType": "row",
         "conditionColumn": "cod_prioridade",
         "operator": "equals",
         "value": "2",
         "backgroundColor": "#ff0000",
         "textColor": "#000000",
-        "priority": -1,
-        "targetColumn": "nom_paciente"
+        "priority": 50
       },
       {
         "id": "color_nc_evento_58",
@@ -3813,21 +3783,30 @@
   {
     "id": "default_biomol_positivo",
     "name": "BIOMOL",
+    "dataSource": "mol",
     "selectedColumns": [
-      "cod_requisicao",
-      "nom_local_origem",
-      "dta_finalizacao",
-      "visualizacao"
+      "cod_requisicao_mol",
+      "paciente_mol",
+      "exame_mol",
+      "local_origem_mol",
+      "dta_finalizacao_mol",
+      "des_conclusao_mol",
+      "visualizado_mol"
     ],
     "conditions": [
       {
-        "column": "des_conclusao",
+        "column": "des_conclusao_mol",
         "operator": "equals",
         "value": "Positivo"
+      },
+      {
+        "column": "visualizado_mol",
+        "operator": "equals",
+        "value": "0"
       }
     ],
     "createdAt": "2026-05-15T00:00:00.000Z",
-    "updatedAt": "2026-05-15T00:00:00.000Z",
+    "updatedAt": "2026-05-18T00:00:00.000Z",
     "colorRules": [],
     "formulaColumns": [],
     "annotationColumns": [],
