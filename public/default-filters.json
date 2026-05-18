@@ -174,7 +174,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "3"
+            "value": "3",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -444,7 +445,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "3"
+            "value": "3",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -500,7 +502,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "4"
+            "value": "4",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -525,7 +528,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "2"
+            "value": "2",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -798,7 +802,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "3"
+            "value": "3",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -1089,7 +1094,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "3"
+            "value": "3",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -1390,7 +1396,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "3"
+            "value": "3",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -1624,7 +1631,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "3"
+            "value": "3",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -1882,7 +1890,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "3"
+            "value": "3",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -3439,7 +3448,8 @@
           {
             "conditionColumn": "dta_status",
             "operator": "days_ago_gte",
-            "value": "3"
+            "value": "3",
+            "businessDaysOnly": true
           }
         ],
         "backgroundColor": "#000000",
@@ -3801,22 +3811,26 @@
     "updatedAt": "2026-05-13T00:00:00.000Z"
   },
   {
-    "id": "default-biomol",
-    "name": "🧬 Biomol",
-    "description": "Dados csvBiomol / IPOG",
-    "dataSource": "mol",
+    "id": "default_biomol_positivo",
+    "name": "BIOMOL",
     "selectedColumns": [
-      "guia_mol",
-      "referencia_mol",
-      "emissao_mol",
-      "liberacao_mol",
-      "paciente_mol",
-      "exame_mol",
-      "analito_mol",
-      "resultado_mol",
-      "anomes_mol"
+      "cod_requisicao",
+      "nom_local_origem",
+      "dta_finalizacao",
+      "visualizacao"
     ],
-    "conditions": [],
-    "createdAt": "2026-05-14T00:00:00.000Z"
+    "conditions": [
+      {
+        "column": "des_conclusao",
+        "operator": "equals",
+        "value": "Positivo"
+      }
+    ],
+    "createdAt": "2026-05-15T00:00:00.000Z",
+    "updatedAt": "2026-05-15T00:00:00.000Z",
+    "colorRules": [],
+    "formulaColumns": [],
+    "annotationColumns": [],
+    "sortOrder": 16
   }
 ]

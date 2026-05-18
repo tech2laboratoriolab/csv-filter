@@ -230,6 +230,16 @@ export default function ColorRuleEditor({ rules, columns, annotationColumns = EM
                           />
                         )
                       )}
+                      {isDaysOffset && (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-3)', cursor: 'pointer', minWidth: 'unset' }}>
+                          <input
+                            type="checkbox"
+                            checked={!!cond.businessDaysOnly}
+                            onChange={e => updateCondition(i, ci, 'businessDaysOnly', e.target.checked || undefined)}
+                          />
+                          Somente dias úteis
+                        </label>
+                      )}
                       {isBetween && (
                         <input
                           type={condCol?.type === 'date' ? 'date' : 'text'}

@@ -6,6 +6,18 @@ function offsetDate(days: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function offsetBusinessDays(n: number): string {
+  const d = new Date();
+  const step = n >= 0 ? 1 : -1;
+  let remaining = Math.abs(n);
+  while (remaining > 0) {
+    d.setDate(d.getDate() + step);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) remaining--;
+  }
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 type StyleObj = Record<string, string>;
 
 export interface ColorRuleResult {
@@ -133,21 +145,25 @@ function matchesCondition(
     }
     case "days_ahead_gte": {
       const n = parseInt(ruleVal) || 0;
-      return value !== "" && value.split(" ")[0] >= offsetDate(n);
+      const threshold = cond.businessDaysOnly ? offsetBusinessDays(n) : offsetDate(n);
+      return value !== "" && value.split(" ")[0] >= threshold;
     }
     case "days_ahead_lte": {
       const n = parseInt(ruleVal) || 0;
       const day = value.split(" ")[0];
-      return value !== "" && day > offsetDate(0) && day <= offsetDate(n);
+      const threshold = cond.businessDaysOnly ? offsetBusinessDays(n) : offsetDate(n);
+      return value !== "" && day > offsetDate(0) && day <= threshold;
     }
     case "days_ago_gte": {
       const n = parseInt(ruleVal) || 0;
-      return value !== "" && value.split(" ")[0] <= offsetDate(-n);
+      const threshold = cond.businessDaysOnly ? offsetBusinessDays(-n) : offsetDate(-n);
+      return value !== "" && value.split(" ")[0] <= threshold;
     }
     case "days_ago_lte": {
       const n = parseInt(ruleVal) || 0;
       const day = value.split(" ")[0];
-      return value !== "" && day >= offsetDate(-n) && day < offsetDate(0);
+      const threshold = cond.businessDaysOnly ? offsetBusinessDays(-n) : offsetDate(-n);
+      return value !== "" && day >= threshold && day < offsetDate(0);
     }
     default:
       return false;

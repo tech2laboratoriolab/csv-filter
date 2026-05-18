@@ -69,33 +69,39 @@ COLUMNS.forEach((c) => {
   HEADER_MAP[c.label.toLowerCase()] = c.name;
 });
 
-// --- Mol CSV (csvBiomol / IPOG) ---
+// --- Mol CSV (csvBiomol / laudoPositivo) ---
 export const MOL_COLUMNS: ColumnDef[] = [
-  { name: "guia_mol",       label: "GuiaIPOG",  type: "text" },
-  { name: "referencia_mol", label: "Referencia", type: "text" },
-  { name: "emissao_mol",    label: "Emissao",    type: "date" },
-  { name: "liberacao_mol",  label: "Liberacao",  type: "date" },
-  { name: "paciente_mol",   label: "Paciente",   type: "text" },
-  { name: "exame_mol",      label: "Exame",      type: "text" },
-  { name: "analito_mol",    label: "Analito",    type: "text" },
-  { name: "resultado_mol",  label: "Resultado",  type: "text" },
-  { name: "anomes_mol",     label: "AnoMes",     type: "text" },
-  { name: "visualizado_mol", label: "Visualizado", type: "number" },
+  { name: "id_requisicao_mol",   label: "IdRequisicao",     type: "text" },
+  { name: "cod_requisicao_mol",  label: "CodRequisicao",    type: "text" },
+  { name: "exame_mol",           label: "NomExame",         type: "text" },
+  { name: "dta_solicitacao_mol", label: "DtaSolicitacao",   type: "date" },
+  { name: "dta_finalizacao_mol", label: "DtaFinalizacao",   type: "date" },
+  { name: "status_mol",          label: "StatusRequisicao", type: "text" },
+  { name: "fonte_pagadora_mol",  label: "NomFontePagadora", type: "text" },
+  { name: "paciente_mol",        label: "NomPaciente",      type: "text" },
+  { name: "sexo_mol",            label: "Sexo",             type: "text" },
+  { name: "local_origem_mol",    label: "NomLocalOrigem",   type: "text" },
+  { name: "medico_mol",          label: "NomMedico",        type: "text" },
+  { name: "teste_mol",           label: "Teste",            type: "text" },
+  { name: "des_conclusao_mol",   label: "DesConclusao",     type: "text" },
+  { name: "visualizado_mol",     label: "Visualizado",      type: "number" },
 ];
 
 export const MOL_HEADER_MAP: Record<string, string> = {
-  "guiaipog":   "guia_mol",
-  "referência": "referencia_mol",
-  "referencia": "referencia_mol",
-  "emissão":    "emissao_mol",
-  "emissao":    "emissao_mol",
-  "liberação":  "liberacao_mol",
-  "liberacao":  "liberacao_mol",
-  "paciente":   "paciente_mol",
-  "exame":      "exame_mol",
-  "analito":    "analito_mol",
-  "resultado":  "resultado_mol",
-  "anomes":     "anomes_mol",
+  "idrequisicao":     "id_requisicao_mol",
+  "codrequisicao":    "cod_requisicao_mol",
+  "nomexame":         "exame_mol",
+  "dtasolicitacao":   "dta_solicitacao_mol",
+  "dtafinalizacao":   "dta_finalizacao_mol",
+  "statusrequisicao": "status_mol",
+  "nomfontepagadora": "fonte_pagadora_mol",
+  "nompaciente":      "paciente_mol",
+  "sexo":             "sexo_mol",
+  "nomlocalorigem":   "local_origem_mol",
+  "nommedico":        "medico_mol",
+  "teste":            "teste_mol",
+  "desconclusao":     "des_conclusao_mol",
+  "visualizado":      "visualizado_mol",
 };
 
 function normalizeDateString(raw: string): string {
@@ -148,18 +154,22 @@ function createEmptyDb(SQL: any): Database {
 
   db.run(`CREATE TABLE mol_data (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    guia_mol TEXT,
-    referencia_mol TEXT,
-    emissao_mol TEXT,
-    liberacao_mol TEXT,
-    paciente_mol TEXT,
+    id_requisicao_mol TEXT,
+    cod_requisicao_mol TEXT,
     exame_mol TEXT,
-    analito_mol TEXT,
-    resultado_mol TEXT,
-    anomes_mol TEXT,
+    dta_solicitacao_mol TEXT,
+    dta_finalizacao_mol TEXT,
+    status_mol TEXT,
+    fonte_pagadora_mol TEXT,
+    paciente_mol TEXT,
+    sexo_mol TEXT,
+    local_origem_mol TEXT,
+    medico_mol TEXT,
+    teste_mol TEXT,
+    des_conclusao_mol TEXT,
     visualizado_mol TEXT
   )`);
-  db.run(`CREATE INDEX idx_referencia_mol ON mol_data("referencia_mol")`);
+  db.run(`CREATE INDEX idx_cod_requisicao_mol ON mol_data("cod_requisicao_mol")`);
 
   return db;
 }
@@ -182,25 +192,49 @@ function migrateMolDb(db: Database): void {
   if (tables.length === 0 || tables[0].values.length === 0) {
     db.run(`CREATE TABLE mol_data (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      guia_mol TEXT,
-      referencia_mol TEXT,
-      emissao_mol TEXT,
-      liberacao_mol TEXT,
-      paciente_mol TEXT,
+      id_requisicao_mol TEXT,
+      cod_requisicao_mol TEXT,
       exame_mol TEXT,
-      analito_mol TEXT,
-      resultado_mol TEXT,
-      anomes_mol TEXT,
+      dta_solicitacao_mol TEXT,
+      dta_finalizacao_mol TEXT,
+      status_mol TEXT,
+      fonte_pagadora_mol TEXT,
+      paciente_mol TEXT,
+      sexo_mol TEXT,
+      local_origem_mol TEXT,
+      medico_mol TEXT,
+      teste_mol TEXT,
+      des_conclusao_mol TEXT,
       visualizado_mol TEXT
     )`);
   } else {
     const molCols = db.exec("PRAGMA table_info(mol_data)");
     const molColNames = (molCols[0]?.values ?? []).map((r: any[]) => r[1] as string);
-    if (!molColNames.includes("visualizado_mol")) {
-      db.run("ALTER TABLE mol_data ADD COLUMN visualizado_mol TEXT");
+    if (!molColNames.includes("cod_requisicao_mol")) {
+      // Schema IPOG antigo — recriar tabela com novo schema
+      db.run("DROP TABLE mol_data");
+      db.run(`CREATE TABLE mol_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_requisicao_mol TEXT,
+        cod_requisicao_mol TEXT,
+        exame_mol TEXT,
+        dta_solicitacao_mol TEXT,
+        dta_finalizacao_mol TEXT,
+        status_mol TEXT,
+        fonte_pagadora_mol TEXT,
+        paciente_mol TEXT,
+        sexo_mol TEXT,
+        local_origem_mol TEXT,
+        medico_mol TEXT,
+        teste_mol TEXT,
+        des_conclusao_mol TEXT,
+        visualizado_mol TEXT
+      )`);
+    } else if (!molColNames.includes("des_conclusao_mol")) {
+      db.run("ALTER TABLE mol_data ADD COLUMN des_conclusao_mol TEXT");
     }
   }
-  db.run(`CREATE INDEX IF NOT EXISTS idx_referencia_mol ON mol_data("referencia_mol")`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_cod_requisicao_mol ON mol_data("cod_requisicao_mol")`);
 }
 
 function syncMolVisualizacao(db: Database): void {
@@ -209,7 +243,7 @@ function syncMolVisualizacao(db: Database): void {
     SET visualizado_mol = (
       SELECT CAST(CAST(c.visualizacao AS INTEGER) AS TEXT)
       FROM csv_data c
-      WHERE c.cod_requisicao = mol_data.referencia_mol
+      WHERE c.cod_requisicao = mol_data.cod_requisicao_mol
       LIMIT 1
     )
   `);
@@ -732,6 +766,7 @@ export interface ColorCondition {
   value: string;
   value2?: string;
   valueIsColumn?: boolean;
+  businessDaysOnly?: boolean;
 }
 
 export interface ColorRule {
@@ -2191,7 +2226,7 @@ export async function getMolStats(): Promise<{
     const resCount = db.exec("SELECT COUNT(*) as total FROM mol_data");
     const total = resCount.length > 0 ? Number(resCount[0].values[0][0]) : 0;
     const resDate = db.exec(
-      "SELECT MIN(emissao_mol) as min_date, MAX(emissao_mol) as max_date FROM mol_data WHERE emissao_mol IS NOT NULL",
+      "SELECT MIN(dta_solicitacao_mol) as min_date, MAX(dta_solicitacao_mol) as max_date FROM mol_data WHERE dta_solicitacao_mol IS NOT NULL",
     );
     const minDate =
       resDate.length > 0 ? String(resDate[0].values[0][0] ?? "") || null : null;
