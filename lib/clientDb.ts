@@ -71,37 +71,37 @@ COLUMNS.forEach((c) => {
 
 // --- Mol CSV (csvBiomol / laudoPositivo) ---
 export const MOL_COLUMNS: ColumnDef[] = [
-  { name: "id_requisicao_mol",   label: "IdRequisicao",     type: "text" },
-  { name: "cod_requisicao_mol",  label: "CodRequisicao",    type: "text" },
-  { name: "exame_mol",           label: "NomExame",         type: "text" },
-  { name: "dta_solicitacao_mol", label: "DtaSolicitacao",   type: "date" },
-  { name: "dta_finalizacao_mol", label: "DtaFinalizacao",   type: "date" },
-  { name: "status_mol",          label: "StatusRequisicao", type: "text" },
-  { name: "fonte_pagadora_mol",  label: "NomFontePagadora", type: "text" },
-  { name: "paciente_mol",        label: "NomPaciente",      type: "text" },
-  { name: "sexo_mol",            label: "Sexo",             type: "text" },
-  { name: "local_origem_mol",    label: "NomLocalOrigem",   type: "text" },
-  { name: "medico_mol",          label: "NomMedico",        type: "text" },
-  { name: "teste_mol",           label: "Teste",            type: "text" },
-  { name: "des_conclusao_mol",   label: "DesConclusao",     type: "text" },
-  { name: "visualizado_mol",     label: "Visualizado",      type: "number" },
+  { name: "id_requisicao_mol", label: "IdRequisicao", type: "text" },
+  { name: "cod_requisicao_mol", label: "CodRequisicao", type: "text" },
+  { name: "exame_mol", label: "NomExame", type: "text" },
+  { name: "dta_solicitacao_mol", label: "DtaSolicitacao", type: "date" },
+  { name: "dta_finalizacao_mol", label: "DtaFinalizacao", type: "date" },
+  { name: "status_mol", label: "StatusRequisicao", type: "text" },
+  { name: "fonte_pagadora_mol", label: "NomFontePagadora", type: "text" },
+  { name: "paciente_mol", label: "NomPaciente", type: "text" },
+  { name: "sexo_mol", label: "Sexo", type: "text" },
+  { name: "local_origem_mol", label: "NomLocalOrigem", type: "text" },
+  { name: "medico_mol", label: "NomMedico", type: "text" },
+  { name: "teste_mol", label: "Teste", type: "text" },
+  { name: "des_conclusao_mol", label: "DesConclusao", type: "text" },
+  { name: "visualizado_mol", label: "Visualizado", type: "number" },
 ];
 
 export const MOL_HEADER_MAP: Record<string, string> = {
-  "idrequisicao":     "id_requisicao_mol",
-  "codrequisicao":    "cod_requisicao_mol",
-  "nomexame":         "exame_mol",
-  "dtasolicitacao":   "dta_solicitacao_mol",
-  "dtafinalizacao":   "dta_finalizacao_mol",
-  "statusrequisicao": "status_mol",
-  "nomfontepagadora": "fonte_pagadora_mol",
-  "nompaciente":      "paciente_mol",
-  "sexo":             "sexo_mol",
-  "nomlocalorigem":   "local_origem_mol",
-  "nommedico":        "medico_mol",
-  "teste":            "teste_mol",
-  "desconclusao":     "des_conclusao_mol",
-  "visualizado":      "visualizado_mol",
+  idrequisicao: "id_requisicao_mol",
+  codrequisicao: "cod_requisicao_mol",
+  nomexame: "exame_mol",
+  dtasolicitacao: "dta_solicitacao_mol",
+  dtafinalizacao: "dta_finalizacao_mol",
+  statusrequisicao: "status_mol",
+  nomfontepagadora: "fonte_pagadora_mol",
+  nompaciente: "paciente_mol",
+  sexo: "sexo_mol",
+  nomlocalorigem: "local_origem_mol",
+  nommedico: "medico_mol",
+  teste: "teste_mol",
+  desconclusao: "des_conclusao_mol",
+  visualizado: "visualizado_mol",
 };
 
 function normalizeDateString(raw: string): string {
@@ -169,7 +169,9 @@ function createEmptyDb(SQL: any): Database {
     des_conclusao_mol TEXT,
     visualizado_mol TEXT
   )`);
-  db.run(`CREATE INDEX idx_cod_requisicao_mol ON mol_data("cod_requisicao_mol")`);
+  db.run(
+    `CREATE INDEX idx_cod_requisicao_mol ON mol_data("cod_requisicao_mol")`,
+  );
 
   return db;
 }
@@ -182,7 +184,9 @@ function migrateDb(db: Database): void {
     const sqlType = c.type === "number" ? "REAL" : "TEXT";
     db.run(`ALTER TABLE csv_data ADD COLUMN "${c.name}" ${sqlType}`);
   }
-  db.run(`CREATE INDEX IF NOT EXISTS idx_cod_requisicao ON csv_data("cod_requisicao")`);
+  db.run(
+    `CREATE INDEX IF NOT EXISTS idx_cod_requisicao ON csv_data("cod_requisicao")`,
+  );
 }
 
 function migrateMolDb(db: Database): void {
@@ -209,7 +213,9 @@ function migrateMolDb(db: Database): void {
     )`);
   } else {
     const molCols = db.exec("PRAGMA table_info(mol_data)");
-    const molColNames = (molCols[0]?.values ?? []).map((r: any[]) => r[1] as string);
+    const molColNames = (molCols[0]?.values ?? []).map(
+      (r: any[]) => r[1] as string,
+    );
     if (!molColNames.includes("cod_requisicao_mol")) {
       // Schema IPOG antigo — recriar tabela com novo schema
       db.run("DROP TABLE mol_data");
@@ -234,7 +240,9 @@ function migrateMolDb(db: Database): void {
       db.run("ALTER TABLE mol_data ADD COLUMN des_conclusao_mol TEXT");
     }
   }
-  db.run(`CREATE INDEX IF NOT EXISTS idx_cod_requisicao_mol ON mol_data("cod_requisicao_mol")`);
+  db.run(
+    `CREATE INDEX IF NOT EXISTS idx_cod_requisicao_mol ON mol_data("cod_requisicao_mol")`,
+  );
 }
 
 function syncMolVisualizacao(db: Database): void {
@@ -245,6 +253,10 @@ function syncMolVisualizacao(db: Database): void {
       FROM csv_data c
       WHERE c.cod_requisicao = mol_data.cod_requisicao_mol
       LIMIT 1
+    )
+    WHERE EXISTS (
+      SELECT 1 FROM csv_data c
+      WHERE c.cod_requisicao = mol_data.cod_requisicao_mol
     )
   `);
 }
@@ -299,7 +311,7 @@ let idbPromise: Promise<IDBPDatabase> | null = null;
 function getIdb() {
   if (typeof window === "undefined") return null; // SSR safety
   if (!idbPromise) {
-    idbPromise = openDB("csv-filter-pro", 6, {
+    idbPromise = openDB("csv-filter-pro", 7, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           if (!db.objectStoreNames.contains("filters")) {
@@ -335,6 +347,14 @@ function getIdb() {
         if (oldVersion < 6) {
           if (!db.objectStoreNames.contains("prompts")) {
             db.createObjectStore("prompts", { keyPath: "id" });
+          }
+        }
+        if (oldVersion < 7) {
+          if (!db.objectStoreNames.contains("whatsapp_templates")) {
+            const store = db.createObjectStore("whatsapp_templates", {
+              keyPath: "id",
+            });
+            store.createIndex("by_tab", "tab");
           }
         }
       },
@@ -1483,10 +1503,10 @@ export async function deletePrompt(id: string): Promise<void> {
   await idb.delete("prompts", id);
 }
 
-export function getPromptsSource(): 'drive' | 'local' | null {
-  if (typeof window === 'undefined') return null;
+export function getPromptsSource(): "drive" | "local" | null {
+  if (typeof window === "undefined") return null;
   const v = localStorage.getItem(PROMPTS_SOURCE_KEY);
-  return v === 'drive' || v === 'local' ? v : null;
+  return v === "drive" || v === "local" ? v : null;
 }
 
 async function seedDefaultFilters(idb: IDBPDatabase): Promise<void> {
@@ -1886,6 +1906,64 @@ export async function getClinicaRows(
   };
 }
 
+export async function getClinicaMolSummary(
+  conditions: FilterCondition[],
+  clinicaNome: string,
+): Promise<{
+  total: number;
+  eventos: { nome_evento: string; count: number }[];
+}> {
+  const db = await getDb();
+  const { sql: where, params } = buildWhereClause(conditions);
+  const cond = where
+    ? `${where} AND "local_origem_mol" = ?`
+    : `WHERE "local_origem_mol" = ?`;
+  const allParams = [...params, clinicaNome];
+  const resCount = db.exec(
+    `SELECT COUNT(*) as total FROM mol_data ${cond}`,
+    allParams,
+  );
+  const total = resCount.length > 0 ? Number(resCount[0].values[0][0]) : 0;
+  return { total, eventos: [] };
+}
+
+export async function getClinicaMolRows(
+  conditions: FilterCondition[],
+  selectedColumns: string[],
+  clinicaNome: string,
+): Promise<{
+  columns: { name: string; label: string; type: string }[];
+  rows: Record<string, string>[];
+}> {
+  const db = await getDb();
+  const { sql: where, params } = buildWhereClause(conditions);
+  const cond = where
+    ? `${where} AND "local_origem_mol" = ?`
+    : `WHERE "local_origem_mol" = ?`;
+  const allParams = [...params, clinicaNome];
+  const validMolNames = new Set(MOL_COLUMNS.map((c) => c.name));
+  const cols = selectedColumns.filter((c) => validMolNames.has(c));
+  const effectiveCols = cols.length ? cols : MOL_COLUMNS.map((c) => c.name);
+  const colsSql = effectiveCols.map((c) => `"${c}"`).join(", ");
+  const resRows = db.exec(
+    `SELECT ${colsSql} FROM mol_data ${cond} ORDER BY id`,
+    allParams,
+  );
+  const rows = resultToObjects(resRows);
+  const columnDefs = effectiveCols.map((name) => {
+    const def = MOL_COLUMNS.find((c) => c.name === name);
+    return { name, label: def?.label ?? name, type: def?.type ?? "text" };
+  });
+  return {
+    columns: columnDefs,
+    rows: rows.map((r) => {
+      const obj: Record<string, string> = {};
+      for (const col of effectiveCols) obj[col] = String(r[col] ?? "");
+      return obj;
+    }),
+  };
+}
+
 // --- Biologia Molecular ---
 const SEED_BIOMOLECULAR_KEY = "csv-filter-biomolecular-seeded";
 
@@ -2022,6 +2100,38 @@ export async function getBioMolecularRows(
       return obj;
     }),
   };
+}
+
+// --- WhatsApp Templates ---
+
+export interface WhatsappTemplate {
+  id: string;
+  tab: "patologistas" | "clinicas" | "bio-molecular" | "analises-clinicas";
+  name: string;
+  content: string;
+}
+
+export async function getWhatsappTemplates(
+  tab: string,
+): Promise<WhatsappTemplate[]> {
+  const idb = await getIdb();
+  if (!idb) return [];
+  const all = await idb.getAllFromIndex("whatsapp_templates", "by_tab", tab);
+  return all as WhatsappTemplate[];
+}
+
+export async function saveWhatsappTemplate(
+  tpl: WhatsappTemplate,
+): Promise<void> {
+  const idb = await getIdb();
+  if (!idb) return;
+  await idb.put("whatsapp_templates", tpl);
+}
+
+export async function deleteWhatsappTemplate(id: string): Promise<void> {
+  const idb = await getIdb();
+  if (!idb) return;
+  await idb.delete("whatsapp_templates", id);
 }
 
 // --- Micro Médico Enrichment Import ---
