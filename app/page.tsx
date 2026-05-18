@@ -346,7 +346,7 @@ export default function Home() {
             mappedCols.includes("cod_requisicao");
 
           const isMolCSV = headers.some(
-            (h) => h.trim().toLowerCase() === "guiaipog",
+            (h) => h.trim().toLowerCase() === "idrequisicaocaptura",
           );
 
           if (isVisualizacaoCSV) {

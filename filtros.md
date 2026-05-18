@@ -19,8 +19,8 @@ csvlaudoPositivo ->
 IdRequisicao;CodRequisicao;NomExame;DtaSolicitacao;DtaFinalizacao;StatusRequisicao;NomFontePagadora;NomPaciente;DtaNascimento;Idade;Sexo;NomLocalOrigem;NomMedico;Teste;Controle;StatusFrasco;Topografia;IdRequisicaoCaptura;Conclusao;TituloResultado;Resultado;TituloConclusao;DesConclusao;Assinatura1;Assinatura2;FaixaEtaria;Endereco;Bairro;Cidade;CEP;TelFixo;TelCelular;Informacoes;NumExterno;Visualizado
 172255;0200053077008;PCR;2026-02-09;2026-02-13;"Laudo Concluído (Definitivo)";"BRADESCO SAUDE - 005711";"LORENA AUGUSTA DAS MERCES DA COSTA";1996-12-02;29;F;"CLAF - TAGUATINGA";"LARISSA ABU KAMEL LASMAR";"Genotipagem HPV 28 - PCR";6599891281;Análise/Conclusão;"Sem observação específica";112827;1;"ALTO RISCO HPV 39";;"ALTO RISCO HPV 39";Positivo;"Ana Clara Vieira Frois";;20-29;;;;;;;"Amostra: 24-TGI; Conservantes: 1-SEM CONSERVANTE INDICADO ; Frascos: 1; Coletor(a): ; ";;0
 
-csvBiomol -> guiaipog,referência,emissão,liberação,paciente,exame,analito,resultado,AnoMes
-2041,0200021760000,8/24/2023 14:09:18,8/24/2023 14:28:31,MARIO GORINI,CHLAMYDIA TRACHOMATIS E NEISSERIA GONORRHOEAE,CT,POSITIVO,8/1/2023
+csvBiomol -> IdRequisicao,CodRequisicao,NomExame,DtaSolicitacao,DtaFinalizacao,StatusRequisicao,NomFontePagadora,NomPaciente,DtaNascimento,Idade,Sexo,NomLocalOrigem,NomMedico,Teste,Controle,StatusFrasco,Topografia,IdRequisicaoCaptura,Conclusao,TituloResultado,Resultado,TituloConclusao,DesConclusao,Assinatura1,Assinatura2,FaixaEtaria,Endereco,Bairro,Cidade,CEP,TelFixo,TelCelular,Informacoes,NumExterno,Visualizado
+68448,0200017762001,CAPTURA HÍBRIDA,2023-04-10,2025-04-15,Concluído - Laudo em Fotos,INAS GDF,REGIANE CRISTINA ALEXANDRE MIZIARA,1993-01-20,30,F,Clínica Revitalité,TATIANA MARA ANDRE CORDEIRO,PCR Alto Risco Oncogênico,,,,42219,,,,,,,,30-39,,,,,,,Amostra: ; Conservantes: ; Frascos: ; Não conformidade: ; ,,0
 
 csv2_tratamento_anatomo -> =QUERY(csvLaudo!A:AT; "SELECT \* WHERE Y <> '' AND H <> '' ORDER BY A ASC " )
 
