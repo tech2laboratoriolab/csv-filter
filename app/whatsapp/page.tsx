@@ -24,9 +24,15 @@ import {
   saveBioMolecularPhone,
   getBioMolecularSummary,
   getBioMolecularRows,
+  getClinicaMolSummary,
+  getClinicaMolRows,
   getSavedAnalisesClinicasPhone,
   saveAnalisesClinicasPhone,
   COLUMNS,
+  getWhatsappTemplates,
+  saveWhatsappTemplate,
+  deleteWhatsappTemplate,
+  WhatsappTemplate,
 } from "@/lib/clientDb";
 
 interface SendResult {
@@ -51,6 +57,9 @@ const DEFAULT_PAT_TEMPLATE =
 const DEFAULT_CLINIC_TEMPLATE =
   "Prezado Parceiro,\n\nViemos informar que o Laudo do(a) Paciente {cod_requisicao} - {nom_paciente} está disponível.\n\n⚠️ *Recomendamos que seja apresentado ao médico solicitante.*";
 
+const CLINIC_BIOMOL_HPV_TEMPLATE =
+  "Prezado Parceiro,\nAbaixo segue a lista de requisições de biologia molecular com HPV+.\nNosso sistema indicou a necessidade de uma verificação adicional para confirmar que o médico assistente realmente acessou o laudo.\n\nEm conformidade com a LGPD, incluímos apenas o número da requisição e a data da liberação do laudo.\nCaso tenha dúvidas ou precise de esclarecimentos adicionais, por favor, entre em contato.\nEstamos à disposição para ajudá-lo.\n{cod_requisicao} - {dta_finalizacao_mol}";
+
 const DEFAULT_BIOMOL_TEMPLATE =
   "Prezado Parceiro.\n\nSegue abaixo os casos de Biologia Molecular do dia. Ótimo dia!\n\nRegistros em {data_hoje}.\n\n{linhas}\n\nQualquer dúvida, entre em contato conosco.";
 
@@ -67,8 +76,15 @@ const VARIABLES_PAT = [
 
 const VARIABLES_CLINIC = [
   { key: "{nome}", desc: "Nome da clínica" },
-  { key: "{cod_requisicao}", desc: "Código da requisição do paciente" },
+  {
+    key: "{cod_requisicao}",
+    desc: "Código da requisição do paciente (também funciona com dados biomol)",
+  },
   { key: "{nom_paciente}", desc: "Nome do paciente" },
+  {
+    key: "{dta_finalizacao_mol}",
+    desc: "Data de finalização do laudo (dados biomol)",
+  },
   { key: "{total}", desc: "Total de registros no filtro" },
   { key: "{data_hoje}", desc: "Data atual (DD/MM/YYYY)" },
   { key: "{resumo}", desc: "Lista de eventos e contagens" },
@@ -101,6 +117,29 @@ const VARIABLES_ANALISES = [
   },
 ];
 
+type ActiveTab =
+  | "patologistas"
+  | "clinicas"
+  | "bio-molecular"
+  | "analises-clinicas";
+
+function getDefaultTemplate(tab: ActiveTab): string {
+  if (tab === "clinicas") return DEFAULT_CLINIC_TEMPLATE;
+  if (tab === "bio-molecular") return DEFAULT_BIOMOL_TEMPLATE;
+  if (tab === "analises-clinicas") return DEFAULT_ANALISES_TEMPLATE;
+  return DEFAULT_PAT_TEMPLATE;
+}
+
+function getDefaultTabTemplates(
+  tab: ActiveTab,
+): { name: string; content: string }[] {
+  const base = [{ name: "Padrão", content: getDefaultTemplate(tab) }];
+  if (tab === "clinicas") {
+    base.push({ name: "Biomol HPV+", content: CLINIC_BIOMOL_HPV_TEMPLATE });
+  }
+  return base;
+}
+
 function formatNome(nome: string): string {
   return nome
     .split(".")
@@ -123,6 +162,19 @@ function formatDateValue(val: string): string {
   const match = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!match) return val;
   return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+function buildBioMolLinhas(rows: Record<string, string>[]): string {
+  if (!rows.length) return "(Nenhum registro)";
+  return rows
+    .map((row) => {
+      const cod = row["cod_requisicao_mol"] || row["cod_requisicao"] || "-";
+      const dta = row["dta_finalizacao_mol"]
+        ? formatDateValue(row["dta_finalizacao_mol"])
+        : "-";
+      return `${cod} - ${dta}`;
+    })
+    .join("\n");
 }
 
 function buildLinhasPreview(
@@ -157,7 +209,10 @@ function formatDateBR(date: Date): string {
 }
 
 const DATE_COLUMN_NAMES = new Set(
-  COLUMNS.reduce<string[]>((acc, c) => { if (c.type === "date") acc.push(c.name); return acc; }, []),
+  COLUMNS.reduce<string[]>((acc, c) => {
+    if (c.type === "date") acc.push(c.name);
+    return acc;
+  }, []),
 );
 
 const DATE_OPERATORS: FilterCondition["operator"][] = [
@@ -219,9 +274,11 @@ function sortRowsAscByDate(
     const parse = (v: string): number => {
       if (!v) return Number.MAX_SAFE_INTEGER;
       const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (iso) return Number(iso[1]) * 10000 + Number(iso[2]) * 100 + Number(iso[3]);
+      if (iso)
+        return Number(iso[1]) * 10000 + Number(iso[2]) * 100 + Number(iso[3]);
       const br = v.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-      if (br) return Number(br[3]) * 10000 + Number(br[2]) * 100 + Number(br[1]);
+      if (br)
+        return Number(br[3]) * 10000 + Number(br[2]) * 100 + Number(br[1]);
       return Number.MAX_SAFE_INTEGER;
     };
     return parse(va) - parse(vb);
@@ -294,12 +351,11 @@ export default function WhatsAppPage() {
   const [sendResults, setSendResults] = useState<SendResult[]>([]);
   const [loadingPats, setLoadingPats] = useState(false);
   const [linhasColumns, setLinhasColumns] = useState<string[]>([]);
-  type ActiveTab =
-    | "patologistas"
-    | "clinicas"
-    | "bio-molecular"
-    | "analises-clinicas";
   const [activeTab, setActiveTab] = useState<ActiveTab>("patologistas");
+  const [savedTemplates, setSavedTemplates] = useState<WhatsappTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null,
+  );
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [selectedClinicIds, setSelectedClinicIds] = useState<Set<string>>(
     new Set(),
@@ -437,6 +493,77 @@ export default function WhatsAppPage() {
     setLinhasColumns(union);
   }, [selectedFilterIds]);
 
+  const applyTemplateContent = useCallback(
+    (tab: ActiveTab, content: string) => {
+      if (tab === "analises-clinicas") setTemplateAnalises(content);
+      else if (tab === "bio-molecular") setTemplateBioMol(content);
+      else if (tab === "clinicas") setTemplateClinic(content);
+      else setTemplatePat(content);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    getWhatsappTemplates(activeTab).then(async (rawTemplates) => {
+      if (cancelled) return;
+
+      // Remove duplicatas com mesmo nome (React StrictMode pode criar dois seeds)
+      const seen = new Map<string, WhatsappTemplate>();
+      const toDelete: string[] = [];
+      for (const t of rawTemplates) {
+        if (seen.has(t.name)) toDelete.push(t.id);
+        else seen.set(t.name, t);
+      }
+      for (const id of toDelete) await deleteWhatsappTemplate(id);
+      let templates = Array.from(seen.values());
+
+      // Corrige "Padrão" que ficou com conteúdo incorreto (migração anterior errada)
+      const padraoErrado = templates.find(
+        (t) => t.name === "Padrão" && t.content === CLINIC_BIOMOL_HPV_TEMPLATE,
+      );
+      if (padraoErrado) {
+        const fixed = { ...padraoErrado, content: DEFAULT_CLINIC_TEMPLATE };
+        await saveWhatsappTemplate(fixed);
+        templates = templates.map((t) => (t.id === fixed.id ? fixed : t));
+      }
+
+      // Garante que todos os templates padrão da aba existem no IDB
+      const defaults = getDefaultTabTemplates(activeTab);
+      for (const def of defaults) {
+        if (!templates.find((t) => t.name === def.name)) {
+          const tpl: WhatsappTemplate = {
+            id: crypto.randomUUID(),
+            tab: activeTab,
+            name: def.name,
+            content: def.content,
+          };
+          await saveWhatsappTemplate(tpl);
+          templates = [...templates, tpl];
+        }
+      }
+
+      // Reordena: templates padrão primeiro, na ordem de defaults
+      const defaultNames = defaults.map((d) => d.name);
+      templates.sort((a, b) => {
+        const ia = defaultNames.indexOf(a.name);
+        const ib = defaultNames.indexOf(b.name);
+        if (ia === -1 && ib === -1) return 0;
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
+
+      if (cancelled) return;
+      setSavedTemplates(templates);
+      setSelectedTemplateId(templates[0].id);
+      applyTemplateContent(activeTab, templates[0].content);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
   const saveLinhasColumns = useCallback(
     async (cols: string[]) => {
       if (!selectedFilters.length) return;
@@ -527,6 +654,32 @@ export default function WhatsAppPage() {
     } catch {}
     setSavingAnalisePhone(false);
   }, [analisePhoneEdit]);
+
+  const handleSaveTemplateAs = useCallback(async () => {
+    const name = window.prompt("Nome do template:");
+    if (!name?.trim()) return;
+    const newTpl: WhatsappTemplate = {
+      id: crypto.randomUUID(),
+      tab: activeTab,
+      name: name.trim(),
+      content: template,
+    };
+    await saveWhatsappTemplate(newTpl);
+    const updated = await getWhatsappTemplates(activeTab);
+    setSavedTemplates(updated);
+    setSelectedTemplateId(newTpl.id);
+  }, [activeTab, template]);
+
+  const handleDeleteTemplate = useCallback(async () => {
+    if (!selectedTemplateId || savedTemplates.length <= 1) return;
+    await deleteWhatsappTemplate(selectedTemplateId);
+    const updated = await getWhatsappTemplates(activeTab);
+    setSavedTemplates(updated);
+    if (updated.length > 0) {
+      setSelectedTemplateId(updated[0].id);
+      applyTemplateContent(activeTab, updated[0].content);
+    }
+  }, [selectedTemplateId, savedTemplates, activeTab, applyTemplateContent]);
 
   const toggleClinicSelect = (nome: string) => {
     setSelectedClinicIds((prev) => {
@@ -686,6 +839,8 @@ export default function WhatsAppPage() {
       }
     } else {
       const isClinicTab = isClinicActive;
+      const hasMolFilter =
+        isClinicTab && selectedFilters.some((f) => f.dataSource === "mol");
       const lista = isClinicTab
         ? clinics
             .filter((c) => selectedClinicIds.has(c.nome))
@@ -700,9 +855,15 @@ export default function WhatsAppPage() {
               telefone: phoneEdits[p.nome] ?? p.telefone,
             }));
       const getSummary = isClinicTab
-        ? getClinicaSummary
+        ? hasMolFilter
+          ? getClinicaMolSummary
+          : getClinicaSummary
         : getPatologistaSummary;
-      const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
+      const getRows = isClinicTab
+        ? hasMolFilter
+          ? getClinicaMolRows
+          : getClinicaRows
+        : getPatologistaRows;
 
       for (const item of lista) {
         try {
@@ -725,10 +886,25 @@ export default function WhatsAppPage() {
               const rowEventos = getRowEventos(row);
               const resumo = buildResumoPreview(rowEventos);
               const linhas = buildLinhasPreview(columnsCombined, [row]);
+              const dtaFinalMol = row["dta_finalizacao_mol"] ?? "";
               const msg = template
                 .replace(/\{nome\}/g, formatNome(item.nome))
-                .replace(/\{cod_requisicao\}/g, row["cod_requisicao"] ?? "")
-                .replace(/\{nom_paciente\}/g, row["nom_paciente"] ?? "")
+                .replace(
+                  /\{cod_requisicao\} - \{dta_finalizacao_mol\}/g,
+                  buildBioMolLinhas([row]),
+                )
+                .replace(
+                  /\{cod_requisicao\}/g,
+                  row["cod_requisicao_mol"] || row["cod_requisicao"] || "",
+                )
+                .replace(
+                  /\{nom_paciente\}/g,
+                  row["paciente_mol"] || row["nom_paciente"] || "",
+                )
+                .replace(
+                  /\{dta_finalizacao_mol\}/g,
+                  dtaFinalMol ? formatDateValue(dtaFinalMol) : "",
+                )
                 .replace(/\{total\}/g, "1")
                 .replace(/\{data_hoje\}/g, dataHoje)
                 .replace(/\{resumo\}/g, resumo)
@@ -746,6 +922,28 @@ export default function WhatsAppPage() {
             const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
             const msg = template
               .replace(/\{nome\}/g, formatNome(item.nome))
+              .replace(
+                /\{cod_requisicao\} - \{dta_finalizacao_mol\}/g,
+                buildBioMolLinhas(rowsCombined),
+              )
+              .replace(
+                /\{cod_requisicao\}/g,
+                rowsCombined[0]?.["cod_requisicao_mol"] ||
+                  rowsCombined[0]?.["cod_requisicao"] ||
+                  "",
+              )
+              .replace(
+                /\{nom_paciente\}/g,
+                rowsCombined[0]?.["paciente_mol"] ||
+                  rowsCombined[0]?.["nom_paciente"] ||
+                  "",
+              )
+              .replace(
+                /\{dta_finalizacao_mol\}/g,
+                rowsCombined[0]?.["dta_finalizacao_mol"]
+                  ? formatDateValue(rowsCombined[0]["dta_finalizacao_mol"])
+                  : "",
+              )
               .replace(/\{total\}/g, String(totalCombined))
               .replace(/\{data_hoje\}/g, dataHoje)
               .replace(/\{resumo\}/g, resumo)
@@ -904,10 +1102,18 @@ export default function WhatsAppPage() {
               nome: p.nome,
               telefone: phoneEdits[p.nome] ?? p.telefone,
             }));
+      const hasMolFilterSend =
+        isClinicTab && selectedFilters.some((f) => f.dataSource === "mol");
       const getSummary = isClinicTab
-        ? getClinicaSummary
+        ? hasMolFilterSend
+          ? getClinicaMolSummary
+          : getClinicaSummary
         : getPatologistaSummary;
-      const getRows = isClinicTab ? getClinicaRows : getPatologistaRows;
+      const getRows = isClinicTab
+        ? hasMolFilterSend
+          ? getClinicaMolRows
+          : getClinicaRows
+        : getPatologistaRows;
 
       for (const item of itemsToSend) {
         const {
@@ -933,10 +1139,25 @@ export default function WhatsAppPage() {
             const rowEventos = getRowEventos(row);
             const resumo = buildResumoPreview(rowEventos);
             const linhas = buildLinhasPreview(columnsCombined, [row]);
+            const dtaFinalMolSend = row["dta_finalizacao_mol"] ?? "";
             const finalMessage = template
               .replace(/\{nome\}/g, formatNome(item.nome))
-              .replace(/\{cod_requisicao\}/g, row["cod_requisicao"] ?? "")
-              .replace(/\{nom_paciente\}/g, row["nom_paciente"] ?? "")
+              .replace(
+                /\{cod_requisicao\} - \{dta_finalizacao_mol\}/g,
+                buildBioMolLinhas([row]),
+              )
+              .replace(
+                /\{cod_requisicao\}/g,
+                row["cod_requisicao_mol"] || row["cod_requisicao"] || "",
+              )
+              .replace(
+                /\{nom_paciente\}/g,
+                row["paciente_mol"] || row["nom_paciente"] || "",
+              )
+              .replace(
+                /\{dta_finalizacao_mol\}/g,
+                dtaFinalMolSend ? formatDateValue(dtaFinalMolSend) : "",
+              )
               .replace(/\{total\}/g, "1")
               .replace(/\{data_hoje\}/g, dataHoje)
               .replace(/\{resumo\}/g, resumo)
@@ -952,6 +1173,28 @@ export default function WhatsAppPage() {
           const linhas = buildLinhasPreview(columnsCombined, rowsCombined);
           const finalMessage = template
             .replace(/\{nome\}/g, formatNome(item.nome))
+            .replace(
+              /\{cod_requisicao\} - \{dta_finalizacao_mol\}/g,
+              buildBioMolLinhas(rowsCombined),
+            )
+            .replace(
+              /\{cod_requisicao\}/g,
+              rowsCombined[0]?.["cod_requisicao_mol"] ||
+                rowsCombined[0]?.["cod_requisicao"] ||
+                "",
+            )
+            .replace(
+              /\{nom_paciente\}/g,
+              rowsCombined[0]?.["paciente_mol"] ||
+                rowsCombined[0]?.["nom_paciente"] ||
+                "",
+            )
+            .replace(
+              /\{dta_finalizacao_mol\}/g,
+              rowsCombined[0]?.["dta_finalizacao_mol"]
+                ? formatDateValue(rowsCombined[0]["dta_finalizacao_mol"])
+                : "",
+            )
             .replace(/\{total\}/g, String(totalCombined))
             .replace(/\{data_hoje\}/g, dataHoje)
             .replace(/\{resumo\}/g, resumo)
@@ -1335,6 +1578,88 @@ export default function WhatsAppPage() {
                   ? "Clínicas"
                   : "Patologistas"}
             </div>
+
+            {savedTemplates.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <select
+                  value={selectedTemplateId ?? ""}
+                  onChange={(e) => {
+                    const tpl = savedTemplates.find(
+                      (t) => t.id === e.target.value,
+                    );
+                    if (!tpl) return;
+                    setSelectedTemplateId(tpl.id);
+                    applyTemplateContent(activeTab, tpl.content);
+                  }}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    background: "var(--bg-3)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    color: "var(--text-0)",
+                    padding: "4px 8px",
+                    fontSize: 12,
+                  }}
+                >
+                  {savedTemplates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleSaveTemplateAs}
+                  title="Salvar template atual com um nome"
+                  style={{
+                    padding: "4px 10px",
+                    background: "var(--bg-3)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    color: "var(--text-1)",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Salvar como...
+                </button>
+                <button
+                  onClick={handleDeleteTemplate}
+                  disabled={savedTemplates.length <= 1}
+                  title={
+                    savedTemplates.length <= 1
+                      ? "Não é possível apagar o único template"
+                      : "Apagar template selecionado"
+                  }
+                  style={{
+                    padding: "4px 10px",
+                    background: "var(--bg-3)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    color:
+                      savedTemplates.length <= 1
+                        ? "var(--text-3)"
+                        : "var(--red)",
+                    fontSize: 12,
+                    cursor:
+                      savedTemplates.length <= 1 ? "not-allowed" : "pointer",
+                    opacity: savedTemplates.length <= 1 ? 0.5 : 1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Apagar
+                </button>
+              </div>
+            )}
 
             <div style={{ marginBottom: 10 }}>
               <div
@@ -2284,7 +2609,14 @@ export default function WhatsAppPage() {
               {sending ? "⏳ Enviando..." : "📤 Enviar Mensagens"}
             </button>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
               <label className="modo-individual-toggle">
                 <input
                   type="checkbox"
