@@ -261,6 +261,26 @@ function syncMolVisualizacao(db: Database): void {
   `);
 }
 
+function syncDesConclusaoFromMol(db: Database): void {
+  db.run(`
+    UPDATE csv_data
+    SET des_conclusao = (
+      SELECT m.des_conclusao_mol
+      FROM mol_data m
+      WHERE m.cod_requisicao_mol = csv_data.cod_requisicao
+        AND m.des_conclusao_mol IS NOT NULL
+        AND m.des_conclusao_mol != ''
+      LIMIT 1
+    )
+    WHERE EXISTS (
+      SELECT 1 FROM mol_data m
+      WHERE m.cod_requisicao_mol = csv_data.cod_requisicao
+        AND m.des_conclusao_mol IS NOT NULL
+        AND m.des_conclusao_mol != ''
+    )
+  `);
+}
+
 export function getDb(): Promise<Database> {
   if (!_dbPromise) {
     _dbPromise = (async () => {
@@ -2316,6 +2336,7 @@ export async function importMolCSV(
   stmt.free();
   db.run("COMMIT;");
   syncMolVisualizacao(db);
+  syncDesConclusaoFromMol(db);
 
   const idbMol = await getIdb();
   if (idbMol) {
