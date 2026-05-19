@@ -459,11 +459,9 @@ export default function DataTable({
                     const rowTextColor = (rowStyle as React.CSSProperties)
                       .color;
                     const mergedStyle: React.CSSProperties = {
-                      ...cellStyle,
                       ...(rowBg ? { backgroundColor: rowBg } : {}),
-                      ...(rowTextColor && !cellStyle.color
-                        ? { color: rowTextColor }
-                        : {}),
+                      ...(rowTextColor ? { color: rowTextColor } : {}),
+                      ...cellStyle,
                     };
                     const val = row[col.name] ?? "";
                     const colType = columns.find(
